@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Clock3, Filter, ShieldCheck, Sparkles, SlidersHorizontal, X } from 'lucide-react';
 import styles from '../App.module.css'; // Reusing the grid styles from App module
@@ -14,6 +14,10 @@ const SORT_OPTIONS: Array<{ value: ListingSortOption; label: string }> = [
     { value: 'rating_desc', label: 'Top rated' },
 ];
 
+const BUDGET_MIN = 0;
+const BUDGET_MAX = 50000;
+const BUDGET_STEP = 1000;
+
 const parseNumberParam = (value: string | null) => {
     if (!value) {
         return undefined;
@@ -21,6 +25,14 @@ const parseNumberParam = (value: string | null) => {
 
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : undefined;
+};
+
+const clampBudgetParam = (value: number | undefined) => {
+    if (value === undefined) {
+        return undefined;
+    }
+
+    return Math.min(BUDGET_MAX, Math.max(BUDGET_MIN, value));
 };
 
 const parseSortParam = (value: string | null): ListingSortOption => {
@@ -36,7 +48,12 @@ export const Home = () => {
     const categoryParam = searchParams.get('category');
     const categoryFilter = categoryParam && categoryParam !== 'icons' ? categoryParam : undefined;
     const sort = parseSortParam(searchParams.get('sort'));
-    const maxPrice = parseNumberParam(searchParams.get('maxPrice'));
+    const minBudgetParam = clampBudgetParam(parseNumberParam(searchParams.get('minPrice')));
+    const maxBudgetParam = clampBudgetParam(parseNumberParam(searchParams.get('maxPrice')));
+    const budgetMinValue = Math.min(minBudgetParam ?? BUDGET_MIN, maxBudgetParam ?? BUDGET_MAX);
+    const budgetMaxValue = Math.max(maxBudgetParam ?? BUDGET_MAX, budgetMinValue);
+    const minPrice = budgetMinValue > BUDGET_MIN ? budgetMinValue : undefined;
+    const maxPrice = budgetMaxValue < BUDGET_MAX ? budgetMaxValue : undefined;
     const guests = parseNumberParam(searchParams.get('guests'));
     const bedrooms = parseNumberParam(searchParams.get('bedrooms'));
     const baths = parseNumberParam(searchParams.get('baths'));
@@ -72,12 +89,22 @@ export const Home = () => {
 
     const clearFilters = () => {
         const params = new URLSearchParams(searchParams);
-        ['category', 'sort', 'maxPrice', 'guests', 'bedrooms', 'baths', 'favorites'].forEach((key) => params.delete(key));
+        ['category', 'sort', 'minPrice', 'maxPrice', 'guests', 'bedrooms', 'baths', 'favorites'].forEach((key) => params.delete(key));
         setSearchParams(params);
     };
 
     const toggleFavoritesOnly = () => {
         updateParams({ favorites: guestFavoriteOnly ? null : 1 });
+    };
+
+    const handleMinBudgetChange = (value: string) => {
+        const nextMinBudget = Math.min(Number(value), budgetMaxValue);
+        updateParams({ minPrice: nextMinBudget <= BUDGET_MIN ? null : nextMinBudget });
+    };
+
+    const handleMaxBudgetChange = (value: string) => {
+        const nextMaxBudget = Math.max(Number(value), budgetMinValue);
+        updateParams({ maxPrice: nextMaxBudget >= BUDGET_MAX ? null : nextMaxBudget });
     };
 
     useEffect(() => {
@@ -87,6 +114,7 @@ export const Home = () => {
                 const filters: ListingFilters = {
                     category: categoryFilter,
                     sort,
+                    minPrice,
                     maxPrice,
                     guests,
                     bedrooms,
@@ -102,7 +130,20 @@ export const Home = () => {
             }
         };
         loadListings();
-    }, [categoryFilter, sort, maxPrice, guests, bedrooms, baths, guestFavoriteOnly]);
+    }, [categoryFilter, sort, minPrice, maxPrice, guests, bedrooms, baths, guestFavoriteOnly]);
+
+    const formatBudget = (value: number) =>
+        new Intl.NumberFormat('en-IN', {
+            style: 'currency',
+            currency: 'INR',
+            maximumFractionDigits: 0,
+        }).format(value);
+
+    const budgetLabel = minPrice === undefined && maxPrice === undefined
+        ? 'Any price'
+        : `${formatBudget(minPrice ?? BUDGET_MIN)} - ${maxPrice === undefined ? 'Any price' : formatBudget(maxPrice)}`;
+    const budgetMinProgress = `${((budgetMinValue - BUDGET_MIN) / (BUDGET_MAX - BUDGET_MIN)) * 100}%`;
+    const budgetMaxProgress = `${((budgetMaxValue - BUDGET_MIN) / (BUDGET_MAX - BUDGET_MIN)) * 100}%`;
 
     useEffect(() => {
         const id = window.setInterval(() => setNowTs(Date.now()), 1000);
@@ -110,13 +151,14 @@ export const Home = () => {
     }, []);
 
     const activeFiltersCount = [
-        categoryFilter,
-        sort !== 'recommended' ? sort : null,
-        maxPrice,
-        guests,
-        bedrooms,
-        baths,
-        guestFavoriteOnly ? 'favorites' : null,
+        Boolean(categoryFilter),
+        sort !== 'recommended',
+        minPrice !== undefined,
+        maxPrice !== undefined,
+        guests !== undefined,
+        bedrooms !== undefined,
+        baths !== undefined,
+        guestFavoriteOnly,
     ].filter(Boolean).length;
 
     const remainingMs = activeDrop ? new Date(activeDrop.endAt).getTime() - nowTs : 0;
@@ -194,17 +236,42 @@ export const Home = () => {
                             </select>
                         </label>
 
-                        <label className={styles.controlField}>
+                        <label className={`${styles.controlField} ${styles.budgetField}`}>
                             <span><Filter size={14} /> Budget</span>
-                            <select
-                                value={maxPrice ?? ''}
-                                onChange={(e) => updateParams({ maxPrice: e.target.value ? Number(e.target.value) : null })}
-                            >
-                                <option value="">Any price</option>
-                                <option value="5000">Under ₹5,000</option>
-                                <option value="10000">Under ₹10,000</option>
-                                <option value="15000">Under ₹15,000</option>
-                            </select>
+                            <div className={styles.budgetSliderShell}>
+                                <div className={styles.budgetValueRow}>
+                                    <strong className={styles.budgetValue}>{budgetLabel}</strong>
+                                    <span>/night</span>
+                                </div>
+                                <div
+                                    className={styles.budgetRange}
+                                    style={{
+                                        '--budget-min-progress': budgetMinProgress,
+                                        '--budget-max-progress': budgetMaxProgress,
+                                    } as CSSProperties}
+                                >
+                                    <input
+                                        aria-label="Minimum nightly budget"
+                                        className={`${styles.budgetSlider} ${styles.budgetSliderMin}`}
+                                        type="range"
+                                        min={BUDGET_MIN}
+                                        max={BUDGET_MAX}
+                                        step={BUDGET_STEP}
+                                        value={budgetMinValue}
+                                        onChange={(e) => handleMinBudgetChange(e.target.value)}
+                                    />
+                                    <input
+                                        aria-label="Maximum nightly budget"
+                                        className={`${styles.budgetSlider} ${styles.budgetSliderMax}`}
+                                        type="range"
+                                        min={BUDGET_MIN}
+                                        max={BUDGET_MAX}
+                                        step={BUDGET_STEP}
+                                        value={budgetMaxValue}
+                                        onChange={(e) => handleMaxBudgetChange(e.target.value)}
+                                    />
+                                </div>
+                            </div>
                         </label>
 
                         <label className={styles.controlField}>
@@ -246,10 +313,10 @@ export const Home = () => {
                     </div>
 
                     <div className={styles.quickChips}>
-                        <button type="button" className={styles.quickChip} onClick={() => updateParams({ maxPrice: 5000 })}>
+                        <button type="button" className={styles.quickChip} onClick={() => updateParams({ minPrice: null, maxPrice: 5000 })}>
                             Under ₹5k
                         </button>
-                        <button type="button" className={styles.quickChip} onClick={() => updateParams({ maxPrice: 10000 })}>
+                        <button type="button" className={styles.quickChip} onClick={() => updateParams({ minPrice: null, maxPrice: 10000 })}>
                             Under ₹10k
                         </button>
                         <button type="button" className={styles.quickChip} onClick={() => updateParams({ sort: 'rating_desc' })}>
