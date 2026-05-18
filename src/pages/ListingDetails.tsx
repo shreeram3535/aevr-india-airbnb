@@ -22,6 +22,9 @@ import {
     Waves,
     Umbrella,
     Trees,
+    ShieldCheck,
+    Compass,
+    Camera,
 } from 'lucide-react';
 import styles from './ListingDetails.module.css';
 import { api } from '../services/api';
@@ -51,6 +54,88 @@ const amenityIcons: Record<string, ElementType> = {
 const getAmenityIcon = (label: string): ElementType => {
     const key = label.trim().toLowerCase();
     return amenityIcons[key] ?? MapPin;
+};
+
+type LocalExperience = {
+    title: string;
+    description: string;
+    meta: string;
+    Icon: ElementType;
+};
+
+const getLocalExperiences = (listing: Listing): LocalExperience[] => {
+    const city = listing.location.city || 'the area';
+    const category = listing.category.toLowerCase();
+    const amenities = listing.amenities.map((amenity) => amenity.toLowerCase());
+    const experiences: LocalExperience[] = [];
+
+    if (category.includes('pool') || amenities.includes('pool')) {
+        experiences.push({
+            title: 'Poolside wind-down',
+            description: `Spend an easy afternoon around ${city}'s resort-style pools, cabanas, and sunset decks.`,
+            meta: 'Local favorite',
+            Icon: Waves,
+        });
+    }
+
+    if (category.includes('beach') || amenities.includes('private beach')) {
+        experiences.push({
+            title: 'Beachfront trail',
+            description: `Explore shore walks, seafood stops, and quiet beach corners close to your stay in ${city}.`,
+            meta: 'Nearby',
+            Icon: Umbrella,
+        });
+    }
+
+    if (category.includes('farm') || amenities.includes('organic food') || amenities.includes('nature trails')) {
+        experiences.push({
+            title: 'Farm-to-table visit',
+            description: `Meet local growers, taste seasonal produce, and slow down with countryside experiences near ${city}.`,
+            meta: 'Host-style pick',
+            Icon: Trees,
+        });
+    }
+
+    if (category.includes('cabin') || category.includes('view') || amenities.includes('lake view')) {
+        experiences.push({
+            title: 'Scenic lookout loop',
+            description: `Find viewpoints, lake edges, and photo stops that make the most of ${city}'s landscape.`,
+            meta: 'Photo spot',
+            Icon: Camera,
+        });
+    }
+
+    if (category.includes('luxe')) {
+        experiences.push({
+            title: 'Private dining night',
+            description: `Book a chef-led dinner, tasting menu, or refined local table for a special evening in ${city}.`,
+            meta: 'Premium pick',
+            Icon: ConciergeBell,
+        });
+    }
+
+    experiences.push(
+        {
+            title: `${city} essentials walk`,
+            description: 'Get oriented with nearby cafes, markets, local lanes, and easy first-day stops.',
+            meta: 'Nearby',
+            Icon: Compass,
+        },
+        {
+            title: 'Local cafe stop',
+            description: `Start the morning with neighborhood coffee, breakfast, and a relaxed route through ${city}.`,
+            meta: 'Easy morning',
+            Icon: Coffee,
+        },
+        {
+            title: 'Cultural highlights',
+            description: 'Ask your host about galleries, temples, old-town routes, seasonal events, and hidden local favorites.',
+            meta: 'Local insight',
+            Icon: Sparkles,
+        }
+    );
+
+    return experiences.slice(0, 4);
 };
 
 const formatPrice = (amount: number, currency?: string) =>
@@ -189,6 +274,8 @@ export const ListingDetails = () => {
     const [bookingError, setBookingError] = useState<string | null>(null);
     const [bookingMode, setBookingMode] = useState<'reserve' | 'request'>('reserve');
     const [submittingBooking, setSubmittingBooking] = useState(false);
+    const [isVerifiedGuest, setIsVerifiedGuest] = useState(false);
+    const [currentUserRole, setCurrentUserRole] = useState<'guest' | 'host' | 'admin' | null>(null);
     const autoSubmitHandled = useRef(false);
 
     const [checkIn, setCheckIn] = useState(() => {
@@ -212,10 +299,15 @@ export const ListingDetails = () => {
 
         const load = async () => {
             setLoading(true);
-            const data = await api.fetchListingById(id);
-            const blocks = await api.fetchAvailabilityBlocks(id);
+            const [data, blocks, currentUser] = await Promise.all([
+                api.fetchListingById(id),
+                api.fetchAvailabilityBlocks(id),
+                api.getCurrentUserSummary(),
+            ]);
             setListing(data);
             setAvailabilityBlocks(blocks);
+            setCurrentUserRole(currentUser?.role ?? null);
+            setIsVerifiedGuest(currentUser?.role === 'guest' && currentUser.isVerifiedGuest);
             setIsFavorited(favoritesService.isFavorite(id));
             setLoading(false);
         };
@@ -275,6 +367,7 @@ export const ListingDetails = () => {
         selectedRoomType?.photos?.[0]
         ?? listing?.images[0]
         ?? 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?q=80&w=1200&auto=format&fit=crop';
+    const localExperiences = useMemo(() => listing ? getLocalExperiences(listing) : [], [listing]);
 
     const toggleFavorite = () => {
         if (!listing) return;
@@ -444,6 +537,11 @@ export const ListingDetails = () => {
 
     const bookingHeadline = bookingMode === 'reserve' ? 'Reserve now' : 'Request to book';
     const bookingActionLabel = bookingMode === 'reserve' ? 'Reserve' : 'Request to book';
+    const bookingTrustNote = isVerifiedGuest
+        ? 'Your verified guest profile is ready for safer, faster booking.'
+        : currentUserRole
+            ? 'Complete your booking details. Admin verification is required to display the AEVR VERIFIED GUEST badge.'
+            : 'Sign in to reserve or request this stay. We will save your selection while you log in.';
 
     if (loading) {
         return <div className={styles.container} style={{ height: '80vh' }} />;
@@ -589,6 +687,27 @@ export const ListingDetails = () => {
                         </div>
                     </div>
 
+                    <section className={styles.localExperiences}>
+                        <div className={styles.sectionIntro}>
+                            <h2>Local experiences nearby</h2>
+                            <p>Curated ideas around {listing.location.city} to help guests plan a richer stay.</p>
+                        </div>
+                        <div className={styles.experienceGrid}>
+                            {localExperiences.map(({ title, description, meta, Icon }) => (
+                                <article key={title} className={styles.experienceCard}>
+                                    <div className={styles.experienceIcon}>
+                                        <Icon size={20} />
+                                    </div>
+                                    <div>
+                                        <span>{meta}</span>
+                                        <h3>{title}</h3>
+                                        <p>{description}</p>
+                                    </div>
+                                </article>
+                            ))}
+                        </div>
+                    </section>
+
                     <div className={styles.feature}>
                         <div className={styles.featureIcon}><BedDouble size={24} /></div>
                         <div className={styles.featureText}>
@@ -620,6 +739,13 @@ export const ListingDetails = () => {
                             </div>
                         </div>
 
+                        {isVerifiedGuest && (
+                            <div className={styles.verifiedGuestBadge}>
+                                <ShieldCheck size={16} />
+                                <span>AEVR VERIFIED GUEST</span>
+                            </div>
+                        )}
+
                         {bookingStatus && (
                             <div className={`${styles.statusBanner} ${bookingStatus === 'reserved' ? styles.statusSuccess : styles.statusInfo}`}>
                                 {bookingStatus === 'reserved'
@@ -636,7 +762,7 @@ export const ListingDetails = () => {
 
                         <div className={styles.bookingForm}>
                             <div className={styles.bookingNote}>
-                                Sign in to reserve or request this stay. We’ll save your selection while you log in.
+                                {bookingTrustNote}
                             </div>
 
                             <div className={styles.dateGrid}>

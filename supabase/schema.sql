@@ -16,6 +16,7 @@ create table if not exists public.profiles (
     bio text,
     phone text,
     is_superhost boolean not null default false,
+    is_verified_guest boolean not null default false,
     created_at timestamptz not null default timezone('utc', now()),
     updated_at timestamptz not null default timezone('utc', now())
 );
@@ -76,6 +77,7 @@ alter table public.profiles add column if not exists host_approval_status text n
 alter table public.profiles add column if not exists host_reviewed_at timestamptz;
 alter table public.profiles add column if not exists host_reviewed_by uuid references public.profiles (id);
 alter table public.profiles add column if not exists host_review_note text;
+alter table public.profiles add column if not exists is_verified_guest boolean not null default false;
 
 update public.profiles
 set host_approval_status = 'approved'
@@ -229,10 +231,37 @@ begin
 end;
 $$;
 
+create or replace function public.prevent_guest_verification_self_grant()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+    if new.is_verified_guest is distinct from old.is_verified_guest then
+        if not exists (
+            select 1
+            from public.profiles p
+            where p.id = auth.uid()
+              and p.role = 'admin'
+        ) then
+            raise exception 'Only admins can update guest verification';
+        end if;
+    end if;
+
+    return new;
+end;
+$$;
+
 drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
 after insert on auth.users
 for each row execute procedure public.handle_new_user();
+
+drop trigger if exists profiles_guest_verification_guard on public.profiles;
+create trigger profiles_guest_verification_guard
+before update of is_verified_guest on public.profiles
+for each row execute procedure public.prevent_guest_verification_self_grant();
 
 drop trigger if exists profiles_updated_at on public.profiles;
 create trigger profiles_updated_at

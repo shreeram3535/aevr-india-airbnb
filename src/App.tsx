@@ -13,6 +13,7 @@ import { Trips } from './pages/Trips';
 import { AdminFlashSales } from './pages/AdminFlashSales';
 import { AdminHostApprovals } from './pages/AdminHostApprovals';
 import { AdminDashboard } from './pages/AdminDashboard';
+import { AdminGuestVerification } from './pages/AdminGuestVerification';
 import './styles/global.css';
 
 function App() {
@@ -36,6 +37,7 @@ function App() {
           <Route path="admin" element={<AdminDashboard />} />
           <Route path="flash-sales" element={<AdminFlashSales />} />
           <Route path="host-approvals" element={<AdminHostApprovals />} />
+          <Route path="guest-verification" element={<AdminGuestVerification />} />
         </Route>
       </Routes>
     </BrowserRouter>

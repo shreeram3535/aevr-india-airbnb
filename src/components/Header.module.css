@@ -57,6 +57,8 @@
 }
 
 .hostLink {
+    position: relative;
+    z-index: 1;
     font-size: var(--font-size-sm);
     font-weight: var(--font-weight-medium);
     padding: 10px 14px;
