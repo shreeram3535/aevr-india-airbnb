@@ -43,7 +43,7 @@ export const Categories: React.FC<CategoriesProps> = ({ selectedCategory, onSele
                         className={`${styles.categoryItem} ${selectedCategory === cat.id ? styles.active : ''}`}
                         onClick={() => onSelectCategory(cat.id)}
                     >
-                        <IconComponent className={styles.icon} strokeWidth={1.5} />
+                        <IconComponent className={styles.icon} strokeWidth={1.8} />
                         <span className={styles.label}>{cat.label}</span>
                     </button>
                 );

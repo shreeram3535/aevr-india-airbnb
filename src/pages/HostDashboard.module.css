@@ -1,7 +1,7 @@
 .page {
     min-height: 100vh;
     background:
-        radial-gradient(circle at top right, rgba(0, 132, 137, 0.08), transparent 28%),
+        radial-gradient(circle at top right, rgba(0, 132, 137, 0.11), transparent 28%),
         linear-gradient(180deg, #ffffff 0%, #f7f7f7 100%);
     padding: calc(var(--header-height) + 24px) var(--container-padding) 48px;
 }
@@ -75,9 +75,9 @@
 .stats div {
     padding: 18px;
     border-radius: 20px;
-    background: rgba(255, 255, 255, 0.88);
+    background: #fff;
     border: 1px solid var(--color-gray-100);
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--shadow-md);
 }
 
 .stats strong {
@@ -87,7 +87,8 @@
 }
 
 .stats span {
-    color: var(--text-secondary);
+    color: var(--color-gray-300);
+    font-weight: var(--font-weight-medium);
 }
 
 .section {
@@ -112,23 +113,32 @@
 }
 
 .propertyCard {
-    background: rgba(255, 255, 255, 0.95);
+    background: #fff;
     border: 1px solid var(--color-gray-100);
     border-radius: 24px;
     overflow: hidden;
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--shadow-md);
 }
 
 .propertyImageWrap {
     display: block;
     aspect-ratio: 4 / 3;
     overflow: hidden;
+    background: #ececec;
 }
 
 .propertyImage {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    image-rendering: auto;
+    filter: contrast(1.03) saturate(1.04);
+    transition: transform 0.2s, filter 0.2s;
+}
+
+.propertyImageWrap:hover .propertyImage {
+    filter: contrast(1.06) saturate(1.06);
+    transform: scale(1.01);
 }
 
 .propertyBody {
@@ -152,7 +162,7 @@
 .propertyTopRow p,
 .description,
 .location {
-    color: var(--text-secondary);
+    color: var(--color-gray-300);
 }
 
 .mapLink {
@@ -168,7 +178,7 @@
 }
 
 .price span {
-    color: var(--text-secondary);
+    color: var(--color-gray-300);
     font-weight: var(--font-weight-regular);
 }
 
@@ -187,11 +197,27 @@
     gap: 6px;
 }
 
+.metaRow span {
+    color: var(--text-primary);
+    font-weight: var(--font-weight-medium);
+}
+
+.metaRow svg,
+.tag svg,
+.location svg,
+.actionPill svg,
+.deletePill svg {
+    color: var(--color-primary);
+    stroke-width: 2.2;
+}
+
 .tag {
     padding: 8px 10px;
     border-radius: var(--radius-full);
-    background: var(--color-gray-50);
+    background: rgba(0, 132, 137, 0.1);
+    color: var(--text-primary);
     font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
 }
 
 .footerRow {
@@ -220,10 +246,18 @@
     font-size: var(--font-size-sm);
 }
 
+.actionPill {
+    border-color: rgba(0, 132, 137, 0.22);
+}
+
 .deletePill {
     color: #8a2132;
-    border-color: rgba(255, 56, 92, 0.2);
-    background: rgba(255, 56, 92, 0.06);
+    border-color: rgba(255, 56, 92, 0.28);
+    background: rgba(255, 56, 92, 0.09);
+}
+
+.deletePill svg {
+    color: #8a2132;
 }
 
 .deletePill:disabled {
@@ -235,7 +269,7 @@
 .loading {
     min-height: 60vh;
     border-radius: 28px;
-    background: rgba(255, 255, 255, 0.9);
+    background: #fff;
     border: 1px solid var(--color-gray-100);
     display: grid;
     place-items: center;

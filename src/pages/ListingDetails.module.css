@@ -80,11 +80,14 @@
     height: 100%;
     object-fit: cover;
     cursor: pointer;
-    transition: opacity 0.2s;
+    image-rendering: auto;
+    filter: contrast(1.03) saturate(1.04);
+    transition: transform 0.2s, filter 0.2s;
 }
 
 .photo:hover {
-    opacity: 0.9;
+    filter: contrast(1.06) saturate(1.06);
+    transform: scale(1.01);
 }
 
 .showAllButton {
@@ -144,7 +147,11 @@
 
 .featureIcon {
     margin-top: 4px;
-    color: var(--text-primary);
+    color: var(--color-primary);
+}
+
+.featureIcon svg {
+    stroke-width: 2.2;
 }
 
 .featureText h3 {
@@ -184,6 +191,19 @@
     align-items: center;
     gap: 12px;
     font-size: var(--font-size-md);
+    color: var(--text-primary);
+    font-weight: var(--font-weight-medium);
+}
+
+.amenityItem svg {
+    flex: 0 0 auto;
+    width: 34px;
+    height: 34px;
+    padding: 7px;
+    border-radius: 50%;
+    color: var(--color-primary);
+    background: rgba(0, 132, 137, 0.12);
+    stroke-width: 2.2;
 }
 
 /* Sticky Booking Card */
@@ -198,7 +218,7 @@
     border: 1px solid var(--color-gray-100);
     border-radius: var(--radius-lg);
     padding: 24px;
-    background: rgba(255, 255, 255, 0.96);
+    background: #fff;
     box-shadow: var(--shadow-floating);
 }
 
@@ -226,7 +246,7 @@
     align-items: center;
     gap: 6px;
     font-size: var(--font-size-sm);
-    color: var(--text-secondary);
+    color: var(--text-primary);
     flex-shrink: 0;
 }
 
@@ -363,6 +383,8 @@
     object-fit: cover;
     border-radius: 14px;
     border: 1px solid var(--color-gray-100);
+    image-rendering: auto;
+    filter: contrast(1.03) saturate(1.04);
 }
 
 .availabilityRow {
