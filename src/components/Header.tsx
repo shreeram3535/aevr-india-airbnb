@@ -40,10 +40,21 @@ export const Header: React.FC = () => {
         navigate(path);
     };
 
-    const handleSwitchToHosting = async () => {
+    const resolveDashboardTarget = () => {
+        if (currentUserRole === 'admin') {
+            return '/host/admin';
+        }
+
+        if (currentUserRole === 'host') {
+            return '/host';
+        }
+
+        return '/trips';
+    };
+
+    const handleSwitchToHosting = () => {
         setIsMenuOpen(false);
-        const path = await api.resolveHostEntryPath();
-        navigate(path);
+        navigate(resolveDashboardTarget());
     };
 
     const roleBadgeLabel = currentUserRole ? currentUserRole.toUpperCase() : '';
@@ -71,18 +82,18 @@ export const Header: React.FC = () => {
             {/* User Menu */}
             <div className={styles.userMenu}>
                 {!currentUserRole ? (
-                    <button className={styles.hostLink} onClick={() => navigate('/auth')}>
+                    <button type="button" className={styles.hostLink} onClick={() => navigate('/auth')}>
                         Login
                     </button>
                 ) : (
                     <>
-                        <button className={styles.hostLink} onClick={() => navigate('/trips')}>
+                        <button type="button" className={styles.hostLink} onClick={() => navigate('/trips')}>
                             Trips
                         </button>
-                        <button className={styles.hostLink} onClick={() => navigate('/favorites')}>
+                        <button type="button" className={styles.hostLink} onClick={() => navigate('/favorites')}>
                             Favorites
                         </button>
-                        <button className={styles.hostLink} onClick={handleSwitchToHosting}>
+                        <button type="button" className={styles.hostLink} onClick={handleSwitchToHosting}>
                             Dashboard
                         </button>
                         <div className={styles.userBadge}>
@@ -135,12 +146,19 @@ export const Header: React.FC = () => {
                                 </button>
                             </>
                         )}
-                        <button type="button" className={styles.menuItem} onClick={() => handleNavigate('/host/flash-sales')}>
-                            Flash sales
-                        </button>
-                        <button type="button" className={styles.menuItem} onClick={() => handleNavigate('/host/host-approvals')}>
-                            Host approvals
-                        </button>
+                        {currentUserRole === 'admin' && (
+                            <>
+                                <button type="button" className={styles.menuItem} onClick={() => handleNavigate('/host/flash-sales')}>
+                                    Flash sales
+                                </button>
+                                <button type="button" className={styles.menuItem} onClick={() => handleNavigate('/host/host-approvals')}>
+                                    Host approvals
+                                </button>
+                                <button type="button" className={styles.menuItem} onClick={() => handleNavigate('/host/guest-verification')}>
+                                    Guest verification
+                                </button>
+                            </>
+                        )}
                         <button type="button" className={styles.menuItem} onClick={() => handleNavigate('/')}>
                             Home
                         </button>

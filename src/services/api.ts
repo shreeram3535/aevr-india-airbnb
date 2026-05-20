@@ -13,6 +13,7 @@ import type {
     RoomType,
     FlashSaleDrop,
     FlashSaleType,
+    GuestVerificationUser,
     HostApprovalApplication,
     HostApprovalStatus,
     UpsertFlashSaleInput,
@@ -131,7 +132,9 @@ type SupabaseProfileRow = {
     id: string;
     full_name: string | null;
     avatar_url: string | null;
+    email?: string | null;
     role: 'guest' | 'host' | 'admin';
+    is_verified_guest?: boolean | null;
     host_approval_status: HostApprovalStatus | null;
     host_reviewed_at: string | null;
     host_reviewed_by: string | null;
@@ -143,6 +146,7 @@ export type CurrentUserSummary = {
     id: string;
     name: string;
     role: 'guest' | 'host' | 'admin';
+    isVerifiedGuest: boolean;
 };
 
 const LISTING_SELECT = `
@@ -462,7 +466,7 @@ const fetchLatestAdminFlashDrop = async (): Promise<FlashSaleDrop | null> => {
     return mapFlashSale(data as unknown as SupabaseFlashSaleRow);
 };
 
-const fetchCurrentProfileBasic = async (): Promise<Pick<SupabaseProfileRow, 'id' | 'full_name' | 'avatar_url' | 'role'> | null> => {
+const fetchCurrentProfileBasic = async (): Promise<Pick<SupabaseProfileRow, 'id' | 'full_name' | 'avatar_url' | 'role' | 'is_verified_guest'> | null> => {
     if (!supabase) {
         return null;
     }
@@ -474,15 +478,28 @@ const fetchCurrentProfileBasic = async (): Promise<Pick<SupabaseProfileRow, 'id'
 
     const { data, error } = await supabase
         .from('profiles')
+        .select('id, full_name, avatar_url, role, is_verified_guest')
+        .eq('id', authData.user.id)
+        .maybeSingle();
+
+    if (!error && data) {
+        return data as Pick<SupabaseProfileRow, 'id' | 'full_name' | 'avatar_url' | 'role' | 'is_verified_guest'>;
+    }
+
+    const { data: fallbackData, error: fallbackError } = await supabase
+        .from('profiles')
         .select('id, full_name, avatar_url, role')
         .eq('id', authData.user.id)
         .maybeSingle();
 
-    if (error || !data) {
+    if (fallbackError || !fallbackData) {
         return null;
     }
 
-    return data as Pick<SupabaseProfileRow, 'id' | 'full_name' | 'avatar_url' | 'role'>;
+    return {
+        ...(fallbackData as Pick<SupabaseProfileRow, 'id' | 'full_name' | 'avatar_url' | 'role'>),
+        is_verified_guest: false,
+    };
 };
 
 const fetchHostApprovalStatusFromProfile = async (): Promise<HostApprovalStatus | null> => {
@@ -896,6 +913,7 @@ export const api = {
             id: profile.id,
             name: profile.full_name?.trim() || 'User',
             role: profile.role,
+            isVerifiedGuest: Boolean(profile.is_verified_guest),
         };
     },
 
@@ -978,6 +996,67 @@ export const api = {
             reviewedBy: row.host_reviewed_by ?? undefined,
             reviewNote: row.host_review_note ?? undefined,
         }));
+    },
+
+    listGuestVerificationUsers: async (): Promise<GuestVerificationUser[]> => {
+        if (!supabase) {
+            return [];
+        }
+
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('id, full_name, avatar_url, role, is_verified_guest, created_at')
+            .eq('role', 'guest')
+            .order('created_at', { ascending: false });
+
+        if (!error && data) {
+            return (data as SupabaseProfileRow[]).map((row) => ({
+                id: row.id,
+                fullName: row.full_name?.trim() || 'Unnamed guest',
+                avatarUrl: row.avatar_url ?? undefined,
+                isVerifiedGuest: Boolean(row.is_verified_guest),
+                createdAt: row.created_at,
+            }));
+        }
+
+        const { data: fallbackData, error: fallbackError } = await supabase
+            .from('profiles')
+            .select('id, full_name, avatar_url, role, created_at')
+            .eq('role', 'guest')
+            .order('created_at', { ascending: false });
+
+        if (fallbackError || !fallbackData) {
+            return [];
+        }
+
+        return (fallbackData as SupabaseProfileRow[]).map((row) => ({
+            id: row.id,
+            fullName: row.full_name?.trim() || 'Unnamed guest',
+            avatarUrl: row.avatar_url ?? undefined,
+            isVerifiedGuest: false,
+            createdAt: row.created_at,
+        }));
+    },
+
+    updateGuestVerification: async (userId: string, isVerifiedGuest: boolean): Promise<void> => {
+        if (!supabase) {
+            throw new Error('Supabase is not configured');
+        }
+
+        const { data: authData, error: authError } = await supabase.auth.getUser();
+        if (authError || !authData.user) {
+            throw new Error('You must be signed in as admin');
+        }
+
+        const { error } = await supabase
+            .from('profiles')
+            .update({ is_verified_guest: isVerifiedGuest })
+            .eq('id', userId)
+            .eq('role', 'guest');
+
+        if (error) {
+            throw error;
+        }
     },
 
     reviewHostApplication: async (

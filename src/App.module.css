@@ -162,7 +162,7 @@
 
 .discoveryControls {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: minmax(140px, 0.9fr) minmax(240px, 1.45fr) repeat(2, minmax(120px, 0.8fr)) minmax(160px, 0.9fr);
     gap: 12px;
     align-items: end;
 }
@@ -190,6 +190,132 @@
     background: var(--color-white);
     font: inherit;
     color: var(--text-primary);
+}
+
+.budgetField {
+    min-width: 0;
+}
+
+.budgetSliderShell {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 7px;
+    height: 68px;
+    padding: 11px 14px;
+    border: 1px solid var(--color-gray-100);
+    border-radius: 16px;
+    background: var(--color-white);
+}
+
+.budgetValueRow {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    min-width: 0;
+}
+
+.budgetValue {
+    font-size: var(--font-size-sm);
+    line-height: 1.1;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.budgetValueRow span {
+    flex: 0 0 auto;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    color: var(--text-secondary);
+}
+
+.budgetRange {
+    position: relative;
+    height: 18px;
+}
+
+.budgetRange::before,
+.budgetRange::after {
+    content: "";
+    position: absolute;
+    top: 8px;
+    right: 0;
+    left: 0;
+    height: 4px;
+    border-radius: var(--radius-full);
+}
+
+.budgetRange::before {
+    background: var(--color-gray-100);
+}
+
+.budgetRange::after {
+    right: calc(100% - var(--budget-max-progress, 100%));
+    left: var(--budget-min-progress, 0%);
+    background: var(--color-primary);
+}
+
+.budgetSlider {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 18px;
+    margin: 0;
+    appearance: none;
+    background: transparent;
+    cursor: pointer;
+    pointer-events: none;
+}
+
+.budgetSlider:focus-visible {
+    outline: 3px solid rgba(0, 132, 137, 0.2);
+    outline-offset: 4px;
+}
+
+.budgetSlider::-webkit-slider-thumb {
+    appearance: none;
+    width: 17px;
+    height: 17px;
+    border: 2px solid var(--color-white);
+    border-radius: 50%;
+    background: var(--color-primary);
+    box-shadow: var(--shadow-sm);
+    pointer-events: auto;
+    position: relative;
+    z-index: 2;
+}
+
+.budgetSlider::-moz-range-thumb {
+    width: 17px;
+    height: 17px;
+    border: 2px solid var(--color-white);
+    border-radius: 50%;
+    background: var(--color-primary);
+    box-shadow: var(--shadow-sm);
+    pointer-events: auto;
+    position: relative;
+    z-index: 2;
+}
+
+.budgetSlider::-webkit-slider-runnable-track {
+    height: 18px;
+    background: transparent;
+}
+
+.budgetSlider::-moz-range-track {
+    height: 18px;
+    background: transparent;
+}
+
+.budgetSliderMin {
+    z-index: 3;
+}
+
+.budgetSliderMax {
+    z-index: 2;
 }
 
 .favoriteToggle {
@@ -271,6 +397,10 @@
 
     .discoveryControls {
         grid-template-columns: 1fr 1fr;
+    }
+
+    .budgetField {
+        grid-column: 1 / -1;
     }
 
     .favoriteToggle {

@@ -80,11 +80,14 @@
     height: 100%;
     object-fit: cover;
     cursor: pointer;
-    transition: opacity 0.2s;
+    image-rendering: auto;
+    filter: contrast(1.03) saturate(1.04);
+    transition: transform 0.2s, filter 0.2s;
 }
 
 .photo:hover {
-    opacity: 0.9;
+    filter: contrast(1.06) saturate(1.06);
+    transform: scale(1.01);
 }
 
 .showAllButton {
@@ -144,7 +147,11 @@
 
 .featureIcon {
     margin-top: 4px;
-    color: var(--text-primary);
+    color: var(--color-primary);
+}
+
+.featureIcon svg {
+    stroke-width: 2.2;
 }
 
 .featureText h3 {
@@ -184,6 +191,91 @@
     align-items: center;
     gap: 12px;
     font-size: var(--font-size-md);
+    color: var(--text-primary);
+    font-weight: var(--font-weight-medium);
+}
+
+.amenityItem svg {
+    flex: 0 0 auto;
+    width: 34px;
+    height: 34px;
+    padding: 7px;
+    border-radius: 50%;
+    color: var(--color-primary);
+    background: rgba(0, 132, 137, 0.12);
+    stroke-width: 2.2;
+}
+
+.localExperiences {
+    padding: 32px 0;
+    border-top: 1px solid var(--color-gray-100);
+    border-bottom: 1px solid var(--color-gray-100);
+}
+
+.sectionIntro {
+    margin-bottom: 20px;
+}
+
+.sectionIntro h2 {
+    font-size: var(--font-size-xl);
+    margin-bottom: 6px;
+}
+
+.sectionIntro p {
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+}
+
+.experienceGrid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.experienceCard {
+    display: flex;
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid var(--color-gray-100);
+    border-radius: 18px;
+    background: #fff;
+    box-shadow: var(--shadow-sm);
+}
+
+.experienceIcon {
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    color: var(--color-primary);
+    background: rgba(0, 132, 137, 0.12);
+}
+
+.experienceIcon svg {
+    stroke-width: 2.2;
+}
+
+.experienceCard span {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--color-primary);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-bold);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.experienceCard h3 {
+    margin-bottom: 4px;
+    font-size: var(--font-size-md);
+}
+
+.experienceCard p {
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    line-height: 1.45;
 }
 
 /* Sticky Booking Card */
@@ -198,7 +290,7 @@
     border: 1px solid var(--color-gray-100);
     border-radius: var(--radius-lg);
     padding: 24px;
-    background: rgba(255, 255, 255, 0.96);
+    background: #fff;
     box-shadow: var(--shadow-floating);
 }
 
@@ -226,8 +318,29 @@
     align-items: center;
     gap: 6px;
     font-size: var(--font-size-sm);
-    color: var(--text-secondary);
+    color: var(--text-primary);
     flex-shrink: 0;
+}
+
+.verifiedGuestBadge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    margin-bottom: 16px;
+    padding: 11px 14px;
+    border: 1px solid rgba(0, 132, 137, 0.28);
+    border-radius: 16px;
+    background: rgba(0, 132, 137, 0.12);
+    color: var(--color-primary);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-bold);
+    letter-spacing: 0.08em;
+}
+
+.verifiedGuestBadge svg {
+    stroke-width: 2.4;
 }
 
 .statusBanner {
@@ -363,6 +476,8 @@
     object-fit: cover;
     border-radius: 14px;
     border: 1px solid var(--color-gray-100);
+    image-rendering: auto;
+    filter: contrast(1.03) saturate(1.04);
 }
 
 .availabilityRow {
@@ -472,6 +587,10 @@
 
     .roomPhotoStrip {
         grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .experienceGrid {
+        grid-template-columns: 1fr;
     }
 
     .roomPhoto {

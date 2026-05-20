@@ -21,6 +21,15 @@ export interface HostApprovalApplication {
     reviewNote?: string;
 }
 
+export interface GuestVerificationUser {
+    id: string;
+    fullName: string;
+    avatarUrl?: string;
+    email?: string;
+    isVerifiedGuest: boolean;
+    createdAt: string;
+}
+
 export interface Location {
     id: string;
     city: string;
