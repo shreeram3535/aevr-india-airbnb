@@ -1,6 +1,25 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Clock3, Filter, ShieldCheck, Sparkles, SlidersHorizontal, X } from 'lucide-react';
+import {
+    Clock3,
+    Filter,
+    ShieldCheck,
+    Sparkles,
+    SlidersHorizontal,
+    X,
+    BedDouble,
+    Waves,
+    Mountain,
+    Home as HomeIcon,
+    Rocket,
+    Umbrella,
+    Tractor,
+    Minimize,
+    Gem,
+    Castle,
+    Tent,
+    Star
+} from 'lucide-react';
 import styles from '../App.module.css'; // Reusing the grid styles from App module
 import { Categories } from '../components/Categories';
 import { ListingCard } from '../components/ListingCard';
@@ -12,6 +31,21 @@ const SORT_OPTIONS: Array<{ value: ListingSortOption; label: string }> = [
     { value: 'price_asc', label: 'Price: low to high' },
     { value: 'price_desc', label: 'Price: high to low' },
     { value: 'rating_desc', label: 'Top rated' },
+];
+
+const FILTER_CATEGORIES = [
+    { slug: 'icons', label: 'Icons', Icon: Star },
+    { slug: 'rooms', label: 'Rooms', Icon: BedDouble },
+    { slug: 'amazing-pools', label: 'Amazing pools', Icon: Waves },
+    { slug: 'amazing-views', label: 'Amazing views', Icon: Mountain },
+    { slug: 'cabins', label: 'Cabins', Icon: HomeIcon },
+    { slug: 'omg', label: 'OMG!', Icon: Rocket },
+    { slug: 'beachfront', label: 'Beachfront', Icon: Umbrella },
+    { slug: 'farms', label: 'Farms', Icon: Tractor },
+    { slug: 'tiny-homes', label: 'Tiny homes', Icon: Minimize },
+    { slug: 'luxe', label: 'Luxe', Icon: Gem },
+    { slug: 'castles', label: 'Castles', Icon: Castle },
+    { slug: 'camping', label: 'Camping', Icon: Tent },
 ];
 
 const BUDGET_MIN = 0;
@@ -161,6 +195,8 @@ export const Home = () => {
         guestFavoriteOnly,
     ].filter(Boolean).length;
 
+    const [showFilters, setShowFilters] = useState(false);
+
     const remainingMs = activeDrop ? new Date(activeDrop.endAt).getTime() - nowTs : 0;
     const hasActiveDrop = Boolean(activeDrop && remainingMs > 0);
     const remainingSeconds = Math.max(0, Math.floor(remainingMs / 1000));
@@ -174,6 +210,9 @@ export const Home = () => {
             <Categories
                 selectedCategory={categoryParam}
                 onSelectCategory={handleSelectCategory}
+                showFilters={showFilters}
+                onToggleFilters={() => setShowFilters(!showFilters)}
+                activeFiltersCount={activeFiltersCount}
             />
 
             <main className={styles.mainContainer}>
@@ -205,7 +244,8 @@ export const Home = () => {
                     </section>
                 )}
 
-                <section className={styles.discoveryPanel}>
+                <div className={`${styles.discoveryPanelWrapper} ${showFilters ? styles.discoveryPanelOpen : ''}`}>
+                    <section className={styles.discoveryPanel}>
                     <div className={styles.discoveryHeader}>
                         <div>
                             <div className={styles.discoveryEyebrow}>Search and discovery</div>
@@ -312,6 +352,27 @@ export const Home = () => {
                         </button>
                     </div>
 
+                    <div className={styles.categoryFilterRow}>
+                        <span className={styles.categoryRowLabel}>Stays Category</span>
+                        <div className={styles.categoryFilterPills}>
+                            {FILTER_CATEGORIES.map((cat) => {
+                                const Icon = cat.Icon;
+                                const isActive = categoryParam === cat.slug;
+                                return (
+                                    <button
+                                        key={cat.slug}
+                                        type="button"
+                                        className={`${styles.categoryFilterPill} ${isActive ? styles.categoryFilterPillActive : ''}`}
+                                        onClick={() => handleSelectCategory(cat.slug)}
+                                    >
+                                        <Icon size={14} />
+                                        <span>{cat.label}</span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+
                     <div className={styles.quickChips}>
                         <button type="button" className={styles.quickChip} onClick={() => updateParams({ minPrice: null, maxPrice: 5000 })}>
                             Under ₹5k
@@ -327,6 +388,7 @@ export const Home = () => {
                         </button>
                     </div>
                 </section>
+                </div>
 
                 {loading ? (
                     <div style={{ display: 'flex', justifyContent: 'center', paddingTop: '100px' }}>

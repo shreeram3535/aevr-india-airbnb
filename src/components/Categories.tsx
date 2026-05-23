@@ -1,53 +1,43 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import styles from './Categories.module.css';
-import { api } from '../services/api';
-import type { Category } from '../types';
 import * as Icons from 'lucide-react';
 
 interface CategoriesProps {
     selectedCategory: string | null;
     onSelectCategory: (id: string) => void;
+    showFilters?: boolean;
+    onToggleFilters?: () => void;
+    activeFiltersCount?: number;
 }
 
-export const Categories: React.FC<CategoriesProps> = ({ selectedCategory, onSelectCategory }) => {
-    const [categories, setCategories] = useState<Category[]>([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        const load = async () => {
-            try {
-                const data = await api.fetchCategories();
-                setCategories(data);
-            } finally {
-                setLoading(false);
-            }
-        };
-        load();
-    }, []);
-
-    if (loading) {
-        // Skeleton or simple loader could go here
-        return <div className={styles.categoriesContainer} style={{ height: '78px' }}></div>;
-    }
-
+export const Categories: React.FC<CategoriesProps> = ({
+    showFilters = false,
+    onToggleFilters,
+    activeFiltersCount = 0,
+}) => {
     return (
-        <div className={styles.categoriesContainer}>
-            {categories.map((cat) => {
-                // Dynamically resolve icon from lucide-react
-                const iconMap = Icons as unknown as Record<string, React.ElementType>;
-                const IconComponent = iconMap[cat.iconName] ?? Icons.HelpCircle;
-
-                return (
+        <div className={styles.categoriesWrapper}>
+            <div className={styles.taglineWrapper}>
+                <Icons.Compass size={18} className={styles.taglineIcon} />
+                <span className={styles.taglineText}>Explore exceptional stays across India</span>
+            </div>
+            {onToggleFilters && (
+                <div className={styles.filterActionWrapper}>
                     <button
-                        key={cat.id}
-                        className={`${styles.categoryItem} ${selectedCategory === cat.id ? styles.active : ''}`}
-                        onClick={() => onSelectCategory(cat.id)}
+                        type="button"
+                        className={`${styles.filterButton} ${showFilters ? styles.filterButtonActive : ''}`}
+                        onClick={onToggleFilters}
+                        aria-label="Toggle search filters"
+                        aria-expanded={showFilters}
                     >
-                        <IconComponent className={styles.icon} strokeWidth={1.8} />
-                        <span className={styles.label}>{cat.label}</span>
+                        <Icons.SlidersHorizontal size={16} />
+                        <span className={styles.filterButtonLabel}>Filters</span>
+                        {activeFiltersCount > 0 && (
+                            <span className={styles.filterBadge}>{activeFiltersCount}</span>
+                        )}
                     </button>
-                );
-            })}
+                </div>
+            )}
         </div>
     );
 };

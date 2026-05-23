@@ -25,6 +25,7 @@ import {
     ShieldCheck,
     Compass,
     Camera,
+    X,
 } from 'lucide-react';
 import styles from './ListingDetails.module.css';
 import { api } from '../services/api';
@@ -276,6 +277,8 @@ export const ListingDetails = () => {
     const [submittingBooking, setSubmittingBooking] = useState(false);
     const [isVerifiedGuest, setIsVerifiedGuest] = useState(false);
     const [currentUserRole, setCurrentUserRole] = useState<'guest' | 'host' | 'admin' | null>(null);
+    const [copied, setCopied] = useState(false);
+    const [showPhotosModal, setShowPhotosModal] = useState(false);
     const autoSubmitHandled = useRef(false);
 
     const [checkIn, setCheckIn] = useState(() => {
@@ -357,6 +360,17 @@ export const ListingDetails = () => {
         setGuestCount((current) => Math.min(current, guestLimit));
     }, [guestLimit]);
 
+    useEffect(() => {
+        if (showPhotosModal) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [showPhotosModal]);
+
     const nights = useMemo(() => nightsBetween(checkIn, checkOut), [checkIn, checkOut]);
     const nightlyRate = selectedRoomType?.pricePerNight ?? listing?.price ?? 0;
     const subtotal = listing ? nightlyRate * nights * roomCount : 0;
@@ -373,6 +387,16 @@ export const ListingDetails = () => {
         if (!listing) return;
         favoritesService.toggleFavorite(listing.id);
         setIsFavorited(!isFavorited);
+    };
+
+    const handleShare = async () => {
+        try {
+            await navigator.clipboard.writeText(window.location.href);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch (err) {
+            console.error('Failed to copy link:', err);
+        }
     };
 
     const submitBooking = useCallback(
@@ -573,7 +597,9 @@ export const ListingDetails = () => {
                         <span style={{ textDecoration: 'underline' }}>{listing.location.city}, {listing.location.country}</span>
                     </div>
                     <div className={styles.actions}>
-                        <button className={styles.actionButton}><Share size={16} /> Share</button>
+                        <button className={styles.actionButton} onClick={handleShare}>
+                            <Share size={16} /> {copied ? 'Copied!' : 'Share'}
+                        </button>
                         <button className={styles.actionButton} onClick={toggleFavorite}>
                             <Heart size={16} fill={isFavorited ? 'var(--color-primary)' : 'none'} color={isFavorited ? 'var(--color-primary)' : 'currentColor'} />
                             <span style={{ color: isFavorited ? 'var(--color-primary)' : 'inherit' }}>{isFavorited ? 'Saved' : 'Save'}</span>
@@ -583,15 +609,15 @@ export const ListingDetails = () => {
             </div>
 
             <div className={styles.photoGrid}>
-                <div className={styles.mainPhoto}>
+                <div className={styles.mainPhoto} onClick={() => setShowPhotosModal(true)}>
                     <img src={coverImage} alt={listing.title} className={styles.photo} />
                 </div>
                 <div className={styles.sidePhotos}>
                     {listing.images.slice(1, 5).map((img, idx) => (
-                        <img key={`${img}-${idx}`} src={img} alt={`${listing.title} view ${idx + 2}`} className={styles.photo} />
+                        <img key={`${img}-${idx}`} src={img} alt={`${listing.title} view ${idx + 2}`} className={styles.photo} onClick={() => setShowPhotosModal(true)} />
                     ))}
                 </div>
-                <button className={styles.showAllButton}>
+                <button className={styles.showAllButton} onClick={() => setShowPhotosModal(true)}>
                     <Grid size={16} /> Show all photos
                 </button>
             </div>
@@ -617,7 +643,13 @@ export const ListingDetails = () => {
                             )}
                         </div>
                         <div className={styles.hostAvatar}>
-                            <img src={listing.host.avatarUrl} alt={listing.host.name} />
+                            {listing.host.avatarUrl ? (
+                                <img src={listing.host.avatarUrl} alt={listing.host.name} />
+                            ) : (
+                                <div className={styles.defaultAvatar}>
+                                    {listing.host.name ? listing.host.name.charAt(0).toUpperCase() : 'H'}
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -899,6 +931,28 @@ export const ListingDetails = () => {
                     </div>
                 </div>
             </div>
+
+            {showPhotosModal && (
+                <div className={`${styles.lightboxModal} ${showPhotosModal ? styles.lightboxModalActive : ''}`}>
+                    <div className={styles.lightboxBackdrop} onClick={() => setShowPhotosModal(false)} />
+                    <div className={styles.lightboxContent}>
+                        <div className={styles.lightboxHeader}>
+                            <h2>{listing.title} - Photo Gallery</h2>
+                            <button className={styles.lightboxCloseButton} onClick={() => setShowPhotosModal(false)} aria-label="Close photo gallery">
+                                <X size={24} />
+                            </button>
+                        </div>
+                        <div className={styles.lightboxBody}>
+                            {listing.images.map((img, index) => (
+                                <div key={`${img}-${index}`} className={styles.lightboxPhotoCard}>
+                                    <img src={img} alt={`${listing.title} - view ${index + 1}`} className={styles.lightboxImage} />
+                                    <span className={styles.lightboxIndexBadge}>{index + 1} / {listing.images.length}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

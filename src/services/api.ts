@@ -147,6 +147,7 @@ export type CurrentUserSummary = {
     name: string;
     role: 'guest' | 'host' | 'admin';
     isVerifiedGuest: boolean;
+    avatarUrl?: string | null;
 };
 
 const LISTING_SELECT = `
@@ -914,6 +915,7 @@ export const api = {
             name: profile.full_name?.trim() || 'User',
             role: profile.role,
             isVerifiedGuest: Boolean(profile.is_verified_guest),
+            avatarUrl: profile.avatar_url ?? null,
         };
     },
 
