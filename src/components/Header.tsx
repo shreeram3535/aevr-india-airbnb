@@ -13,13 +13,17 @@ import {
     Shield, 
     Building2,
     LogOut, 
-    LogIn 
+    LogIn,
+    Instagram,
+    MessageCircle
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { authService } from '../services/auth';
 
 export const Header: React.FC = () => {
+    const instagramUrl = 'https://www.instagram.com/aevrindia?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==';
+    const whatsappUrl = 'https://wa.me/918890807482';
     const navigate = useNavigate();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [currentUserName, setCurrentUserName] = useState<string | null>(null);
@@ -245,6 +249,29 @@ export const Header: React.FC = () => {
                             </button>
                         </>
                     )}
+
+                    <div className={styles.drawerDivider} />
+                    <div className={styles.drawerSectionLabel}>Contact</div>
+                    <a
+                        href={whatsappUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className={styles.drawerAnchorItem}
+                        onClick={() => setIsMenuOpen(false)}
+                    >
+                        <MessageCircle size={18} className={styles.drawerItemIcon} />
+                        WhatsApp: +91 88908 07482
+                    </a>
+                    <a
+                        href={instagramUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className={styles.drawerAnchorItem}
+                        onClick={() => setIsMenuOpen(false)}
+                    >
+                        <Instagram size={18} className={styles.drawerItemIcon} />
+                        Instagram
+                    </a>
                 </div>
             </div>
         </header>

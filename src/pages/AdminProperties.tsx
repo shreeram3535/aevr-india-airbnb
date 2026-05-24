@@ -117,6 +117,7 @@ export const AdminProperties = () => {
                                         <p className={styles.price}>{formatPrice(property.price, property.currency)} / night</p>
                                         <div className={styles.actions}>
                                             <Link to={`/rooms/${property.id}`} className={styles.secondaryButton}>View</Link>
+                                            <Link to={`/host/edit/${property.id}`} className={styles.secondaryButton}>Edit</Link>
                                             <button
                                                 type="button"
                                                 className={styles.dangerButton}

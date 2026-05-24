@@ -17,10 +17,13 @@ import type {
     HostApprovalApplication,
     HostApprovalStatus,
     UpsertFlashSaleInput,
+    ListingMediaItem,
 } from '../types';
 import { supabase } from './supabase';
+import { coerceMediaItem, coerceMediaList, getImageUrlsFromMedia } from './media';
 
 const DELAY_MS = 800;
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 
 type JoinedEntity<T> = T | T[] | null;
 
@@ -71,6 +74,11 @@ type SupabaseListingRow = {
         image_url: string;
         sort_order: number | null;
         alt_text: string | null;
+        media_kind?: string | null;
+        source_type?: string | null;
+        provider?: string | null;
+        embed_url?: string | null;
+        thumbnail_url?: string | null;
     }> | null;
     listing_amenities: Array<{
         amenity: {
@@ -110,7 +118,15 @@ type SupabaseBookingRow = {
         country: string;
         price_per_night: number;
         currency: string;
-        listing_images: Array<{ image_url: string; sort_order: number | null }> | null;
+        listing_images: Array<{
+            image_url: string;
+            sort_order: number | null;
+            media_kind?: string | null;
+            source_type?: string | null;
+            provider?: string | null;
+            embed_url?: string | null;
+            thumbnail_url?: string | null;
+        }> | null;
     }>;
 };
 
@@ -188,7 +204,12 @@ const LISTING_SELECT = `
     listing_images (
         image_url,
         sort_order,
-        alt_text
+        alt_text,
+        media_kind,
+        source_type,
+        provider,
+        embed_url,
+        thumbnail_url
     ),
     listing_amenities (
         amenity:amenities (
@@ -246,11 +267,10 @@ const normalizeRoomTypes = (value: unknown): RoomType[] => {
                 roomType.description = record.description.trim();
             }
 
-            const photos = Array.isArray(record.photos)
-                ? record.photos.filter((photo): photo is string => typeof photo === 'string' && photo.trim().length > 0)
-                : [];
-            if (photos.length > 0) {
-                roomType.photos = photos;
+            const roomMedia = coerceMediaList(record.media ?? record.photos, { supabaseUrl: SUPABASE_URL });
+            if (roomMedia.length > 0) {
+                roomType.media = roomMedia;
+                roomType.photos = getImageUrlsFromMedia(roomMedia);
             }
 
             return roomType;
@@ -267,16 +287,19 @@ const serializeRoomTypes = (roomTypes: RoomType[]) =>
         maxGuests: roomType.maxGuests ?? null,
         beds: roomType.beds ?? null,
         description: roomType.description ?? null,
-        photos: roomType.photos ?? [],
+        media: (roomType.media ?? roomType.photos ?? [])
+            .map((item, index) => coerceMediaItem(item, index, { supabaseUrl: SUPABASE_URL }))
+            .filter((item): item is ListingMediaItem => item !== null),
     }));
 
 const mapListing = (row: SupabaseListingRow): Listing => {
     const category = first(row.category);
     const host = first(row.host);
-    const images = (row.listing_images ?? [])
-        .slice()
-        .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-        .map((image) => image.image_url);
+    const media = (row.listing_images ?? [])
+        .map((item, index) => coerceMediaItem(item, index, { supabaseUrl: SUPABASE_URL }))
+        .filter((item): item is ListingMediaItem => item !== null)
+        .sort((a, b) => a.sortOrder - b.sortOrder);
+    const images = getImageUrlsFromMedia(media);
 
     const amenities = (row.listing_amenities ?? [])
         .map((entry) => entry.amenity?.label)
@@ -293,6 +316,7 @@ const mapListing = (row: SupabaseListingRow): Listing => {
         rating: row.rating ?? 0,
         reviewCount: row.review_count ?? 0,
         images,
+        media,
         location: {
             id: row.id,
             city: row.city,
@@ -340,8 +364,9 @@ const mapAvailabilityBlock = (row: SupabaseAvailabilityBlockRow): AvailabilityBl
 const mapBooking = (row: SupabaseBookingRow): BookingHistoryItem => {
     const listing = first(row.listing);
     const imageUrl = (listing?.listing_images ?? [])
-        .slice()
-        .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))[0]?.image_url;
+        .map((item, index) => coerceMediaItem(item, index, { supabaseUrl: SUPABASE_URL }))
+        .filter((item): item is ListingMediaItem => item !== null)
+        .find((item) => item.kind === 'image')?.url;
 
     return {
         id: row.id,
@@ -814,20 +839,74 @@ const resolveAmenityIds = async (labels: string[]) => {
     });
 };
 
-const persistListingImages = async (listingId: string, imageUrls: string[], altText: string) => {
+const slugifyAmenity = (label: string) =>
+    label
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+
+const ensureAmenities = async (labels: string[]) => {
+    if (!supabase) {
+        return [];
+    }
+
+    const normalizedLabels = labels.map((label) => label.trim()).filter(Boolean);
+    if (normalizedLabels.length === 0) {
+        return [];
+    }
+
+    const existing = await resolveAmenityIds(normalizedLabels);
+    const existingKeys = new Set(
+        existing.flatMap((amenity) => [amenity.label.trim().toLowerCase(), amenity.slug.trim().toLowerCase()])
+    );
+
+    const missing = normalizedLabels.filter((label) => {
+        const key = label.trim().toLowerCase();
+        return !existingKeys.has(key);
+    });
+
+    if (missing.length > 0) {
+        const { error } = await supabase
+            .from('amenities')
+            .upsert(
+                missing.map((label, index) => ({
+                    slug: slugifyAmenity(label),
+                    label: label.trim(),
+                    icon_name: 'Sparkles',
+                    sort_order: 100 + index,
+                    is_active: true,
+                })),
+                { onConflict: 'slug' }
+            );
+
+        if (error) {
+            throw error;
+        }
+    }
+
+    return resolveAmenityIds(normalizedLabels);
+};
+
+const persistListingMedia = async (listingId: string, media: ListingMediaItem[], altText: string) => {
     if (!supabase) {
         return;
     }
 
     await supabase.from('listing_images').delete().eq('listing_id', listingId);
 
-    if (imageUrls.length > 0) {
+    if (media.length > 0) {
         await supabase.from('listing_images').insert(
-            imageUrls.map((imageUrl, index) => ({
+            media.map((item, index) => ({
                 listing_id: listingId,
-                image_url: imageUrl,
+                image_url: item.url,
                 sort_order: index,
                 alt_text: altText,
+                media_kind: item.kind,
+                source_type: item.sourceType,
+                provider: item.provider ?? null,
+                embed_url: item.embedUrl ?? null,
+                thumbnail_url: item.thumbnailUrl ?? null,
             }))
         );
     }
@@ -840,7 +919,7 @@ const persistListingAmenities = async (listingId: string, amenityLabels: string[
 
     await supabase.from('listing_amenities').delete().eq('listing_id', listingId);
 
-    const amenityRows = await resolveAmenityIds(amenityLabels);
+    const amenityRows = await ensureAmenities(amenityLabels);
     if (amenityRows.length > 0) {
         await supabase.from('listing_amenities').insert(
             amenityRows.map((amenity) => ({
@@ -1236,7 +1315,7 @@ export const api = {
             throw listingError ?? new Error('Unable to create listing');
         }
 
-        await persistListingImages(listing.id, input.imageUrls, input.title);
+        await persistListingMedia(listing.id, input.media, input.title);
         await persistListingAmenities(listing.id, input.amenityLabels);
 
         return mapListing(listing as unknown as SupabaseListingRow);
@@ -1295,8 +1374,65 @@ export const api = {
             throw error ?? new Error('Unable to update listing');
         }
 
-        if (input.imageUrls) {
-            await persistListingImages(listingId, input.imageUrls, input.title);
+        if (input.media) {
+            await persistListingMedia(listingId, input.media, input.title);
+        }
+
+        await persistListingAmenities(listingId, input.amenityLabels);
+
+        return mapListing(updated as unknown as SupabaseListingRow);
+    },
+
+    updateListingAsAdmin: async (listingId: string, input: UpdateListingInput): Promise<Listing> => {
+        if (!supabase) {
+            throw new Error('Supabase is not configured');
+        }
+
+        const { data: authData, error: authError } = await supabase.auth.getUser();
+        if (authError || !authData.user) {
+            throw new Error('You must be signed in as admin');
+        }
+
+        const role = await api.getCurrentUserRole();
+        if (role !== 'admin') {
+            throw new Error('Only admins can edit any listing');
+        }
+
+        const category = await resolveCategoryRow(input.categorySlug);
+        if (!category) {
+            throw new Error('Category not found');
+        }
+
+        const { data: updated, error } = await supabase
+            .from('listings')
+            .update({
+                category_id: category.id,
+                title: input.title,
+                description: input.description,
+                price_per_night: input.pricePerNight,
+                currency: input.currency,
+                city: input.city,
+                country: input.country,
+                lat: input.lat,
+                lng: input.lng,
+                map_link: input.mapLink ?? null,
+                guest_count_max: input.guestCountMax,
+                bedrooms: input.bedrooms,
+                beds: input.beds,
+                baths: input.baths,
+                availability_summary: input.availabilitySummary ?? null,
+                room_types: serializeRoomTypes(input.roomTypes),
+            })
+            .eq('id', listingId)
+            .select(LISTING_SELECT)
+            .maybeSingle();
+
+        if (error || !updated) {
+            throw error ?? new Error('Unable to update listing');
+        }
+
+        if (input.media) {
+            await persistListingMedia(listingId, input.media, input.title);
         }
 
         await persistListingAmenities(listingId, input.amenityLabels);

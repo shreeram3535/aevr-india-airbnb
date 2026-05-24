@@ -55,6 +55,7 @@ export interface Listing {
     rating: number;
     reviewCount: number;
     images: string[];
+    media: ListingMediaItem[];
     location: Location;
     category: string;
     categoryLabel?: string;
@@ -82,6 +83,22 @@ export interface RoomType {
     beds?: number;
     description?: string;
     photos?: string[];
+    media?: ListingMediaItem[];
+}
+
+export type ListingMediaKind = 'image' | 'video';
+export type ListingMediaSourceType = 'upload' | 'external';
+export type ListingVideoProvider = 'youtube' | 'instagram' | 'google-drive' | 'unknown';
+
+export interface ListingMediaItem {
+    url: string;
+    kind: ListingMediaKind;
+    sourceType: ListingMediaSourceType;
+    sortOrder: number;
+    embedUrl?: string;
+    thumbnailUrl?: string;
+    provider?: ListingVideoProvider;
+    title?: string;
 }
 
 export interface Category {
@@ -117,8 +134,8 @@ export interface AvailabilityBlock {
     reason?: string;
 }
 
-export interface UpdateListingInput extends Omit<CreateListingInput, 'imageUrls'> {
-    imageUrls?: string[];
+export interface UpdateListingInput extends Omit<CreateListingInput, 'media'> {
+    media?: ListingMediaItem[];
 }
 
 export interface Amenity {
@@ -205,7 +222,7 @@ export interface CreateListingInput {
     isGuestFavorite?: boolean;
     availabilitySummary?: string;
     roomTypes: RoomType[];
-    imageUrls: string[];
+    media: ListingMediaItem[];
     amenityLabels: string[];
 }
 

@@ -1,6 +1,9 @@
 import React from 'react';
 import styles from './Footer.module.css';
-import { Globe } from 'lucide-react';
+import { Globe, Instagram, MessageCircle } from 'lucide-react';
+
+const INSTAGRAM_URL = 'https://www.instagram.com/aevrindia?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==';
+const WHATSAPP_URL = 'https://wa.me/918890807482';
 
 export const Footer: React.FC = () => {
     return (
@@ -9,9 +12,9 @@ export const Footer: React.FC = () => {
                 <div className={styles.section}>
                     <h3>Support</h3>
                     <ul>
+                        <li><a href={WHATSAPP_URL} target="_blank" rel="noreferrer">WhatsApp: +91 88908 07482</a></li>
+                        <li><a href={INSTAGRAM_URL} target="_blank" rel="noreferrer">Instagram: @aevrindia</a></li>
                         <li><a href="#">Help Center</a></li>
-                        <li><a href="#">AirCover</a></li>
-                        <li><a href="#">Anti-discrimination</a></li>
                         <li><a href="#">Disability support</a></li>
                     </ul>
                 </div>
@@ -47,6 +50,12 @@ export const Footer: React.FC = () => {
                 <div className={styles.right}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Globe size={16} /> English (IN)</span>
                     <span>₹ INR</span>
+                    <a href={WHATSAPP_URL} target="_blank" rel="noreferrer" className={styles.socialLink} aria-label="Chat on WhatsApp">
+                        <MessageCircle size={16} /> WhatsApp
+                    </a>
+                    <a href={INSTAGRAM_URL} target="_blank" rel="noreferrer" className={styles.socialLink} aria-label="Visit Instagram">
+                        <Instagram size={16} /> Instagram
+                    </a>
                 </div>
             </div>
         </footer>

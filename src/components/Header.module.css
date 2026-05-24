@@ -218,11 +218,33 @@
     transition: background-color 0.2s, transform 0.1s, color 0.2s;
 }
 
+.drawerAnchorItem {
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-3);
+    width: 100%;
+    padding: 12px var(--spacing-4);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--text-primary);
+    transition: background-color 0.2s, transform 0.1s, color 0.2s;
+}
+
 .drawerItem:hover {
     background-color: var(--color-gray-50);
 }
 
+.drawerAnchorItem:hover {
+    background-color: var(--color-gray-50);
+}
+
 .drawerItem:active {
+    transform: scale(0.99);
+}
+
+.drawerAnchorItem:active {
     transform: scale(0.99);
 }
 
@@ -233,6 +255,10 @@
 }
 
 .drawerItem:hover .drawerItemIcon {
+    color: var(--color-primary);
+}
+
+.drawerAnchorItem:hover .drawerItemIcon {
     color: var(--color-primary);
 }
 
@@ -438,4 +464,3 @@
     color: var(--color-white);
     opacity: 0.95;
 }
-

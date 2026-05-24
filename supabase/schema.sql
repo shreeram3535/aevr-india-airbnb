@@ -93,11 +93,22 @@ create table if not exists public.listing_images (
     id uuid primary key default gen_random_uuid(),
     listing_id uuid not null references public.listings (id) on delete cascade,
     image_url text not null,
+    media_kind text not null default 'image' check (media_kind in ('image', 'video')),
+    source_type text not null default 'upload' check (source_type in ('upload', 'external')),
+    provider text,
+    embed_url text,
+    thumbnail_url text,
     sort_order integer not null default 0,
     alt_text text,
     created_at timestamptz not null default timezone('utc', now()),
     updated_at timestamptz not null default timezone('utc', now())
 );
+
+alter table public.listing_images add column if not exists media_kind text not null default 'image';
+alter table public.listing_images add column if not exists source_type text not null default 'upload';
+alter table public.listing_images add column if not exists provider text;
+alter table public.listing_images add column if not exists embed_url text;
+alter table public.listing_images add column if not exists thumbnail_url text;
 
 create table if not exists public.listing_amenities (
     listing_id uuid not null references public.listings (id) on delete cascade,

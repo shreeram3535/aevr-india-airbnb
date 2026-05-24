@@ -4,6 +4,7 @@ import type { Listing } from '../types';
 import { Star, Heart, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { favoritesService } from '../services/favorites';
+import { getFallbackImage } from '../services/media';
 
 interface ListingCardProps {
     listing: Listing;
@@ -13,9 +14,10 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [isFavorited, setIsFavorited] = useState(favoritesService.isFavorite(listing.id));
     const hasImages = listing.images.length > 0;
+    const fallbackMedia = listing.media.find((item) => item.kind === 'video' && item.thumbnailUrl)?.thumbnailUrl;
     const coverImage = hasImages
         ? (listing.images[currentImageIndex] ?? listing.images[0])
-        : 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?q=80&w=1200&auto=format&fit=crop';
+        : fallbackMedia ?? getFallbackImage();
 
     useEffect(() => {
         // Sync with external updates (e.g. from other tabs or components)
@@ -60,6 +62,11 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
                         src={coverImage}
                         alt={listing.title}
                         className={styles.image}
+                        onError={(event) => {
+                            if (event.currentTarget.src !== getFallbackImage()) {
+                                event.currentTarget.src = getFallbackImage();
+                            }
+                        }}
                     />
 
                     {/* Navigation Arrows */}

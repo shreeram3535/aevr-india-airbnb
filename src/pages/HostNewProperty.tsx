@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { CalendarDays, Plus, Trash2 } from 'lucide-react';
+import { CalendarDays, Plus, Trash2, PlayCircle } from 'lucide-react';
 import styles from './HostNewProperty.module.css';
 import { api } from '../services/api';
 import { authService } from '../services/auth';
 import { hasSupabaseConfig } from '../services/supabase';
 import { uploadListingImages } from '../services/storage';
 import { HostApprovalStatusView } from '../components/HostApprovalStatus';
-import type { AvailabilityBlock, AvailabilityBlockStatus, Category, Listing, RoomType } from '../types';
+import type { AvailabilityBlock, AvailabilityBlockStatus, Category, Listing, ListingMediaItem, RoomType } from '../types';
+import { createExternalVideoMedia } from '../services/media';
 
 type FormState = {
     title: string;
@@ -34,8 +35,9 @@ type RoomTypeFormState = {
     maxGuests: string;
     beds: string;
     description: string;
-    photoUrls: string[];
+    existingMedia: ListingMediaItem[];
     photoFiles: File[];
+    videoLinks: string;
 };
 
 const initialState: FormState = {
@@ -63,8 +65,9 @@ const createRoomTypeRow = (overrides: Partial<RoomTypeFormState> = {}): RoomType
     maxGuests: overrides.maxGuests ?? '2',
     beds: overrides.beds ?? '1',
     description: overrides.description ?? '',
-    photoUrls: overrides.photoUrls ?? [],
+    existingMedia: overrides.existingMedia ?? [],
     photoFiles: overrides.photoFiles ?? [],
+    videoLinks: overrides.videoLinks ?? '',
 });
 
 const listingToForm = (listing: Listing): FormState => ({
@@ -98,11 +101,22 @@ const roomTypesToForm = (roomTypes?: RoomType[], fallbackPrice?: number): RoomTy
             maxGuests: roomType.maxGuests != null ? String(roomType.maxGuests) : '',
             beds: roomType.beds != null ? String(roomType.beds) : '',
             description: roomType.description ?? '',
-            photoUrls: roomType.photos ?? [],
+            existingMedia: roomType.media ?? [],
             photoFiles: [],
+            videoLinks: (roomType.media ?? []).filter((item) => item.kind === 'video').map((item) => item.url).join('\n'),
         })
     );
 };
+
+const parseVideoLinks = (value: string, startingSortOrder = 0) =>
+    value
+        .split(/\n|,/)
+        .map((item) => item.trim())
+        .filter(Boolean)
+        .map((url, index) => createExternalVideoMedia(url, startingSortOrder + index))
+        .filter((item): item is ListingMediaItem => item !== null);
+
+const preserveUploadedImages = (media: ListingMediaItem[]) => media.filter((item) => item.kind === 'image');
 
 const formatBlockRange = (startDate: string, endDate: string) =>
     `${new Intl.DateTimeFormat('en-IN', { month: 'short', day: 'numeric' }).format(new Date(`${startDate}T00:00:00Z`))} - ${new Intl.DateTimeFormat('en-IN', { month: 'short', day: 'numeric' }).format(new Date(`${endDate}T00:00:00Z`))}`;
@@ -125,7 +139,8 @@ export const HostNewProperty = () => {
     const [roomTypes, setRoomTypes] = useState<RoomTypeFormState[]>([createRoomTypeRow()]);
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const [previewUrls, setPreviewUrls] = useState<string[]>([]);
-    const [existingImages, setExistingImages] = useState<string[]>([]);
+    const [existingMedia, setExistingMedia] = useState<ListingMediaItem[]>([]);
+    const [videoLinks, setVideoLinks] = useState('');
     const [availabilityBlocks, setAvailabilityBlocks] = useState<AvailabilityBlock[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [blockError, setBlockError] = useState<string | null>(null);
@@ -133,6 +148,8 @@ export const HostNewProperty = () => {
     const [blockEnd, setBlockEnd] = useState('');
     const [blockStatus, setBlockStatus] = useState<AvailabilityBlockStatus>('booked');
     const [hostApprovalStatus, setHostApprovalStatus] = useState<'pending' | 'approved' | 'rejected' | null>(null);
+    const [currentRole, setCurrentRole] = useState<'guest' | 'host' | 'admin' | null>(null);
+    const backPath = currentRole === 'admin' ? '/host/properties' : '/host';
 
     useEffect(() => {
         const load = async () => {
@@ -148,6 +165,7 @@ export const HostNewProperty = () => {
             }
 
             const role = await api.getCurrentUserRole();
+            setCurrentRole(role);
             if (role !== 'host' && role !== 'admin') {
                 navigate('/host/auth', { replace: true });
                 return;
@@ -170,7 +188,8 @@ export const HostNewProperty = () => {
                 } else {
                     setForm(listingToForm(listing));
                     setRoomTypes(roomTypesToForm(listing.roomTypes, listing.price));
-                    setExistingImages(listing.images);
+                    setExistingMedia(listing.media);
+                    setVideoLinks(listing.media.filter((item) => item.kind === 'video').map((item) => item.url).join('\n'));
                     setAvailabilityBlocks(await api.fetchAvailabilityBlocks(listingId));
                 }
             } else {
@@ -179,6 +198,8 @@ export const HostNewProperty = () => {
                 categorySlug: data.find((item) => item.slug && item.slug !== 'icons')?.slug ?? current.categorySlug,
                 }));
                 setRoomTypes([createRoomTypeRow()]);
+                setExistingMedia([]);
+                setVideoLinks('');
             }
 
             setLoading(false);
@@ -240,6 +261,14 @@ export const HostNewProperty = () => {
         );
     };
 
+    const updateRoomTypeVideoLinks = (roomTypeId: string) => (event: ChangeEvent<HTMLTextAreaElement>) => {
+        setRoomTypes((current) =>
+            current.map((roomType) =>
+                roomType.id === roomTypeId ? { ...roomType, videoLinks: event.target.value } : roomType
+            )
+        );
+    };
+
     const addRoomType = () => {
         setRoomTypes((current) => [...current, createRoomTypeRow()]);
     };
@@ -271,12 +300,15 @@ export const HostNewProperty = () => {
                 return;
             }
 
-            if (!isEditMode && selectedFiles.length === 0) {
-                throw new Error('Upload at least one property image.');
+            const propertyVideoMedia = parseVideoLinks(videoLinks);
+            const existingPropertyImages = preserveUploadedImages(existingMedia);
+
+            if (!isEditMode && selectedFiles.length === 0 && propertyVideoMedia.length === 0) {
+                throw new Error('Add at least one property image or video link.');
             }
 
-            if (isEditMode && selectedFiles.length === 0 && existingImages.length === 0) {
-                throw new Error('Add at least one property image.');
+            if (isEditMode && selectedFiles.length === 0 && existingPropertyImages.length === 0 && propertyVideoMedia.length === 0) {
+                throw new Error('Add at least one property image or video link.');
             }
 
             const normalizedRoomTypes = (await Promise.all(roomTypes.map(async (roomType, index): Promise<RoomType | null> => {
@@ -291,7 +323,8 @@ export const HostNewProperty = () => {
 
                     const uploadedRoomPhotos = roomType.photoFiles.length > 0
                         ? await uploadListingImages(session.user.id, roomType.photoFiles)
-                        : roomType.photoUrls;
+                        : preserveUploadedImages(roomType.existingMedia);
+                    const roomVideoMedia = parseVideoLinks(roomType.videoLinks, uploadedRoomPhotos.length);
 
                     const normalizedRoomType: RoomType = {
                         id: roomType.id || `${index}-${roomType.name.toLowerCase().replace(/\s+/g, '-')}`,
@@ -312,8 +345,11 @@ export const HostNewProperty = () => {
                         normalizedRoomType.description = roomType.description.trim();
                     }
 
-                    if (uploadedRoomPhotos.length > 0) {
-                        normalizedRoomType.photos = uploadedRoomPhotos;
+                    const roomMedia = [...uploadedRoomPhotos, ...roomVideoMedia]
+                        .map((item, itemIndex) => ({ ...item, sortOrder: itemIndex }));
+                    if (roomMedia.length > 0) {
+                        normalizedRoomType.media = roomMedia;
+                        normalizedRoomType.photos = roomMedia.filter((item) => item.kind === 'image').map((item) => item.url);
                     }
                     return normalizedRoomType;
                 })))
@@ -325,13 +361,18 @@ export const HostNewProperty = () => {
 
             const startingPrice = Math.min(...normalizedRoomTypes.map((roomType) => roomType.pricePerNight));
 
-            const imageUrls = selectedFiles.length > 0
+            const uploadedPropertyMedia = selectedFiles.length > 0
                 ? await uploadListingImages(session.user.id, selectedFiles)
                 : undefined;
 
-            if (selectedFiles.length > 0 && (!imageUrls || imageUrls.length === 0)) {
+            if (selectedFiles.length > 0 && (!uploadedPropertyMedia || uploadedPropertyMedia.length === 0)) {
                 throw new Error('Could not upload images. Make sure the `listing-images` storage bucket exists.');
             }
+
+            const propertyMedia = [
+                ...(uploadedPropertyMedia ?? existingPropertyImages),
+                ...propertyVideoMedia,
+            ].map((item, itemIndex) => ({ ...item, sortOrder: itemIndex }));
 
             const payload = {
                 title: form.title,
@@ -352,19 +393,23 @@ export const HostNewProperty = () => {
                 amenityLabels: form.amenityLabels.split(',').map((item) => item.trim()).filter(Boolean),
                 isGuestFavorite: false,
                 roomTypes: normalizedRoomTypes,
-                ...(imageUrls ? { imageUrls } : {}),
+                ...(propertyMedia.length > 0 ? { media: propertyMedia } : {}),
             };
 
             if (isEditMode && listingId) {
-                await api.updateListing(session.user.id, listingId, payload);
+                if (currentRole === 'admin') {
+                    await api.updateListingAsAdmin(listingId, payload);
+                } else {
+                    await api.updateListing(session.user.id, listingId, payload);
+                }
             } else {
                 await api.createListing(session.user.id, {
                     ...payload,
-                    imageUrls: imageUrls ?? [],
+                    media: propertyMedia,
                 });
             }
 
-            navigate('/host', { replace: true });
+            navigate(backPath, { replace: true });
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Unable to save property');
         } finally {
@@ -435,13 +480,19 @@ export const HostNewProperty = () => {
         }
     };
 
-    const currentImageUrls = useMemo(() => {
-        if (selectedFiles.length > 0) {
-            return previewUrls;
-        }
+    const currentPropertyMedia = useMemo(() => {
+        const uploadedImages = previewUrls.map((url, index) => ({
+            url,
+            kind: 'image' as const,
+            sourceType: 'upload' as const,
+            sortOrder: index,
+        }));
 
-        return existingImages;
-    }, [existingImages, previewUrls, selectedFiles.length]);
+        const imageMedia = selectedFiles.length > 0 ? uploadedImages : preserveUploadedImages(existingMedia);
+        const externalVideos = parseVideoLinks(videoLinks, imageMedia.length);
+
+        return [...imageMedia, ...externalVideos];
+    }, [existingMedia, previewUrls, selectedFiles.length, videoLinks]);
 
     if (loading) {
         return <div className={styles.page}><div className={styles.loading}>Loading property form...</div></div>;
@@ -459,7 +510,7 @@ export const HostNewProperty = () => {
                     <h1>{isEditMode ? 'Update your listing' : 'Publish a new stay'}</h1>
                     <p>Fill out the basics now. You can always expand the listing later from the host dashboard.</p>
                 </div>
-                <Link to="/host" className={styles.secondaryButton}>Back to dashboard</Link>
+                <Link to={backPath} className={styles.secondaryButton}>Back to dashboard</Link>
             </div>
 
             {error && <div className={styles.error}>{error}</div>}
@@ -503,6 +554,21 @@ export const HostNewProperty = () => {
                     <div className={styles.roomTypeList}>
                         {roomTypes.map((roomType, index) => (
                             <article key={roomType.id} className={styles.roomTypeCard}>
+                                {(() => {
+                                    const roomExistingImages = roomType.photoFiles.length > 0
+                                        ? []
+                                        : preserveUploadedImages(roomType.existingMedia).map((item, mediaIndex) => ({
+                                            url: item.url,
+                                            fileName: `Photo ${mediaIndex + 1}`,
+                                            key: `${roomType.id}-image-${item.url}-${mediaIndex}`,
+                                        }));
+                                    const roomPreviewVideos = parseVideoLinks(
+                                        roomType.videoLinks,
+                                        roomExistingImages.length
+                                    );
+
+                                    return (
+                                        <>
                                 <div className={styles.roomTypeGrid}>
                                     <label className={styles.field}>
                                         <span>Room type name</span>
@@ -540,13 +606,25 @@ export const HostNewProperty = () => {
                                             Upload photos for this room type. They will be shown when guests choose the room.
                                         </small>
                                     </label>
+                                    <label className={styles.field}>
+                                        <span>Room video links</span>
+                                        <textarea
+                                            value={roomType.videoLinks}
+                                            onChange={updateRoomTypeVideoLinks(roomType.id)}
+                                            rows={3}
+                                            placeholder="Paste YouTube, Instagram, or Google Drive links. One link per line."
+                                        />
+                                        <small className={styles.helperText}>
+                                            We will embed supported links when possible and show an open-link card for the rest.
+                                        </small>
+                                    </label>
                                 </div>
-                                {(roomType.photoUrls.length > 0 || roomType.photoFiles.length > 0) && (
+                                {(roomExistingImages.length > 0 || roomType.photoFiles.length > 0 || roomPreviewVideos.length > 0) && (
                                     <div className={styles.roomTypePhotoPreview}>
-                                        {roomType.photoUrls.map((src, photoIndex) => (
-                                            <figure key={`${roomType.id}-${src}-${photoIndex}`} className={styles.roomTypePhotoCard}>
-                                                <img src={src} alt={roomType.name} className={styles.roomTypePhotoImage} />
-                                                <figcaption>Photo {photoIndex + 1}</figcaption>
+                                        {roomExistingImages.map((item, photoIndex) => (
+                                            <figure key={item.key} className={styles.roomTypePhotoCard}>
+                                                <img src={item.url} alt={roomType.name} className={styles.roomTypePhotoImage} />
+                                                <figcaption>{item.fileName ?? `Photo ${photoIndex + 1}`}</figcaption>
                                             </figure>
                                         ))}
                                         {roomType.photoFiles.length > 0 && (
@@ -558,6 +636,14 @@ export const HostNewProperty = () => {
                                                 ))}
                                             </div>
                                         )}
+                                        {roomPreviewVideos.map((item, videoIndex) => (
+                                            <figure key={`${roomType.id}-${item.url}-${videoIndex}`} className={styles.roomTypeVideoCard}>
+                                                <div className={styles.videoPreviewPlaceholder}>
+                                                    <PlayCircle size={28} />
+                                                </div>
+                                                <figcaption>{item.provider === 'unknown' ? 'Video link' : `${item.provider} video`}</figcaption>
+                                            </figure>
+                                        ))}
                                     </div>
                                 )}
                                 <div className={styles.roomTypeFooter}>
@@ -566,6 +652,9 @@ export const HostNewProperty = () => {
                                         <Trash2 size={16} /> Remove
                                     </button>
                                 </div>
+                                        </>
+                                    );
+                                })()}
                             </article>
                         ))}
                     </div>
@@ -636,17 +725,41 @@ export const HostNewProperty = () => {
                     <input type="file" accept="image/*" multiple onChange={handleFileChange} />
                     <small className={styles.helperText}>
                         {isEditMode
-                            ? 'Uploading new images will replace the current gallery.'
+                            ? 'Uploading new images will replace the current uploaded photos. Video links stay editable below.'
                             : 'Upload images directly. We will store them in Supabase Storage.'}
                     </small>
                 </label>
 
-                {currentImageUrls.length > 0 && (
+                <label className={styles.field}>
+                    <span>Property video links</span>
+                    <textarea
+                        value={videoLinks}
+                        onChange={(event) => setVideoLinks(event.target.value)}
+                        placeholder="Paste YouTube, Instagram, or Google Drive links. One link per line."
+                        rows={4}
+                    />
+                    <small className={styles.helperText}>
+                        Supported links are embedded when possible. Otherwise, guests will see an open-link card.
+                    </small>
+                </label>
+
+                {currentPropertyMedia.length > 0 && (
                     <div className={styles.previewGrid}>
-                        {currentImageUrls.map((src, index) => (
-                            <figure key={`${src}-${index}`} className={styles.previewCard}>
-                                <img src={src} alt={form.title || `Property image ${index + 1}`} className={styles.previewImage} />
-                                <figcaption>{selectedFiles[index]?.name ?? `Image ${index + 1}`}</figcaption>
+                        {currentPropertyMedia.map((item, index) => (
+                            <figure key={`${item.url}-${index}`} className={styles.previewCard}>
+                                {item.kind === 'image' ? (
+                                    <img src={item.url} alt={form.title || `Property image ${index + 1}`} className={styles.previewImage} />
+                                ) : (
+                                    <div className={styles.videoPreviewPlaceholder}>
+                                        <PlayCircle size={32} />
+                                        <span>{item.provider === 'unknown' ? 'Video link' : `${item.provider} video`}</span>
+                                    </div>
+                                )}
+                                <figcaption>
+                                    {item.kind === 'image'
+                                        ? (selectedFiles[index]?.name ?? `Image ${index + 1}`)
+                                        : item.url}
+                                </figcaption>
                             </figure>
                         ))}
                     </div>
@@ -729,7 +842,7 @@ export const HostNewProperty = () => {
                     <button type="submit" className={styles.primaryButton} disabled={saving}>
                         {saving ? 'Saving...' : isEditMode ? 'Save changes' : 'Create property'}
                     </button>
-                    <Link to="/host" className={styles.secondaryButton}>Cancel</Link>
+                    <Link to={backPath} className={styles.secondaryButton}>Cancel</Link>
                 </div>
             </form>
         </div>

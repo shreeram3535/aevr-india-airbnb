@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ElementType } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ElementType, type SyntheticEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
     Star,
@@ -26,12 +26,15 @@ import {
     Compass,
     Camera,
     X,
+    ExternalLink,
+    PlayCircle,
 } from 'lucide-react';
 import styles from './ListingDetails.module.css';
 import { api } from '../services/api';
 import { authService } from '../services/auth';
 import { favoritesService } from '../services/favorites';
 import type { AvailabilityBlock, Listing, RoomType } from '../types';
+import { getFallbackImage } from '../services/media';
 
 const amenityIcons: Record<string, ElementType> = {
     wifi: Wifi,
@@ -216,6 +219,12 @@ const fallbackRoomTypes = (listing?: Listing): RoomType[] => {
     ];
 };
 
+const renderImageFallback = (event: SyntheticEvent<HTMLImageElement>) => {
+    if (event.currentTarget.src !== getFallbackImage()) {
+        event.currentTarget.src = getFallbackImage();
+    }
+};
+
 const PENDING_BOOKING_KEY = 'aevr.pending-booking';
 
 type PendingBooking = {
@@ -377,10 +386,15 @@ export const ListingDetails = () => {
     const gstRate = listing ? getHotelGstRate(nightlyRate) : 0;
     const taxes = listing ? Math.round(subtotal * gstRate) : 0;
     const total = subtotal + taxes;
-    const coverImage =
-        selectedRoomType?.photos?.[0]
-        ?? listing?.images[0]
-        ?? 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?q=80&w=1200&auto=format&fit=crop';
+    const listingMedia = useMemo(() => listing?.media ?? [], [listing?.media]);
+    const galleryMedia = useMemo(() => {
+        const roomMedia = selectedRoomType?.media ?? [];
+        return roomMedia.length > 0 ? roomMedia : listingMedia;
+    }, [listingMedia, selectedRoomType?.media]);
+    const coverMedia = galleryMedia[0] ?? listingMedia[0] ?? null;
+    const coverImage = coverMedia?.kind === 'image'
+        ? coverMedia.url
+        : coverMedia?.thumbnailUrl ?? listing?.images[0] ?? getFallbackImage();
     const localExperiences = useMemo(() => listing ? getLocalExperiences(listing) : [], [listing]);
 
     const toggleFavorite = () => {
@@ -610,15 +624,51 @@ export const ListingDetails = () => {
 
             <div className={styles.photoGrid}>
                 <div className={styles.mainPhoto} onClick={() => setShowPhotosModal(true)}>
-                    <img src={coverImage} alt={listing.title} className={styles.photo} />
+                    {coverMedia?.kind === 'video' && coverMedia.embedUrl ? (
+                        <iframe
+                            src={coverMedia.embedUrl}
+                            title={`${listing.title} video`}
+                            className={styles.mediaFrame}
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                        />
+                    ) : (
+                        <img src={coverImage} alt={listing.title} className={styles.photo} onError={renderImageFallback} />
+                    )}
                 </div>
                 <div className={styles.sidePhotos}>
-                    {listing.images.slice(1, 5).map((img, idx) => (
-                        <img key={`${img}-${idx}`} src={img} alt={`${listing.title} view ${idx + 2}`} className={styles.photo} onClick={() => setShowPhotosModal(true)} />
+                    {galleryMedia.slice(1, 5).map((item, idx) => (
+                        item.kind === 'video' ? (
+                            <div key={`${item.url}-${idx}`} className={styles.mediaCard} onClick={() => setShowPhotosModal(true)}>
+                                {item.embedUrl ? (
+                                    <iframe
+                                        src={item.embedUrl}
+                                        title={`${listing.title} video ${idx + 2}`}
+                                        className={styles.mediaFrame}
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                        allowFullScreen
+                                    />
+                                ) : (
+                                    <div className={styles.videoLinkCard}>
+                                        <PlayCircle size={26} />
+                                        <span>Open video</span>
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <img
+                                key={`${item.url}-${idx}`}
+                                src={item.url}
+                                alt={`${listing.title} view ${idx + 2}`}
+                                className={styles.photo}
+                                onClick={() => setShowPhotosModal(true)}
+                                onError={renderImageFallback}
+                            />
+                        )
                     ))}
                 </div>
                 <button className={styles.showAllButton} onClick={() => setShowPhotosModal(true)}>
-                    <Grid size={16} /> Show all photos
+                    <Grid size={16} /> Show all media
                 </button>
             </div>
 
@@ -834,10 +884,35 @@ export const ListingDetails = () => {
                                 </select>
                             </label>
 
-                            {selectedRoomType?.photos && selectedRoomType.photos.length > 0 && (
+                            {selectedRoomType?.media && selectedRoomType.media.length > 0 && (
                                 <div className={styles.roomPhotoStrip}>
-                                    {selectedRoomType.photos.slice(0, 3).map((photo, index) => (
-                                        <img key={`${selectedRoomType.id}-${photo}-${index}`} src={photo} alt={selectedRoomType.name} className={styles.roomPhoto} />
+                                    {selectedRoomType.media.slice(0, 3).map((mediaItem, index) => (
+                                        mediaItem.kind === 'video' ? (
+                                            <div key={`${selectedRoomType.id}-${mediaItem.url}-${index}`} className={styles.roomVideoCard}>
+                                                {mediaItem.embedUrl ? (
+                                                    <iframe
+                                                        src={mediaItem.embedUrl}
+                                                        title={`${selectedRoomType.name} video ${index + 1}`}
+                                                        className={styles.roomVideoFrame}
+                                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                        allowFullScreen
+                                                    />
+                                                ) : (
+                                                    <a href={mediaItem.url} target="_blank" rel="noreferrer" className={styles.videoLinkCard}>
+                                                        <PlayCircle size={22} />
+                                                        <span>Open video</span>
+                                                    </a>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <img
+                                                key={`${selectedRoomType.id}-${mediaItem.url}-${index}`}
+                                                src={mediaItem.url}
+                                                alt={selectedRoomType.name}
+                                                className={styles.roomPhoto}
+                                                onError={renderImageFallback}
+                                            />
+                                        )
                                     ))}
                                 </div>
                             )}
@@ -937,16 +1012,39 @@ export const ListingDetails = () => {
                     <div className={styles.lightboxBackdrop} onClick={() => setShowPhotosModal(false)} />
                     <div className={styles.lightboxContent}>
                         <div className={styles.lightboxHeader}>
-                            <h2>{listing.title} - Photo Gallery</h2>
+                            <h2>{listing.title} - Media Gallery</h2>
                             <button className={styles.lightboxCloseButton} onClick={() => setShowPhotosModal(false)} aria-label="Close photo gallery">
                                 <X size={24} />
                             </button>
                         </div>
                         <div className={styles.lightboxBody}>
-                            {listing.images.map((img, index) => (
-                                <div key={`${img}-${index}`} className={styles.lightboxPhotoCard}>
-                                    <img src={img} alt={`${listing.title} - view ${index + 1}`} className={styles.lightboxImage} />
-                                    <span className={styles.lightboxIndexBadge}>{index + 1} / {listing.images.length}</span>
+                            {galleryMedia.map((item, index) => (
+                                <div key={`${item.url}-${index}`} className={styles.lightboxPhotoCard}>
+                                    {item.kind === 'video' ? (
+                                        item.embedUrl ? (
+                                            <iframe
+                                                src={item.embedUrl}
+                                                title={`${listing.title} video ${index + 1}`}
+                                                className={styles.lightboxVideoFrame}
+                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                allowFullScreen
+                                            />
+                                        ) : (
+                                            <a href={item.url} target="_blank" rel="noreferrer" className={styles.lightboxVideoLink}>
+                                                <PlayCircle size={40} />
+                                                <span>Open external video</span>
+                                                <ExternalLink size={18} />
+                                            </a>
+                                        )
+                                    ) : (
+                                        <img
+                                            src={item.url}
+                                            alt={`${listing.title} - view ${index + 1}`}
+                                            className={styles.lightboxImage}
+                                            onError={renderImageFallback}
+                                        />
+                                    )}
+                                    <span className={styles.lightboxIndexBadge}>{index + 1} / {galleryMedia.length}</span>
                                 </div>
                             ))}
                         </div>

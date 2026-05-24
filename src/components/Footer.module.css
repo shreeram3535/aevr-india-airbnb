@@ -53,6 +53,20 @@
     display: flex;
     gap: 16px;
     font-weight: var(--font-weight-semibold);
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.socialLink {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-secondary);
+    font-weight: var(--font-weight-medium);
+}
+
+.socialLink:hover {
+    color: var(--color-primary);
 }
 
 @media (max-width: 744px) {
