@@ -28,6 +28,9 @@ import {
     X,
     ExternalLink,
     PlayCircle,
+    Phone,
+    ChevronLeft,
+    ChevronRight,
 } from 'lucide-react';
 import styles from './ListingDetails.module.css';
 import { api } from '../services/api';
@@ -197,6 +200,41 @@ const getHotelGstRate = (nightlyRate: number) => {
     return 0.18;
 };
 
+const DEFAULT_WHATSAPP_PHONE = '918890807482';
+
+const normalizePhoneNumber = (value?: string | null) => {
+    if (!value) return '';
+    return value.replace(/[^\d+]/g, '');
+};
+
+const toWhatsAppPhone = (value?: string | null) => {
+    const normalized = normalizePhoneNumber(value);
+    if (!normalized) return DEFAULT_WHATSAPP_PHONE;
+    if (normalized.startsWith('+')) {
+        return normalized.slice(1);
+    }
+    if (normalized.startsWith('00')) {
+        return normalized.slice(2);
+    }
+    if (normalized.length === 10) {
+        return `91${normalized}`;
+    }
+    return normalized;
+};
+
+const formatPhoneDisplay = (value?: string | null) => {
+    const normalized = normalizePhoneNumber(value);
+    if (!normalized) return '+91 88908 07482';
+    if (normalized.startsWith('+')) return normalized;
+    if (normalized.length === 10) {
+        return `+91 ${normalized.slice(0, 5)} ${normalized.slice(5)}`;
+    }
+    if (normalized.length === 12 && normalized.startsWith('91')) {
+        return `+${normalized.slice(0, 2)} ${normalized.slice(2, 7)} ${normalized.slice(7)}`;
+    }
+    return normalized;
+};
+
 const fallbackRoomTypes = (listing?: Listing): RoomType[] => {
     if (!listing) {
         return [];
@@ -235,7 +273,6 @@ type PendingBooking = {
     roomTypeName: string;
     roomTypePrice: number;
     roomCount: number;
-    mode: 'reserve' | 'request';
 };
 
 const readPendingBooking = (): PendingBooking | null => {
@@ -246,7 +283,7 @@ const readPendingBooking = (): PendingBooking | null => {
         }
 
         const parsed = JSON.parse(stored) as Partial<PendingBooking>;
-        if (!parsed?.listingId || !parsed?.checkIn || !parsed?.checkOut || !parsed?.guestCount || !parsed?.mode) {
+        if (!parsed?.listingId || !parsed?.checkIn || !parsed?.checkOut || !parsed?.guestCount) {
             return null;
         }
 
@@ -258,7 +295,6 @@ const readPendingBooking = (): PendingBooking | null => {
             roomTypeName: typeof parsed.roomTypeName === 'string' && parsed.roomTypeName.trim() ? parsed.roomTypeName : 'Standard stay',
             roomTypePrice: Number.isFinite(Number(parsed.roomTypePrice)) && Number(parsed.roomTypePrice) > 0 ? Number(parsed.roomTypePrice) : 0,
             roomCount: Number.isFinite(Number(parsed.roomCount)) && Number(parsed.roomCount) > 0 ? Number(parsed.roomCount) : 1,
-            mode: parsed.mode,
         };
     } catch {
         return null;
@@ -282,13 +318,14 @@ export const ListingDetails = () => {
     const [availabilityBlocks, setAvailabilityBlocks] = useState<AvailabilityBlock[]>([]);
     const [bookingStatus, setBookingStatus] = useState<'reserved' | 'requested' | null>(null);
     const [bookingError, setBookingError] = useState<string | null>(null);
-    const [bookingMode, setBookingMode] = useState<'reserve' | 'request'>('reserve');
     const [submittingBooking, setSubmittingBooking] = useState(false);
     const [isVerifiedGuest, setIsVerifiedGuest] = useState(false);
     const [currentUserRole, setCurrentUserRole] = useState<'guest' | 'host' | 'admin' | null>(null);
     const [copied, setCopied] = useState(false);
     const [showPhotosModal, setShowPhotosModal] = useState(false);
+    const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
     const autoSubmitHandled = useRef(false);
+    const mobileSliderRef = useRef<HTMLDivElement | null>(null);
 
     const [checkIn, setCheckIn] = useState(() => {
         const tomorrow = new Date();
@@ -361,9 +398,7 @@ export const ListingDetails = () => {
         }
     }, [checkIn, checkOut]);
 
-    const guestLimit = selectedRoomType?.maxGuests
-        ? Math.max(selectedRoomType.maxGuests * roomCount, 1)
-        : listing?.guestCountMax ?? 10;
+    const guestLimit = 4;
 
     useEffect(() => {
         setGuestCount((current) => Math.min(current, guestLimit));
@@ -396,6 +431,14 @@ export const ListingDetails = () => {
         ? coverMedia.url
         : coverMedia?.thumbnailUrl ?? listing?.images[0] ?? getFallbackImage();
     const localExperiences = useMemo(() => listing ? getLocalExperiences(listing) : [], [listing]);
+    const hostPhone = normalizePhoneNumber(listing?.host.phone);
+    const displayPhone = formatPhoneDisplay(listing?.host.phone);
+    const callHref = hostPhone ? `tel:${hostPhone}` : undefined;
+    const whatsappHref = `https://wa.me/${toWhatsAppPhone(listing?.host.phone)}`;
+
+    useEffect(() => {
+        setCurrentMediaIndex(0);
+    }, [galleryMedia]);
 
     const toggleFavorite = () => {
         if (!listing) return;
@@ -413,8 +456,35 @@ export const ListingDetails = () => {
         }
     };
 
+    const scrollToMediaIndex = useCallback((index: number) => {
+        const slider = mobileSliderRef.current;
+        if (!slider) return;
+        const slides = slider.querySelectorAll<HTMLElement>(`[data-mobile-slide="true"]`);
+        const target = slides[index];
+        if (!target) return;
+        target.scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' });
+    }, []);
+
+    const handleMobileSliderScroll = useCallback(() => {
+        const slider = mobileSliderRef.current;
+        if (!slider) return;
+        const slideWidth = slider.clientWidth;
+        if (slideWidth <= 0) return;
+        const nextIndex = Math.round(slider.scrollLeft / slideWidth);
+        setCurrentMediaIndex(Math.max(0, Math.min(nextIndex, galleryMedia.length - 1)));
+    }, [galleryMedia.length]);
+
+    const handleMobileSliderStep = useCallback((direction: 'prev' | 'next') => {
+        if (galleryMedia.length <= 1) return;
+        const nextIndex = direction === 'next'
+            ? Math.min(currentMediaIndex + 1, galleryMedia.length - 1)
+            : Math.max(currentMediaIndex - 1, 0);
+        setCurrentMediaIndex(nextIndex);
+        scrollToMediaIndex(nextIndex);
+    }, [currentMediaIndex, galleryMedia.length, scrollToMediaIndex]);
+
     const submitBooking = useCallback(
-        async (mode: 'reserve' | 'request', guestId: string, bookingOverride?: PendingBooking) => {
+        async (guestId: string, bookingOverride?: PendingBooking) => {
             if (!listing || !id) return;
 
             const bookingCheckIn = bookingOverride?.checkIn ?? checkIn;
@@ -476,12 +546,12 @@ export const ListingDetails = () => {
                     fees: 0,
                     taxes: bookingTaxes,
                     total: bookingTotal,
-                    status: mode === 'reserve' ? 'confirmed' : 'pending',
+                    status: 'confirmed',
                 });
 
                 clearPendingBooking();
                 setBookingError(null);
-                setBookingStatus(mode === 'reserve' ? 'reserved' : 'requested');
+                setBookingStatus('reserved');
                 setCheckIn(booking.checkIn);
                 setCheckOut(booking.checkOut);
                 setGuestCount(booking.guestCount);
@@ -519,15 +589,14 @@ export const ListingDetails = () => {
             if (pendingRoomType) {
                 setSelectedRoomTypeId(pendingRoomType.id);
             }
-            setBookingMode(pendingBooking.mode);
             clearPendingBooking();
-            await submitBooking(pendingBooking.mode, session.user.id, pendingBooking);
+            await submitBooking(session.user.id, pendingBooking);
         };
 
         continuePendingBooking();
     }, [id, listing, roomTypes, submitBooking]);
 
-    const handleBooking = async (mode: 'reserve' | 'request') => {
+    const handleBooking = async () => {
         if (!listing || !id) return;
 
         const bookingCheckIn = checkIn;
@@ -564,22 +633,21 @@ export const ListingDetails = () => {
                 roomTypeName: selectedRoomType?.name ?? 'Standard stay',
                 roomTypePrice: selectedRoomType?.pricePerNight ?? listing.price,
                 roomCount,
-                mode,
             });
             navigate(`/guest/auth?next=${encodeURIComponent(`/rooms/${id}`)}&mode=sign-up`);
             return;
         }
 
-        await submitBooking(mode, session.user.id);
+        await submitBooking(session.user.id);
     };
 
-    const bookingHeadline = bookingMode === 'reserve' ? 'Reserve now' : 'Request to book';
-    const bookingActionLabel = bookingMode === 'reserve' ? 'Reserve' : 'Request to book';
+    const bookingHeadline = 'Reserve now';
+    const bookingActionLabel = 'Reserve';
     const bookingTrustNote = isVerifiedGuest
         ? 'Your verified guest profile is ready for safer, faster booking.'
         : currentUserRole
             ? 'Complete your booking details. Admin verification is required to display the AEVR VERIFIED GUEST badge.'
-            : 'Sign in to reserve or request this stay. We will save your selection while you log in.';
+            : 'Sign in to reserve this stay. We will save your selection while you log in.';
 
     if (loading) {
         return <div className={styles.container} style={{ height: '80vh' }} />;
@@ -672,6 +740,90 @@ export const ListingDetails = () => {
                 </button>
             </div>
 
+            <div className={styles.mobileGallery}>
+                <div className={styles.mobileSlider} ref={mobileSliderRef} onScroll={handleMobileSliderScroll}>
+                    {galleryMedia.map((item, index) => (
+                        <div
+                            key={`${item.url}-${index}`}
+                            className={styles.mobileSlide}
+                            data-mobile-slide="true"
+                        >
+                            <button
+                                type="button"
+                                className={styles.mobileSlideButton}
+                                onClick={() => setShowPhotosModal(true)}
+                                aria-label={`Open media ${index + 1}`}
+                            >
+                                {item.kind === 'video' ? (
+                                    item.embedUrl ? (
+                                        <iframe
+                                            src={item.embedUrl}
+                                            title={`${listing.title} mobile video ${index + 1}`}
+                                            className={styles.mobileSlideMedia}
+                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                            allowFullScreen
+                                        />
+                                    ) : (
+                                        <div className={styles.mobileVideoCard}>
+                                            <PlayCircle size={30} />
+                                            <span>Open video</span>
+                                        </div>
+                                    )
+                                ) : (
+                                    <img
+                                        src={item.url}
+                                        alt={`${listing.title} view ${index + 1}`}
+                                        className={styles.mobileSlideMedia}
+                                        onError={renderImageFallback}
+                                    />
+                                )}
+                            </button>
+                        </div>
+                    ))}
+                </div>
+
+                {galleryMedia.length > 1 && (
+                    <div className={styles.mobileGalleryControls}>
+                        <button
+                            type="button"
+                            className={styles.mobileNavButton}
+                            onClick={() => handleMobileSliderStep('prev')}
+                            disabled={currentMediaIndex === 0}
+                            aria-label="Previous media"
+                        >
+                            <ChevronLeft size={18} />
+                        </button>
+                        <div className={styles.mobileDots}>
+                            {galleryMedia.map((item, index) => (
+                                <button
+                                    key={`${item.url}-dot-${index}`}
+                                    type="button"
+                                    className={index === currentMediaIndex ? styles.mobileDotActive : styles.mobileDot}
+                                    onClick={() => {
+                                        setCurrentMediaIndex(index);
+                                        scrollToMediaIndex(index);
+                                    }}
+                                    aria-label={`Go to media ${index + 1}`}
+                                />
+                            ))}
+                        </div>
+                        <button
+                            type="button"
+                            className={styles.mobileNavButton}
+                            onClick={() => handleMobileSliderStep('next')}
+                            disabled={currentMediaIndex === galleryMedia.length - 1}
+                            aria-label="Next media"
+                        >
+                            <ChevronRight size={18} />
+                        </button>
+                    </div>
+                )}
+
+                <button type="button" className={styles.mobileShowAllButton} onClick={() => setShowPhotosModal(true)}>
+                    <Grid size={16} /> Show all media
+                </button>
+            </div>
+
             <div className={styles.contentGrid}>
                 <div className={styles.leftColumn}>
                     <div className={styles.hostSection}>
@@ -741,11 +893,30 @@ export const ListingDetails = () => {
 
                     <div className={styles.description}>
                         <p>{listing.description}</p>
-                        {listing.host.bio && (
-                            <p style={{ marginTop: '16px', color: 'var(--text-secondary)' }}>
-                                {listing.host.bio}
-                            </p>
-                        )}
+                            {listing.host.bio && (
+                                <p style={{ marginTop: '16px', color: 'var(--text-secondary)' }}>
+                                    {listing.host.bio}
+                                </p>
+                            )}
+                        </div>
+
+                    <div className={styles.contactSection}>
+                        <div className={styles.contactHeader}>
+                            <h2>Contact host</h2>
+                            <span>{displayPhone}</span>
+                        </div>
+                        <div className={styles.contactActions}>
+                            {callHref && (
+                                <a href={callHref} className={styles.contactButton}>
+                                    <Phone size={18} />
+                                    <span>Call now</span>
+                                </a>
+                            )}
+                            <a href={whatsappHref} target="_blank" rel="noreferrer" className={styles.whatsappButton}>
+                                <img src="/whatsapp.svg" alt="" className={styles.whatsappIcon} aria-hidden="true" />
+                                <span>WhatsApp</span>
+                            </a>
+                        </div>
                     </div>
 
                     <div className={styles.amenities}>
@@ -829,10 +1000,8 @@ export const ListingDetails = () => {
                         )}
 
                         {bookingStatus && (
-                            <div className={`${styles.statusBanner} ${bookingStatus === 'reserved' ? styles.statusSuccess : styles.statusInfo}`}>
-                                {bookingStatus === 'reserved'
-                                    ? 'Reservation placed. You can follow up from this screen later.'
-                                    : 'Request sent. The host can review your dates and get back to you.'}
+                            <div className={`${styles.statusBanner} ${styles.statusSuccess}`}>
+                                Reservation placed. You can follow up from this screen later.
                             </div>
                         )}
 
@@ -931,7 +1100,7 @@ export const ListingDetails = () => {
                             <label className={styles.formField}>
                                 <span>Guests</span>
                                 <select value={guestCount} onChange={(e) => setGuestCount(Number(e.target.value))}>
-                                    {Array.from({ length: guestLimit }, (_, index) => index + 1).map((value) => (
+                                    {[1, 2, 3, 4].map((value) => (
                                         <option key={value} value={value}>
                                             {value} guest{value > 1 ? 's' : ''}
                                         </option>
@@ -939,31 +1108,22 @@ export const ListingDetails = () => {
                                 </select>
                             </label>
 
-                            <div className={styles.modeToggle} role="tablist" aria-label="Booking mode">
-                                <button
-                                    type="button"
-                                    className={bookingMode === 'reserve' ? styles.modeButtonActive : styles.modeButton}
-                                    onClick={() => setBookingMode('reserve')}
-                                >
-                                    Reserve
-                                </button>
-                                <button
-                                    type="button"
-                                    className={bookingMode === 'request' ? styles.modeButtonActive : styles.modeButton}
-                                    onClick={() => setBookingMode('request')}
-                                >
-                                    Request
-                                </button>
-                            </div>
-
                             <button
                                 type="button"
                                 className={styles.reserveButton}
-                                onClick={() => handleBooking(bookingMode)}
+                                onClick={handleBooking}
                                 disabled={nights <= 0 || submittingBooking}
                             >
                                 {submittingBooking ? 'Please wait...' : bookingActionLabel}
                             </button>
+
+                            <div className={styles.sidebarContactSection}>
+                                <div className={styles.sidebarContactLabel}>Contact</div>
+                                <a href={whatsappHref} target="_blank" rel="noreferrer" className={styles.sidebarWhatsappButton}>
+                                    <img src="/whatsapp.svg" alt="" className={styles.whatsappIcon} aria-hidden="true" />
+                                    <span>WhatsApp</span>
+                                </a>
+                            </div>
 
                             <div className={styles.bookingNote}>
                                 {bookingHeadline}. You will not be charged yet.

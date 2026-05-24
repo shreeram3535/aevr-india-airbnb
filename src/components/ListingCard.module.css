@@ -70,29 +70,6 @@
     opacity: 1;
 }
 
-/* Dots Indicator */
-.dotsContainer {
-    position: absolute;
-    bottom: 12px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    gap: 6px;
-    z-index: 2;
-}
-
-.dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background-color: rgba(255, 255, 255, 0.78);
-    transition: background-color 0.2s;
-}
-
-.dot.active {
-    background-color: #fff;
-}
-
 /* Favorite Heart */
 .heartButton {
     position: absolute;

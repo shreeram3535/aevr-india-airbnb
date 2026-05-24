@@ -99,17 +99,6 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
                         <Heart size={24} fill={isFavorited ? 'currentColor' : 'rgba(0,0,0,0.5)'} />
                     </button>
 
-                    {/* Dots */}
-                    {listing.images.length > 1 && (
-                        <div className={styles.dotsContainer}>
-                            {listing.images.slice(0, 5).map((_, idx) => ( // Limit dots to 5 for aesthetics if many images
-                                <div
-                                    key={idx}
-                                    className={`${styles.dot} ${idx === currentImageIndex ? styles.active : ''}`}
-                                />
-                            ))}
-                        </div>
-                    )}
                 </div>
 
                 <div className={styles.info}>

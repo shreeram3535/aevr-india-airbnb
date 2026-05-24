@@ -69,6 +69,7 @@ type SupabaseListingRow = {
         avatar_url: string | null;
         is_superhost: boolean;
         bio: string | null;
+        phone: string | null;
     }>;
     listing_images: Array<{
         image_url: string;
@@ -199,7 +200,8 @@ const LISTING_SELECT = `
         full_name,
         avatar_url,
         is_superhost,
-        bio
+        bio,
+        phone
     ),
     listing_images (
         image_url,
@@ -332,6 +334,7 @@ const mapListing = (row: SupabaseListingRow): Listing => {
             avatarUrl: host?.avatar_url ?? '',
             isSuperhost: host?.is_superhost ?? false,
             bio: host?.bio ?? undefined,
+            phone: host?.phone ?? undefined,
         },
         amenities,
         isGuestFavorite: row.is_guest_favorite,
