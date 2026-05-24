@@ -11,6 +11,7 @@ import {
     Flame, 
     UserCheck, 
     Shield, 
+    Building2,
     LogOut, 
     LogIn 
 } from 'lucide-react';
@@ -221,6 +222,10 @@ export const Header: React.FC = () => {
                                     <button type="button" className={styles.drawerItem} onClick={() => handleNavigate('/host/flash-sales')}>
                                         <Flame size={18} className={styles.drawerItemIcon} />
                                         Flash Sales
+                                    </button>
+                                    <button type="button" className={styles.drawerItem} onClick={() => handleNavigate('/host/properties')}>
+                                        <Building2 size={18} className={styles.drawerItemIcon} />
+                                        Properties
                                     </button>
                                     <button type="button" className={styles.drawerItem} onClick={() => handleNavigate('/host/host-approvals')}>
                                         <UserCheck size={18} className={styles.drawerItemIcon} />

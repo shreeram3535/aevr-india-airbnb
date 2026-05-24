@@ -1,0 +1,185 @@
+.page {
+    padding-top: calc(var(--header-height) + 24px);
+    padding-left: var(--container-padding);
+    padding-right: var(--container-padding);
+    padding-bottom: 48px;
+}
+
+.panel {
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 24px;
+    border: 1px solid var(--color-gray-100);
+    border-radius: 20px;
+    background: var(--color-white);
+    box-shadow: var(--shadow-md);
+}
+
+.headerRow {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: flex-start;
+}
+
+.headerRow p {
+    margin-top: 8px;
+    color: var(--color-gray-300);
+}
+
+.primaryButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 40px;
+    padding: 0 14px;
+    border-radius: 999px;
+    font-weight: var(--font-weight-semibold);
+    background: var(--color-primary);
+    color: #fff;
+    box-shadow: var(--shadow-sm);
+}
+
+.metaRow {
+    margin-top: 16px;
+    display: flex;
+    gap: 16px;
+    color: var(--color-gray-300);
+}
+
+.errorBox {
+    margin-top: 14px;
+    padding: 10px 12px;
+    border: 1px solid rgba(185, 28, 28, 0.28);
+    background: rgba(254, 242, 242, 0.95);
+    color: #7f1d1d;
+    border-radius: 10px;
+}
+
+.grid {
+    margin-top: 16px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.card {
+    border: 1px solid var(--color-gray-100);
+    border-radius: 14px;
+    overflow: hidden;
+    background: #fff;
+}
+
+.image {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+}
+
+.body {
+    padding: 12px;
+}
+
+.top {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+}
+
+.top h3 {
+    margin: 0;
+}
+
+.body p {
+    margin: 6px 0 0;
+    color: var(--color-gray-300);
+}
+
+.hostLine {
+    font-size: 0.92rem;
+}
+
+.price {
+    color: var(--text-primary) !important;
+    font-weight: var(--font-weight-semibold);
+}
+
+.badgeActive,
+.badgeDelisted {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: var(--font-weight-semibold);
+}
+
+.badgeActive {
+    background: rgba(15, 118, 110, 0.12);
+    color: #0f766e;
+}
+
+.badgeDelisted {
+    background: rgba(185, 28, 28, 0.1);
+    color: #b91c1c;
+}
+
+.actions {
+    margin-top: 12px;
+    display: flex;
+    gap: 10px;
+}
+
+.secondaryButton,
+.dangerButton {
+    height: 36px;
+    padding: 0 12px;
+    border-radius: 999px;
+    font-weight: var(--font-weight-semibold);
+    border: 1px solid var(--color-gray-100);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.secondaryButton {
+    background: #fff;
+    color: var(--text-primary);
+}
+
+.dangerButton {
+    background: #fff;
+    color: #b91c1c;
+    border-color: rgba(185, 28, 28, 0.2);
+}
+
+.dangerButton:disabled {
+    opacity: 0.62;
+    cursor: not-allowed;
+}
+
+.emptyState {
+    margin-top: 18px;
+    border: 1px dashed var(--color-gray-100);
+    border-radius: 14px;
+    padding: 20px;
+    text-align: center;
+}
+
+@media (max-width: 900px) {
+    .grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 744px) {
+    .headerRow {
+        flex-direction: column;
+    }
+
+    .metaRow {
+        flex-direction: column;
+        gap: 8px;
+    }
+}

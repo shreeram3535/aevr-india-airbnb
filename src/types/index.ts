@@ -70,6 +70,7 @@ export interface Listing {
     roomTypes?: RoomType[];
     hostId?: string;
     mapLink?: string;
+    isActive?: boolean;
 }
 
 export interface RoomType {

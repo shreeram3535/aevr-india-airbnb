@@ -14,6 +14,7 @@ import { AdminFlashSales } from './pages/AdminFlashSales';
 import { AdminHostApprovals } from './pages/AdminHostApprovals';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { AdminGuestVerification } from './pages/AdminGuestVerification';
+import { AdminProperties } from './pages/AdminProperties';
 import './styles/global.css';
 
 function App() {
@@ -35,6 +36,7 @@ function App() {
           <Route path="new" element={<HostNewProperty />} />
           <Route path="edit/:id" element={<HostNewProperty />} />
           <Route path="admin" element={<AdminDashboard />} />
+          <Route path="properties" element={<AdminProperties />} />
           <Route path="flash-sales" element={<AdminFlashSales />} />
           <Route path="host-approvals" element={<AdminHostApprovals />} />
           <Route path="guest-verification" element={<AdminGuestVerification />} />

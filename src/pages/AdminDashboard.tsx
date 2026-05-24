@@ -71,6 +71,7 @@ export const AdminDashboard = () => {
                 </section>
 
                 <section className={styles.actions}>
+                    <Link to="/host/properties" className={styles.primaryButton}>Manage Properties</Link>
                     <Link to="/host/host-approvals" className={styles.primaryButton}>Open Host Approvals</Link>
                     <Link to="/host/guest-verification" className={styles.secondaryButton}>Guest Verification</Link>
                     <Link to="/host/flash-sales" className={styles.secondaryButton}>Open Flash Sales</Link>

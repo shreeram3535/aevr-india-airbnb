@@ -319,6 +319,7 @@ const mapListing = (row: SupabaseListingRow): Listing => {
         availabilitySummary: row.availability_summary ?? undefined,
         roomTypes,
         mapLink: row.map_link ?? undefined,
+        isActive: row.is_active,
     };
 };
 
@@ -674,6 +675,23 @@ const fetchSupabaseListings = async (filters: ListingFilters = {}): Promise<List
         : rows.map(mapListing);
 };
 
+const fetchSupabaseAdminListings = async (): Promise<ListingsResponse> => {
+    if (!supabase) {
+        return [];
+    }
+
+    const { data, error } = await supabase
+        .from('listings')
+        .select(LISTING_SELECT)
+        .order('created_at', { ascending: false });
+
+    if (error || !data) {
+        return [];
+    }
+
+    return (data as unknown as SupabaseListingRow[]).map(mapListing);
+};
+
 const fetchSupabaseListingById = async (id: string): Promise<Listing | undefined> => {
     if (!supabase) {
         return undefined;
@@ -859,6 +877,10 @@ export const api = {
                     .catch(() => resolve([]));
             }, DELAY_MS);
         });
+    },
+
+    fetchAdminListings: async (): Promise<ListingsResponse> => {
+        return fetchSupabaseAdminListings();
     },
 
     fetchListingById: (id: string): Promise<Listing | undefined> => {
@@ -1220,6 +1242,19 @@ export const api = {
         return mapListing(listing as unknown as SupabaseListingRow);
     },
 
+    createListingAsAdmin: async (input: CreateListingInput): Promise<Listing> => {
+        if (!supabase) {
+            throw new Error('Supabase is not configured');
+        }
+
+        const { data: authData, error: authError } = await supabase.auth.getUser();
+        if (authError || !authData.user) {
+            throw new Error('You must be signed in as admin');
+        }
+
+        return api.createListing(authData.user.id, input);
+    },
+
     updateListing: async (hostId: string, listingId: string, input: UpdateListingInput): Promise<Listing> => {
         if (!supabase) {
             throw new Error('Supabase is not configured');
@@ -1279,6 +1314,21 @@ export const api = {
             .update({ is_active: false })
             .eq('id', listingId)
             .eq('host_id', hostId);
+
+        if (error) {
+            throw error;
+        }
+    },
+
+    adminDelistListing: async (listingId: string): Promise<void> => {
+        if (!supabase) {
+            throw new Error('Supabase is not configured');
+        }
+
+        const { error } = await supabase
+            .from('listings')
+            .update({ is_active: false })
+            .eq('id', listingId);
 
         if (error) {
             throw error;

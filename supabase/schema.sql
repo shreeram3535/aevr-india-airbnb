@@ -424,6 +424,53 @@ with check (
     )
 );
 
+drop policy if exists "Admins read all listings" on public.listings;
+create policy "Admins read all listings"
+on public.listings
+for select
+using (
+    exists (
+        select 1
+        from public.profiles p
+        where p.id = auth.uid()
+          and p.role = 'admin'
+    )
+);
+
+drop policy if exists "Admins insert listings" on public.listings;
+create policy "Admins insert listings"
+on public.listings
+for insert
+with check (
+    exists (
+        select 1
+        from public.profiles p
+        where p.id = auth.uid()
+          and p.role = 'admin'
+    )
+);
+
+drop policy if exists "Admins update listings" on public.listings;
+create policy "Admins update listings"
+on public.listings
+for update
+using (
+    exists (
+        select 1
+        from public.profiles p
+        where p.id = auth.uid()
+          and p.role = 'admin'
+    )
+)
+with check (
+    exists (
+        select 1
+        from public.profiles p
+        where p.id = auth.uid()
+          and p.role = 'admin'
+    )
+);
+
 drop policy if exists "Hosts delete own listings" on public.listings;
 create policy "Hosts delete own listings"
 on public.listings
@@ -473,6 +520,27 @@ with check (
     )
 );
 
+drop policy if exists "Admins manage listing images" on public.listing_images;
+create policy "Admins manage listing images"
+on public.listing_images
+for all
+using (
+    exists (
+        select 1
+        from public.profiles p
+        where p.id = auth.uid()
+          and p.role = 'admin'
+    )
+)
+with check (
+    exists (
+        select 1
+        from public.profiles p
+        where p.id = auth.uid()
+          and p.role = 'admin'
+    )
+);
+
 drop policy if exists "Public read listing amenities for active listings" on public.listing_amenities;
 create policy "Public read listing amenities for active listings"
 on public.listing_amenities
@@ -507,6 +575,27 @@ with check (
     )
 );
 
+drop policy if exists "Admins manage listing amenities" on public.listing_amenities;
+create policy "Admins manage listing amenities"
+on public.listing_amenities
+for all
+using (
+    exists (
+        select 1
+        from public.profiles p
+        where p.id = auth.uid()
+          and p.role = 'admin'
+    )
+)
+with check (
+    exists (
+        select 1
+        from public.profiles p
+        where p.id = auth.uid()
+          and p.role = 'admin'
+    )
+);
+
 drop policy if exists "Public read availability blocks for active listings" on public.availability_blocks;
 create policy "Public read availability blocks for active listings"
 on public.availability_blocks
@@ -538,6 +627,27 @@ with check (
         from public.listings l
         where l.id = listing_id
           and l.host_id = auth.uid()
+    )
+);
+
+drop policy if exists "Admins manage availability blocks" on public.availability_blocks;
+create policy "Admins manage availability blocks"
+on public.availability_blocks
+for all
+using (
+    exists (
+        select 1
+        from public.profiles p
+        where p.id = auth.uid()
+          and p.role = 'admin'
+    )
+)
+with check (
+    exists (
+        select 1
+        from public.profiles p
+        where p.id = auth.uid()
+          and p.role = 'admin'
     )
 );
 
