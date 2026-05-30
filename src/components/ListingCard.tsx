@@ -90,6 +90,18 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
                         <div className={styles.guestFavorite}>Guest favorite</div>
                     )}
 
+                    {/* Carousel Dots Indicators */}
+                    {listing.images.length > 1 && (
+                        <div className={styles.dots}>
+                            {listing.images.map((_, index) => (
+                                <div
+                                    key={index}
+                                    className={`${styles.dot} ${index === currentImageIndex ? styles.activeDot : ''}`}
+                                />
+                            ))}
+                        </div>
+                    )}
+
                     {/* Heart Icon */}
                     <button
                         className={`${styles.heartButton} ${isFavorited ? styles.favorited : ''}`}
