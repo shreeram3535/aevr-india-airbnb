@@ -30,12 +30,14 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
 
     const nextImage = (e: React.MouseEvent) => {
         e.stopPropagation();
+        e.preventDefault();
         if (!hasImages) return;
         setCurrentImageIndex((prev) => (prev + 1) % listing.images.length);
     };
 
     const prevImage = (e: React.MouseEvent) => {
         e.stopPropagation();
+        e.preventDefault();
         if (!hasImages) return;
         setCurrentImageIndex((prev) => (prev - 1 + listing.images.length) % listing.images.length);
     };
