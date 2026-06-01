@@ -117,7 +117,7 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
 
                 <div className={styles.info}>
                     <div className={styles.headerRow}>
-                        <div className={styles.title}>{listing.location.city}, {listing.location.country}</div>
+                        <div className={styles.title}>{listing.title}</div>
                         <div className={styles.rating}>
                             <Star size={14} fill="currentColor" />
                             <span>{listing.rating}</span>
