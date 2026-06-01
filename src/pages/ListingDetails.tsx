@@ -828,7 +828,7 @@ export const ListingDetails = () => {
                 <div className={styles.leftColumn}>
                     <div className={styles.hostSection}>
                         <div className={styles.hostInfo}>
-                            <h2>{listing.categoryLabel ?? `Hosted by ${listing.host.name}`}</h2>
+                            <h2>Hosted by {listing.host.name}</h2>
                             <p style={{ color: 'var(--text-secondary)' }}>
                                 {listing.host.isSuperhost && 'Superhost · '}
                                 {listingSummary || 'Flexible stay'}

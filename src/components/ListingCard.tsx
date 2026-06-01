@@ -13,13 +13,16 @@ interface ListingCardProps {
 export const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [isFavorited, setIsFavorited] = useState(favoritesService.isFavorite(listing.id));
-    const hasImages = listing.images.length > 0;
+    const imageCount = listing.images.length;
+    const hasImages = imageCount > 0;
     const fallbackMedia = listing.media.find((item) => item.kind === 'video' && item.thumbnailUrl)?.thumbnailUrl;
     const coverImage = hasImages
         ? (listing.images[currentImageIndex] ?? listing.images[0])
         : fallbackMedia ?? getFallbackImage();
 
     useEffect(() => {
+        setIsFavorited(favoritesService.isFavorite(listing.id));
+
         // Sync with external updates (e.g. from other tabs or components)
         const handleUpdate = () => {
             setIsFavorited(favoritesService.isFavorite(listing.id));
@@ -28,24 +31,36 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
         return () => window.removeEventListener('favorites-updated', handleUpdate);
     }, [listing.id]);
 
+    useEffect(() => {
+        setCurrentImageIndex(0);
+    }, [listing.id]);
+
+    useEffect(() => {
+        if (currentImageIndex >= imageCount) {
+            setCurrentImageIndex(0);
+        }
+    }, [currentImageIndex, imageCount]);
+
     const nextImage = (e: React.MouseEvent) => {
         e.stopPropagation();
+        e.preventDefault();
         if (!hasImages) return;
-        setCurrentImageIndex((prev) => (prev + 1) % listing.images.length);
+        setCurrentImageIndex((prev) => (prev + 1) % imageCount);
     };
 
     const prevImage = (e: React.MouseEvent) => {
         e.stopPropagation();
+        e.preventDefault();
         if (!hasImages) return;
-        setCurrentImageIndex((prev) => (prev - 1 + listing.images.length) % listing.images.length);
+        setCurrentImageIndex((prev) => (prev - 1 + imageCount) % imageCount);
     };
 
     const toggleFavorite = (e: React.MouseEvent) => {
         e.stopPropagation();
         e.preventDefault(); // Prevent link click
         favoritesService.toggleFavorite(listing.id);
-        // State updates via event listener, but optmistic update helps responsivenss
-        setIsFavorited(!isFavorited);
+        // State updates via event listener, but optimistic update helps responsiveness.
+        setIsFavorited((current) => !current);
     };
 
     const priceLabel = new Intl.NumberFormat('en-IN', {
@@ -73,13 +88,20 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
                     {listing.images.length > 1 && (
                         <>
                             <button
+                                type="button"
+                                aria-label="Previous image"
                                 className={`${styles.navButton} ${styles.prevButton}`}
                                 onClick={prevImage}
                                 style={{ display: currentImageIndex === 0 ? 'none' : 'flex' }} // Airbnb style: hide prev on first image
                             >
                                 <ChevronLeft size={16} />
                             </button>
-                            <button className={`${styles.navButton} ${styles.nextButton}`} onClick={nextImage}>
+                            <button
+                                type="button"
+                                aria-label="Next image"
+                                className={`${styles.navButton} ${styles.nextButton}`}
+                                onClick={nextImage}
+                            >
                                 <ChevronRight size={16} />
                             </button>
                         </>
@@ -104,6 +126,8 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
 
                     {/* Heart Icon */}
                     <button
+                        type="button"
+                        aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
                         className={`${styles.heartButton} ${isFavorited ? styles.favorited : ''}`}
                         onClick={toggleFavorite}
                         style={{ zIndex: 4 }}
@@ -122,7 +146,7 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
                         </div>
                     </div>
                     <div className={styles.subtitle}>
-                        {listing.categoryLabel ?? (listing.category === 'farms' ? 'Farm stay' : `Stay with ${listing.host.name}`)}
+                        Hosted by {listing.host.name}
                     </div>
                     <div className={styles.dates}>{listing.availableDates}</div>
                     <div className={styles.priceRow}>

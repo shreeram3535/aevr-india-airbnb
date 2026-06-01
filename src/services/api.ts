@@ -38,6 +38,7 @@ type SupabaseCategoryRow = {
 type SupabaseListingRow = {
     id: string;
     host_id?: string;
+    host_name?: string | null;
     map_link?: string | null;
     title: string;
     description: string;
@@ -170,6 +171,7 @@ export type CurrentUserSummary = {
 const LISTING_SELECT = `
     host_id,
     id,
+    host_name,
     map_link,
     title,
     description,
@@ -307,6 +309,7 @@ const mapListing = (row: SupabaseListingRow): Listing => {
         .map((entry) => entry.amenity?.label)
         .filter((label): label is string => Boolean(label));
     const roomTypes = normalizeRoomTypes(row.room_types);
+    const displayHostName = row.host_name?.trim() || host?.full_name?.trim() || 'Host';
 
     return {
         id: row.id,
@@ -330,7 +333,7 @@ const mapListing = (row: SupabaseListingRow): Listing => {
         categoryLabel: category?.label ?? undefined,
         host: {
             id: host?.id ?? '',
-            name: host?.full_name ?? 'Host',
+            name: displayHostName,
             avatarUrl: host?.avatar_url ?? '',
             isSuperhost: host?.is_superhost ?? false,
             bio: host?.bio ?? undefined,
@@ -933,6 +936,36 @@ const persistListingAmenities = async (listingId: string, amenityLabels: string[
     }
 };
 
+const getSupabaseErrorMessage = (error: unknown, fallback: string) => {
+    if (!error) {
+        return fallback;
+    }
+
+    if (error instanceof Error) {
+        return error.message;
+    }
+
+    if (typeof error === 'object') {
+        const record = error as { message?: unknown; details?: unknown; hint?: unknown };
+        const message = typeof record.message === 'string' ? record.message : '';
+        const details = typeof record.details === 'string' ? record.details : '';
+        const hint = typeof record.hint === 'string' ? record.hint : '';
+        const combined = [message, details, hint].filter(Boolean).join(' ');
+
+        if (combined.toLowerCase().includes('host_name')) {
+            return 'The database is missing the listings.host_name column. Run this in Supabase SQL Editor: alter table public.listings add column if not exists host_name text;';
+        }
+
+        return combined || fallback;
+    }
+
+    return fallback;
+};
+
+const throwSupabaseError = (error: unknown, fallback: string): never => {
+    throw new Error(getSupabaseErrorMessage(error, fallback));
+};
+
 const bookingStatusLabel: Record<Booking['status'], Booking['status']> = {
     pending: 'pending',
     confirmed: 'confirmed',
@@ -1296,6 +1329,7 @@ export const api = {
                 category_id: category.id,
                 title: input.title,
                 description: input.description,
+                host_name: input.hostName.trim(),
                 price_per_night: input.pricePerNight,
                 currency: input.currency,
                 city: input.city,
@@ -1315,7 +1349,7 @@ export const api = {
             .single();
 
         if (listingError || !listing) {
-            throw listingError ?? new Error('Unable to create listing');
+            throwSupabaseError(listingError, 'Unable to create listing');
         }
 
         await persistListingMedia(listing.id, input.media, input.title);
@@ -1353,6 +1387,7 @@ export const api = {
                 category_id: category.id,
                 title: input.title,
                 description: input.description,
+                host_name: input.hostName.trim(),
                 price_per_night: input.pricePerNight,
                 currency: input.currency,
                 city: input.city,
@@ -1374,7 +1409,7 @@ export const api = {
             .maybeSingle();
 
         if (error || !updated) {
-            throw error ?? new Error('Unable to update listing');
+            throwSupabaseError(error, 'Unable to update listing');
         }
 
         if (input.media) {
@@ -1412,6 +1447,7 @@ export const api = {
                 category_id: category.id,
                 title: input.title,
                 description: input.description,
+                host_name: input.hostName.trim(),
                 price_per_night: input.pricePerNight,
                 currency: input.currency,
                 city: input.city,
@@ -1431,7 +1467,7 @@ export const api = {
             .maybeSingle();
 
         if (error || !updated) {
-            throw error ?? new Error('Unable to update listing');
+            throwSupabaseError(error, 'Unable to update listing');
         }
 
         if (input.media) {
