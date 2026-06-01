@@ -1,0 +1,466 @@
+.header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--header-height);
+    background-color: var(--color-white);
+    border-bottom: 1px solid var(--color-gray-100);
+    z-index: 1000;
+    padding: 0 var(--container-padding);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-4);
+}
+
+/* Logo Section */
+.logoContainer {
+    flex: 1 0 140px;
+    display: flex;
+    align-items: center;
+}
+
+.logoText {
+    color: var(--color-primary);
+    font-weight: var(--font-weight-bold);
+    font-size: var(--font-size-2xl);
+    letter-spacing: -0.02em;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-2);
+}
+
+/* User Menu (Right) */
+.userMenu {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--spacing-2);
+}
+
+/* Right-Side Drawer Backdrop Overlay */
+.drawerBackdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(34, 34, 34, 0.35);
+    backdrop-filter: blur(6px);
+    z-index: 1999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.backdropOpen {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Right-Side Drawer Panel */
+.drawerPanel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    max-width: 380px;
+    background-color: var(--color-white);
+    box-shadow: -8px 0 32px rgba(0, 0, 0, 0.12);
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.drawerOpen {
+    transform: translateX(0);
+}
+
+/* Drawer Header styling */
+.drawerHeader {
+    height: var(--header-height);
+    padding: 0 var(--spacing-6);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--color-gray-50);
+}
+
+.drawerTitle {
+    font-size: var(--font-size-md);
+    font-weight: var(--font-weight-bold);
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+}
+
+.drawerCloseButton {
+    border: none;
+    background: transparent;
+    padding: 8px;
+    border-radius: 50%;
+    color: var(--color-gray-300);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s, transform 0.1s;
+}
+
+.drawerCloseButton:hover {
+    background-color: var(--color-gray-50);
+    color: var(--text-primary);
+}
+
+.drawerCloseButton:active {
+    transform: scale(0.92);
+}
+
+/* Drawer User Summary Card */
+.drawerUserSection {
+    padding: var(--spacing-5);
+    margin: var(--spacing-4) var(--spacing-6) var(--spacing-2) var(--spacing-6);
+    background: linear-gradient(135deg, rgba(0, 132, 137, 0.03) 0%, rgba(0, 132, 137, 0.08) 100%);
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(0, 132, 137, 0.08);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-4);
+}
+
+.drawerAvatarLarge {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background-color: var(--color-primary);
+    color: var(--color-white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-sm);
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+.drawerUserIconLarge {
+    color: var(--color-white);
+}
+
+.drawerUserInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    overflow: hidden;
+}
+
+.drawerWelcomeText {
+    font-size: var(--font-size-md);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.drawerSubText {
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.drawerRoleBadge {
+    align-self: flex-start;
+    font-size: 10px;
+    font-weight: var(--font-weight-bold);
+    letter-spacing: 0.08em;
+    color: var(--color-primary);
+    background: rgba(0, 132, 137, 0.12);
+    border-radius: var(--radius-full);
+    padding: 2px 8px;
+    text-transform: uppercase;
+}
+
+/* Drawer Links */
+.drawerLinks {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--spacing-4) var(--spacing-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-1);
+}
+
+.drawerSectionLabel {
+    font-size: 10px;
+    font-weight: var(--font-weight-bold);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-gray-300);
+    padding: var(--spacing-4) var(--spacing-3) var(--spacing-1) var(--spacing-3);
+}
+
+.drawerItem {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-3);
+    width: 100%;
+    padding: 12px var(--spacing-4);
+    border: none;
+    background: transparent;
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--text-primary);
+    cursor: pointer;
+    text-align: left;
+    transition: background-color 0.2s, transform 0.1s, color 0.2s;
+}
+
+.drawerAnchorItem {
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-3);
+    width: 100%;
+    padding: 12px var(--spacing-4);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--text-primary);
+    transition: background-color 0.2s, transform 0.1s, color 0.2s;
+}
+
+.drawerItem:hover {
+    background-color: var(--color-gray-50);
+}
+
+.drawerAnchorItem:hover {
+    background-color: var(--color-gray-50);
+}
+
+.drawerItem:active {
+    transform: scale(0.99);
+}
+
+.drawerAnchorItem:active {
+    transform: scale(0.99);
+}
+
+.drawerItemIcon {
+    color: var(--color-gray-200);
+    transition: color 0.2s;
+    flex-shrink: 0;
+}
+
+.drawerItem:hover .drawerItemIcon {
+    color: var(--color-primary);
+}
+
+.drawerAnchorItem:hover .drawerItemIcon {
+    color: var(--color-primary);
+}
+
+.drawerDivider {
+    height: 1px;
+    background-color: var(--color-gray-50);
+    margin: var(--spacing-3) var(--spacing-2);
+}
+
+.logoutButton {
+    color: #e53e3e;
+}
+
+.drawerItem:hover.logoutButton {
+    background-color: rgba(229, 62, 62, 0.04);
+}
+
+.drawerItem:hover.logoutButton .drawerItemIcon {
+    color: #e53e3e;
+}
+
+.hostLink {
+    position: relative;
+    z-index: 1;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    padding: 10px 14px;
+    border-radius: var(--radius-full);
+    transition: background-color 0.1s;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+}
+
+.hostLink:hover {
+    background-color: var(--color-gray-50);
+}
+
+.globeButton {
+    padding: 12px;
+    border-radius: 50%;
+    transition: background-color 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.globeButton:hover {
+    background-color: var(--color-gray-50);
+}
+
+.profileMenu {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-3);
+    padding: 5px 5px 5px 12px;
+    border: 1px solid var(--color-gray-100);
+    background-color: var(--color-white);
+    color: inherit;
+    font-family: inherit;
+    border-radius: 21px;
+    margin-left: var(--spacing-1);
+    transition: box-shadow 0.2s, transform 0.1s;
+    cursor: pointer;
+    outline: none;
+}
+
+.userBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--color-gray-100);
+    background: var(--color-white);
+}
+
+.userName {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+}
+
+.roleBadge {
+    font-size: 11px;
+    font-weight: var(--font-weight-bold);
+    letter-spacing: 0.06em;
+    color: var(--color-primary);
+    background: rgba(0, 132, 137, 0.12);
+    border-radius: 999px;
+    padding: 4px 8px;
+}
+
+.profileMenu:hover {
+    box-shadow: var(--shadow-md);
+}
+
+.profileMenu:active {
+    transform: scale(0.96);
+}
+
+.avatar {
+    background-color: var(--color-gray-200);
+    color: var(--color-white);
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    flex-shrink: 0;
+    transition: background-color 0.2s;
+}
+
+.avatar:has(.avatarInitials) {
+    background-color: var(--color-primary);
+}
+
+.avatarImage {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.avatarInitials {
+    font-size: 11px;
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-white);
+    text-transform: uppercase;
+    user-select: none;
+}
+
+.drawerAvatarImage {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.drawerAvatarInitials {
+    font-size: 15px;
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-white);
+    text-transform: uppercase;
+    user-select: none;
+}
+
+.drawerAvatarLarge:has(.drawerAvatarInitials) {
+    background: var(--color-primary);
+}
+
+@media (max-width: 744px) {
+    .header {
+        height: var(--header-height);
+        padding: 0 16px;
+        gap: 8px;
+    }
+
+    .logoContainer {
+        flex: 0 0 auto;
+    }
+
+    .logoText {
+        font-size: var(--font-size-lg);
+        gap: 6px;
+    }
+
+    .logoText svg {
+        width: 24px;
+        height: 24px;
+    }
+
+    .userMenu {
+        display: flex !important;
+        align-items: center;
+        flex: 0 0 auto;
+    }
+
+    .hostLink,
+    .userBadge {
+        display: none !important;
+    }
+
+    .drawerPanel {
+        max-width: 300px;
+    }
+}
+
+.defaultGuestAvatar {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--color-primary) 0%, #00b3b0 100%);
+    color: var(--color-white);
+    transition: transform 0.2s ease;
+}
+
+.guestAvatarIcon {
+    color: var(--color-white);
+    opacity: 0.95;
+}

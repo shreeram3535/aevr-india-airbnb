@@ -1,0 +1,310 @@
+.page {
+    min-height: 100vh;
+    background:
+        radial-gradient(circle at top right, rgba(0, 132, 137, 0.11), transparent 28%),
+        linear-gradient(180deg, #ffffff 0%, #f7f7f7 100%);
+    padding: calc(var(--header-height) + 24px) var(--container-padding) 48px;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 24px;
+    margin-bottom: 24px;
+}
+
+.kicker {
+    text-transform: uppercase;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-primary);
+    letter-spacing: 0.12em;
+    margin-bottom: 10px;
+}
+
+.header h1 {
+    font-size: clamp(2rem, 4vw, 3.4rem);
+    line-height: 1;
+    letter-spacing: -0.04em;
+    margin-bottom: 8px;
+}
+
+.header p {
+    color: var(--text-secondary);
+    max-width: 60ch;
+}
+
+.actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.primaryButton,
+.secondaryButton,
+.viewLink,
+.actionPill,
+.deletePill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: var(--radius-full);
+    padding: 12px 16px;
+    font-weight: var(--font-weight-semibold);
+}
+
+.primaryButton {
+    background: var(--color-primary);
+    color: white;
+}
+
+.secondaryButton {
+    background: white;
+    color: var(--text-primary);
+    border: 1px solid var(--color-gray-100);
+}
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 28px;
+}
+
+.stats div {
+    padding: 18px;
+    border-radius: 20px;
+    background: #fff;
+    border: 1px solid var(--color-gray-100);
+    box-shadow: var(--shadow-md);
+}
+
+.stats strong {
+    display: block;
+    font-size: 2rem;
+    margin-bottom: 6px;
+}
+
+.stats span {
+    color: var(--color-gray-300);
+    font-weight: var(--font-weight-medium);
+}
+
+.section {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.sectionHeader h2 {
+    font-size: 1.3rem;
+    margin-bottom: 6px;
+}
+
+.sectionHeader p {
+    color: var(--text-secondary);
+}
+
+.listingsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 18px;
+}
+
+.propertyCard {
+    background: #fff;
+    border: 1px solid var(--color-gray-100);
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: var(--shadow-md);
+}
+
+.propertyImageWrap {
+    display: block;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    background: #ececec;
+}
+
+.propertyImage {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    image-rendering: auto;
+    filter: contrast(1.03) saturate(1.04);
+    transition: transform 0.2s, filter 0.2s;
+}
+
+.propertyImageWrap:hover .propertyImage {
+    filter: contrast(1.06) saturate(1.06);
+    transform: scale(1.01);
+}
+
+.propertyBody {
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.propertyTopRow {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.propertyTopRow h3 {
+    font-size: 1.1rem;
+    margin-bottom: 4px;
+}
+
+.propertyTopRow p,
+.description,
+.location {
+    color: var(--color-gray-300);
+}
+
+.mapLink {
+    width: fit-content;
+    color: var(--color-primary);
+    font-weight: var(--font-weight-semibold);
+}
+
+.price {
+    font-weight: var(--font-weight-semibold);
+    text-align: right;
+    white-space: nowrap;
+}
+
+.price span {
+    color: var(--color-gray-300);
+    font-weight: var(--font-weight-regular);
+}
+
+.metaRow,
+.tagRow,
+.footerRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.metaRow span,
+.tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.metaRow span {
+    color: var(--text-primary);
+    font-weight: var(--font-weight-medium);
+}
+
+.metaRow svg,
+.tag svg,
+.location svg,
+.actionPill svg,
+.deletePill svg {
+    color: var(--color-primary);
+    stroke-width: 2.2;
+}
+
+.tag {
+    padding: 8px 10px;
+    border-radius: var(--radius-full);
+    background: rgba(0, 132, 137, 0.1);
+    color: var(--text-primary);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+}
+
+.footerRow {
+    justify-content: space-between;
+    align-items: center;
+}
+
+.viewLink {
+    border: 1px solid var(--color-gray-100);
+    background: white;
+}
+
+.cardActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.actionPill,
+.deletePill {
+    padding: 10px 12px;
+    border: 1px solid var(--color-gray-100);
+    background: white;
+    color: var(--text-primary);
+    font-size: var(--font-size-sm);
+}
+
+.actionPill {
+    border-color: rgba(0, 132, 137, 0.22);
+}
+
+.deletePill {
+    color: #8a2132;
+    border-color: rgba(255, 56, 92, 0.28);
+    background: rgba(255, 56, 92, 0.09);
+}
+
+.deletePill svg {
+    color: #8a2132;
+}
+
+.deletePill:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.emptyState,
+.loading {
+    min-height: 60vh;
+    border-radius: 28px;
+    background: #fff;
+    border: 1px solid var(--color-gray-100);
+    display: grid;
+    place-items: center;
+    text-align: center;
+    padding: 24px;
+    box-shadow: var(--shadow-sm);
+}
+
+.emptyState {
+    gap: 10px;
+}
+
+@media (max-width: 900px) {
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .stats {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .page {
+        padding: calc(var(--header-height) + 20px) 16px 32px;
+    }
+
+    .actions {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .cardActions {
+        justify-content: flex-start;
+    }
+}

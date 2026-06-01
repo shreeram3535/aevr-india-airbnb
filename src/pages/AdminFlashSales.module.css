@@ -1,0 +1,81 @@
+.page {
+    padding-top: calc(var(--header-height) + 24px);
+    padding-left: var(--container-padding);
+    padding-right: var(--container-padding);
+    padding-bottom: 48px;
+}
+
+.panel {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 24px;
+    border: 1px solid var(--color-gray-100);
+    border-radius: 20px;
+    background: var(--color-white);
+}
+
+.panel h1 {
+    margin-bottom: 8px;
+}
+
+.panel p {
+    margin-bottom: 16px;
+    color: var(--text-secondary);
+}
+
+.currentDrop {
+    padding: 12px;
+    border-radius: 12px;
+    background: rgba(0, 132, 137, 0.1);
+    margin-bottom: 16px;
+}
+
+.form {
+    display: grid;
+    gap: 14px;
+}
+
+.form label {
+    display: grid;
+    gap: 6px;
+    font-weight: var(--font-weight-medium);
+}
+
+.form input,
+.form select {
+    border: 1px solid var(--color-gray-100);
+    border-radius: 12px;
+    padding: 12px;
+    font: inherit;
+}
+
+.endInfo {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+}
+
+.actions {
+    display: flex;
+    gap: 10px;
+}
+
+.actions button {
+    height: 42px;
+    padding: 0 16px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    background: var(--color-primary);
+    color: #fff;
+    font-weight: var(--font-weight-semibold);
+}
+
+.actions .danger {
+    background: #fff;
+    border-color: #e03e5f;
+    color: #e03e5f;
+}
+
+.error {
+    color: #b4233f;
+    font-size: var(--font-size-sm);
+}

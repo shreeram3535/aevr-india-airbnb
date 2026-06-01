@@ -1,0 +1,224 @@
+.card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    cursor: pointer;
+    position: relative;
+    group: pointer;
+    /* Concept for grouping hover effects */
+}
+
+/* Image Carousel */
+.imageContainer {
+    position: relative;
+    aspect-ratio: 20 / 19;
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    background-color: #ececec;
+}
+
+.image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    image-rendering: auto;
+    filter: contrast(1) saturate(1.02);
+    transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1), filter 0.6s ease;
+}
+
+.card:hover .image {
+    filter: contrast(1.02) saturate(1.04);
+    transform: scale(1.04);
+}
+
+/* Navigation Arrows */
+.navButton {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.25s, transform 0.15s;
+    z-index: 2;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+}
+
+.navButton:hover {
+    background-color: #fff;
+    transform: translateY(-50%) scale(1.05);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.12);
+}
+
+.prevButton {
+    left: 8px;
+}
+
+.nextButton {
+    right: 8px;
+}
+
+.card:hover .navButton {
+    opacity: 1;
+}
+
+/* Favorite Heart Pop animation */
+.heartButton {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 2;
+    color: rgba(255, 255, 255, 0.9);
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.heartButton:active {
+    transform: scale(0.85);
+}
+
+.heartButton svg {
+    fill: rgba(0, 0, 0, 0.45);
+    stroke: #fff;
+    stroke-width: 2.2px;
+    overflow: visible;
+}
+
+.heartButton.favorited svg {
+    fill: #ff385c; /* Standard premium travel favorite pink-red */
+    stroke: #ff385c;
+    animation: heartPop 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+}
+
+@keyframes heartPop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.22); }
+    100% { transform: scale(1); }
+}
+
+/* Info Section */
+.info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding-top: 4px;
+}
+
+.headerRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.title {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 15px;
+    letter-spacing: -0.01em;
+}
+
+.rating {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.rating svg {
+    color: #ff385c; /* Accent color star rating */
+}
+
+.subtitle {
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.dates {
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.priceRow {
+    margin-top: 4px;
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+}
+
+.price {
+    font-weight: 700;
+    color: var(--text-primary);
+    font-size: 15px;
+}
+
+.period {
+    color: var(--text-primary);
+    font-size: 14px;
+}
+
+/* Premium Glassmorphic Badge */
+.guestFavorite {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    padding: 5px 10px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--color-black);
+    z-index: 2;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+    letter-spacing: -0.01em;
+}
+
+/* Carousel Dots Indicator styling */
+.dots {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 5px;
+    z-index: 3;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+
+.card:hover .dots {
+    opacity: 1;
+}
+
+.dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.6);
+    transition: all 0.2s ease;
+}
+
+.activeDot {
+    width: 6px;
+    height: 6px;
+    background-color: #ffffff;
+    transform: scale(1.25);
+}
+
+@media (max-width: 744px) {
+    .navButton {
+        opacity: 1;
+        /* Always show arrows on touch devices if needed, or rely on swipe (not implemented yet) */
+        width: 28px;
+        height: 28px;
+    }
+}

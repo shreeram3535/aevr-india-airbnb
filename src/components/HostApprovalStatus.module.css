@@ -1,0 +1,48 @@
+.page {
+    padding-top: calc(var(--header-height) + 24px);
+    padding-left: var(--container-padding);
+    padding-right: var(--container-padding);
+}
+
+.card {
+    max-width: 760px;
+    margin: 0 auto;
+    border: 1px solid var(--color-gray-100);
+    border-radius: 20px;
+    background: var(--color-white);
+    padding: 24px;
+}
+
+.card p {
+    margin-top: 8px;
+    color: var(--text-secondary);
+}
+
+.actions {
+    margin-top: 16px;
+    display: flex;
+    gap: 10px;
+}
+
+.primaryButton,
+.secondaryButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    height: 40px;
+    padding: 0 14px;
+    border: 1px solid var(--color-gray-100);
+    font-weight: var(--font-weight-semibold);
+}
+
+.primaryButton {
+    background: var(--color-primary);
+    color: #fff;
+    border-color: transparent;
+}
+
+.secondaryButton {
+    color: var(--text-primary);
+    background: #fff;
+}
