@@ -23,6 +23,7 @@ import {
 import styles from '../App.module.css'; // Reusing the grid styles from App module
 import { Categories } from '../components/Categories';
 import { ListingCard } from '../components/ListingCard';
+import { SkeletonScreen } from '../components/SkeletonScreen';
 import { api } from '../services/api';
 import type { FlashSaleDrop, Listing, ListingFilters, ListingSortOption } from '../types';
 
@@ -411,17 +412,7 @@ export const Home = () => {
                 </div>
 
                 {loading ? (
-                    <div style={{ display: 'flex', justifyContent: 'center', paddingTop: '100px' }}>
-                        <div style={{
-                            width: '40px',
-                            height: '40px',
-                            border: '3px solid #f7f7f7',
-                            borderTopColor: '#ff385c',
-                            borderRadius: '50%',
-                            animation: 'spin 1s linear infinite'
-                        }} />
-                        <style>{`@keyframes spin { 100% { transform: rotate(360deg); } }`}</style>
-                    </div>
+                    <SkeletonScreen variant="listing-grid" />
                 ) : listingError ? (
                     <div className={`${styles.emptyState} ${styles.debugErrorState}`} role="status">
                         <h2>Listings could not load</h2>

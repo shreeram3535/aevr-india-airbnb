@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import styles from './HostAuth.module.css';
 import { authService } from '../services/auth';
 import { hasSupabaseConfig } from '../services/supabase';
+import { SkeletonScreen } from '../components/SkeletonScreen';
 
 type Mode = 'sign-in' | 'sign-up';
 
@@ -110,7 +111,7 @@ export const GuestAuth = () => {
     };
 
     if (loading) {
-        return <div className={styles.page}><div className={styles.card}>Loading guest access...</div></div>;
+        return <div className={styles.page}><SkeletonScreen variant="auth" /></div>;
     }
 
     return (

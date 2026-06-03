@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import styles from '../App.module.css'; // Reusing grid styles
 import { ListingCard } from '../components/ListingCard';
+import { SkeletonScreen } from '../components/SkeletonScreen';
 import { api } from '../services/api';
 import { favoritesService } from '../services/favorites';
 import type { Listing } from '../types';
@@ -37,17 +38,7 @@ export const Favorites = () => {
             <h1 style={{ marginBottom: '24px', fontSize: '32px', fontWeight: 600 }}>Your favorites</h1>
 
             {loading ? (
-                <div style={{ display: 'flex', justifyContent: 'center', paddingTop: '100px' }}>
-                    <div style={{
-                        width: '40px',
-                        height: '40px',
-                        border: '3px solid #f7f7f7',
-                        borderTopColor: '#ff385c',
-                        borderRadius: '50%',
-                        animation: 'spin 1s linear infinite'
-                    }} />
-                    <style>{`@keyframes spin { 100% { transform: rotate(360deg); } }`}</style>
-                </div>
+                <SkeletonScreen variant="listing-grid" count={4} />
             ) : listings.length > 0 ? (
                 <div className={styles.grid}>
                     {listings.map((listing) => (

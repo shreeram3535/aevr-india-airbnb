@@ -4,6 +4,7 @@ import styles from './HostAuth.module.css';
 import { authService } from '../services/auth';
 import { api } from '../services/api';
 import { hasSupabaseConfig } from '../services/supabase';
+import { SkeletonScreen } from '../components/SkeletonScreen';
 
 type Mode = 'sign-in' | 'sign-up';
 type SignUpRole = 'guest' | 'host';
@@ -72,7 +73,7 @@ export const Auth = () => {
     };
 
     if (loading) {
-        return <div className={styles.page}><div className={styles.card}>Loading access...</div></div>;
+        return <div className={styles.page}><SkeletonScreen variant="auth" /></div>;
     }
 
     return (
