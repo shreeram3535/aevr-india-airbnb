@@ -427,6 +427,23 @@
     color: var(--text-secondary);
 }
 
+.debugErrorState {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 48px 24px;
+    border: 1px solid #ffd6de;
+    border-radius: var(--radius-md);
+    background: #fff7f8;
+    color: var(--text-primary);
+}
+
+.debugErrorState p {
+    margin: 12px auto 0;
+    max-width: 620px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
 .categoryFilterRow {
     margin-top: 24px;
     display: flex;
