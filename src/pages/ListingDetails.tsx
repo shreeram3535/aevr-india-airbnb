@@ -32,6 +32,7 @@ import {
     ChevronLeft,
     ChevronRight,
 } from 'lucide-react';
+import { SkeletonScreen } from '../components/SkeletonScreen';
 import styles from './ListingDetails.module.css';
 import { api } from '../services/api';
 import { authService } from '../services/auth';
@@ -650,7 +651,7 @@ export const ListingDetails = () => {
             : 'Sign in to reserve this stay. We will save your selection while you log in.';
 
     if (loading) {
-        return <div className={styles.container} style={{ height: '80vh' }} />;
+        return <SkeletonScreen variant="listing-details" />;
     }
 
     if (!listing) {
@@ -828,7 +829,7 @@ export const ListingDetails = () => {
                 <div className={styles.leftColumn}>
                     <div className={styles.hostSection}>
                         <div className={styles.hostInfo}>
-                            <h2>{listing.categoryLabel ?? `Hosted by ${listing.host.name}`}</h2>
+                            <h2>Hosted by {listing.host.name}</h2>
                             <p style={{ color: 'var(--text-secondary)' }}>
                                 {listing.host.isSuperhost && 'Superhost · '}
                                 {listingSummary || 'Flexible stay'}

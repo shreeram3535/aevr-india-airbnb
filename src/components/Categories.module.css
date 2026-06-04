@@ -7,7 +7,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 14px var(--container-padding);
+    padding: 6px var(--container-padding);
     transition: all 0.2s ease-in-out;
 }
 
@@ -42,7 +42,7 @@
     border: 1px solid var(--color-gray-200);
     background-color: var(--color-white);
     color: var(--text-primary);
-    padding: 10px 16px;
+    padding: 6px 12px;
     border-radius: var(--radius-md);
     font-size: var(--font-size-xs);
     font-weight: var(--font-weight-semibold);

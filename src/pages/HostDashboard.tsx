@@ -6,6 +6,7 @@ import { authService } from '../services/auth';
 import { api } from '../services/api';
 import { hasSupabaseConfig } from '../services/supabase';
 import { HostApprovalStatusView } from '../components/HostApprovalStatus';
+import { SkeletonScreen } from '../components/SkeletonScreen';
 import type { HostApprovalStatus, Listing } from '../types';
 
 type SessionUser = {
@@ -183,7 +184,7 @@ export const HostDashboard = () => {
     };
 
     if (loading) {
-        return <div className={styles.page}><div className={styles.loading}>Loading your host dashboard...</div></div>;
+        return <div className={styles.page}><SkeletonScreen variant="host-dashboard" /></div>;
     }
 
     if (error) {

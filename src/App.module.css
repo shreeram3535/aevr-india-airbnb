@@ -427,6 +427,23 @@
     color: var(--text-secondary);
 }
 
+.debugErrorState {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 48px 24px;
+    border: 1px solid #ffd6de;
+    border-radius: var(--radius-md);
+    background: #fff7f8;
+    color: var(--text-primary);
+}
+
+.debugErrorState p {
+    margin: 12px auto 0;
+    max-width: 620px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
 .categoryFilterRow {
     margin-top: 24px;
     display: flex;
@@ -493,3 +510,292 @@
     background: rgba(0, 132, 137, 0.08);
 }
 
+/* My Visual Diary Premium Carousel Styles - ULTRA COMPACT SPACE-EFFICIENT VERSION */
+.diarySection {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    margin-bottom: 20px;
+    width: 100%;
+    border-bottom: 1px solid var(--color-gray-50);
+    padding-bottom: 16px;
+}
+
+.diaryEyebrow {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--color-primary);
+    margin-bottom: 4px;
+}
+
+.diaryTitle {
+    font-size: 1.45rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    color: var(--color-black);
+    margin-bottom: 4px;
+}
+
+.diarySubtitle {
+    font-size: 11px;
+    color: var(--color-gray-200);
+    max-width: 450px;
+    line-height: 1.3;
+    margin-bottom: 14px;
+}
+
+.diaryPillsWrapper {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    margin-bottom: 14px;
+    overflow: visible;
+}
+
+.diaryPills {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 2px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    max-width: 100%;
+    justify-content: flex-start;
+}
+
+.diaryPills::-webkit-scrollbar {
+    display: none;
+}
+
+.diaryPill {
+    flex: 0 0 auto;
+    font-size: 12px;
+    font-weight: var(--font-weight-semibold);
+    padding: 6px 14px;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--color-gray-100);
+    background: var(--color-white);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.diaryPill:hover {
+    border-color: var(--color-black);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.04);
+}
+
+.diaryPillActive {
+    background: #0b1120;
+    color: var(--color-white);
+    border-color: #0b1120;
+}
+
+.diaryPillMore {
+    border-color: var(--color-black);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.diaryPillMore:hover {
+    background: var(--color-gray-50);
+}
+
+/* 3D Carousel Container - Highly Compressed Height */
+.diaryCarouselTrack {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 200px;
+    perspective: 800px;
+    overflow: visible;
+    margin-bottom: 12px;
+}
+
+/* Individual Slide Card - Scaled down for space efficiency */
+.diaryCarouselCard {
+    position: absolute;
+    width: 210px;
+    height: 165px;
+    border-radius: 16px;
+    overflow: hidden;
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1),
+                filter 0.6s ease,
+                box-shadow 0.6s ease,
+                opacity 0.6s ease;
+    
+    /* Calculate precise 3D Coverflow positioning using offsets */
+    transform: translateX(calc(var(--offset) * 115px))
+               translateZ(calc(var(--abs-offset) * -85px))
+               rotateY(calc(var(--offset) * -8deg))
+               scale(calc(1 - (var(--abs-offset) * 0.14)));
+               
+    z-index: calc(10 - var(--abs-offset));
+    
+    /* Subtle blur and dimming on background slides */
+    filter: brightness(calc(1 - (var(--abs-offset) * 0.3)))
+            blur(calc(var(--abs-offset) * 1px));
+            
+    opacity: calc(1 - (var(--abs-offset) * 0.2));
+}
+
+.diaryCarouselCard:hover {
+    box-shadow: var(--shadow-md);
+}
+
+.diaryCarouselCardActive {
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15), 0 5px 10px rgba(0, 0, 0, 0.05);
+    filter: brightness(1) blur(0px);
+    opacity: 1;
+    cursor: default;
+}
+
+.diaryCardImage {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    pointer-events: none;
+    transition: transform 0.6s ease;
+}
+
+.diaryCarouselCardActive:hover .diaryCardImage {
+    transform: scale(1.03);
+}
+
+/* Semi-transparent Play Button overlay for video indicator */
+.diaryCardPlayBtn {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-black);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+    transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    z-index: 5;
+    pointer-events: auto;
+}
+
+.diaryCardPlayBtn:hover {
+    transform: scale(1.1);
+    background: #ffffff;
+    color: #ff385c;
+}
+
+.diaryCardPlayBtn svg {
+    width: 12px;
+    height: 12px;
+}
+
+/* Media Card Overlay for details on active slide */
+.diaryCardOverlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 20px 12px 10px;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.3) 60%, transparent 100%);
+    color: var(--color-white);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    text-align: left;
+    opacity: 0;
+    transform: translateY(6px);
+    transition: all 0.35s ease 0.05s;
+    pointer-events: none;
+}
+
+.diaryCarouselCardActive .diaryCardOverlay {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.diaryCardOverlay h3 {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.diaryCardOverlay p {
+    font-size: 10px;
+    color: var(--color-gray-100);
+}
+
+/* Bottom Navigation Controls */
+.diaryNavButtons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 2px;
+}
+
+.diaryNavBtn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid var(--color-gray-100);
+    background: var(--color-white);
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.diaryNavBtn:hover {
+    border-color: var(--color-black);
+    color: var(--color-black);
+    transform: scale(1.05);
+}
+
+.diaryNavBtn:active {
+    transform: scale(0.95);
+}
+
+.diaryNavBtn svg {
+    width: 14px;
+    height: 14px;
+}
+
+@media (max-width: 744px) {
+    .diaryCarouselTrack {
+        height: 170px;
+    }
+    
+    .diaryCarouselCard {
+        width: 170px;
+        height: 135px;
+        border-radius: 12px;
+        
+        transform: translateX(calc(var(--offset) * 85px))
+                   translateZ(calc(var(--abs-offset) * -65px))
+                   rotateY(calc(var(--offset) * -6deg))
+                   scale(calc(1 - (var(--abs-offset) * 0.14)));
+    }
+    
+    .diaryTitle {
+        font-size: 1.25rem;
+    }
+}

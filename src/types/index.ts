@@ -208,6 +208,7 @@ export interface Favorite {
 export interface CreateListingInput {
     title: string;
     description: string;
+    hostName: string;
     pricePerNight: number;
     currency: string;
     categorySlug: string;

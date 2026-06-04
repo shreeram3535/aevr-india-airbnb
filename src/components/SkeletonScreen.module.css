@@ -1,0 +1,242 @@
+.pulse {
+    position: relative;
+    overflow: hidden;
+    background: #e5e5e5;
+    box-shadow: none;
+}
+
+.pulse::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.55) 50%, transparent 100%);
+    animation: skeletonPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes skeletonPulse {
+    0% {
+        transform: translateX(-100%);
+    }
+
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+.block {
+    composes: pulse;
+    border-radius: 8px;
+    min-height: 12px;
+}
+
+.line {
+    composes: pulse;
+    height: 14px;
+    border-radius: 999px;
+}
+
+.panel,
+.card {
+    border: 1px solid #eeeeee;
+    background: #ffffff;
+    border-radius: var(--radius-md);
+    box-shadow: none;
+}
+
+.homeGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 24px;
+}
+
+.listingCard {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-bottom: 4px;
+}
+
+.listingImage {
+    composes: pulse;
+    width: 100%;
+    aspect-ratio: 1 / 0.9;
+    border-radius: var(--radius-md);
+    box-shadow: none;
+}
+
+.listingMeta {
+    display: grid;
+    gap: 8px;
+}
+
+.adminPanel {
+    composes: panel;
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 32px;
+}
+
+.adminHeader {
+    display: grid;
+    gap: 12px;
+    max-width: 540px;
+    margin-bottom: 28px;
+}
+
+.statsGrid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.statCard {
+    composes: card;
+    padding: 18px;
+    display: grid;
+    gap: 14px;
+}
+
+.tableRows {
+    display: grid;
+    gap: 12px;
+}
+
+.tableRow {
+    composes: card;
+    padding: 16px;
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 120px;
+    gap: 16px;
+    align-items: center;
+}
+
+.authShell {
+    max-width: 920px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 380px;
+    gap: 32px;
+    align-items: start;
+}
+
+.authHero,
+.authCard {
+    display: grid;
+    gap: 14px;
+}
+
+.authCard {
+    composes: card;
+    padding: 28px;
+}
+
+.hostDashboard {
+    max-width: 1120px;
+    margin: 0 auto;
+    display: grid;
+    gap: 24px;
+}
+
+.hostStats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.hostListingGrid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.formShell {
+    max-width: 1080px;
+    margin: 0 auto;
+    display: grid;
+    gap: 24px;
+}
+
+.formGrid {
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    gap: 20px;
+}
+
+.formPanel {
+    composes: panel;
+    padding: 24px;
+    display: grid;
+    gap: 16px;
+}
+
+.detailsShell {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 24px;
+    display: grid;
+    gap: 24px;
+}
+
+.detailsGallery {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 8px;
+    min-height: 360px;
+}
+
+.detailsBody {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    gap: 48px;
+}
+
+.bookingCard {
+    composes: card;
+    padding: 24px;
+    display: grid;
+    gap: 14px;
+}
+
+.tripList {
+    max-width: 1000px;
+    margin: 0 auto;
+    display: grid;
+    gap: 18px;
+}
+
+.tripCard {
+    composes: card;
+    padding: 18px;
+    display: grid;
+    grid-template-columns: 180px minmax(0, 1fr) 140px;
+    gap: 18px;
+    align-items: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pulse::after {
+        animation: none;
+        display: none;
+    }
+}
+
+@media (max-width: 800px) {
+    .homeGrid,
+    .statsGrid,
+    .hostStats,
+    .hostListingGrid,
+    .formGrid,
+    .detailsGallery,
+    .detailsBody,
+    .authShell,
+    .tripCard {
+        grid-template-columns: 1fr;
+    }
+
+    .tableRow {
+        grid-template-columns: 1fr;
+    }
+
+}

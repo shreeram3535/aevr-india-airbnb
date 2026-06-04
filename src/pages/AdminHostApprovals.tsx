@@ -4,6 +4,7 @@ import styles from './AdminHostApprovals.module.css';
 import { authService } from '../services/auth';
 import { api } from '../services/api';
 import { hasSupabaseConfig } from '../services/supabase';
+import { SkeletonScreen } from '../components/SkeletonScreen';
 import type { HostApprovalApplication } from '../types';
 
 export const AdminHostApprovals = () => {
@@ -60,7 +61,7 @@ export const AdminHostApprovals = () => {
     };
 
     if (loading) {
-        return <div className={styles.page}><div className={styles.card}>Loading host approvals...</div></div>;
+        return <div className={styles.page}><SkeletonScreen variant="admin-table" count={4} /></div>;
     }
 
     if (error && items.length === 0) {

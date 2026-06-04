@@ -7,12 +7,14 @@ import { authService } from '../services/auth';
 import { hasSupabaseConfig } from '../services/supabase';
 import { uploadListingImages } from '../services/storage';
 import { HostApprovalStatusView } from '../components/HostApprovalStatus';
+import { SkeletonScreen } from '../components/SkeletonScreen';
 import type { AvailabilityBlock, AvailabilityBlockStatus, Category, Listing, ListingMediaItem, RoomType } from '../types';
 import { createExternalVideoMedia } from '../services/media';
 
 type FormState = {
     title: string;
     description: string;
+    hostName: string;
     pricePerNight: string;
     currency: string;
     categorySlug: string;
@@ -43,6 +45,7 @@ type RoomTypeFormState = {
 const initialState: FormState = {
     title: '',
     description: '',
+    hostName: '',
     pricePerNight: '',
     currency: 'INR',
     categorySlug: 'cabins',
@@ -73,6 +76,7 @@ const createRoomTypeRow = (overrides: Partial<RoomTypeFormState> = {}): RoomType
 const listingToForm = (listing: Listing): FormState => ({
     title: listing.title,
     description: listing.description,
+    hostName: listing.host.name,
     pricePerNight: String(listing.price),
     currency: listing.currency ?? 'INR',
     categorySlug: listing.category,
@@ -360,6 +364,11 @@ export const HostNewProperty = () => {
             }
 
             const startingPrice = Math.min(...normalizedRoomTypes.map((roomType) => roomType.pricePerNight));
+            const hostName = form.hostName.trim();
+
+            if (!hostName) {
+                throw new Error('Add the host name for this property.');
+            }
 
             const uploadedPropertyMedia = selectedFiles.length > 0
                 ? await uploadListingImages(session.user.id, selectedFiles)
@@ -377,6 +386,7 @@ export const HostNewProperty = () => {
             const payload = {
                 title: form.title,
                 description: form.description,
+                hostName,
                 pricePerNight: startingPrice,
                 currency: form.currency,
                 categorySlug: form.categorySlug,
@@ -495,7 +505,7 @@ export const HostNewProperty = () => {
     }, [existingMedia, previewUrls, selectedFiles.length, videoLinks]);
 
     if (loading) {
-        return <div className={styles.page}><div className={styles.loading}>Loading property form...</div></div>;
+        return <div className={styles.page}><SkeletonScreen variant="property-form" /></div>;
     }
 
     if (hostApprovalStatus && hostApprovalStatus !== 'approved') {
@@ -524,6 +534,11 @@ export const HostNewProperty = () => {
                 <label className={styles.field}>
                     <span>Description</span>
                     <textarea value={form.description} onChange={updateField('description')} placeholder="A short description of the place" rows={5} required />
+                </label>
+
+                <label className={styles.field}>
+                    <span>Host name</span>
+                    <input value={form.hostName} onChange={updateField('hostName')} placeholder="Name shown as the property host" required />
                 </label>
 
                 <div className={styles.grid}>

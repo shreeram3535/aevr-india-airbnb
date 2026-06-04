@@ -22,13 +22,13 @@
     height: 100%;
     object-fit: cover;
     image-rendering: auto;
-    filter: contrast(1.03) saturate(1.04);
-    transition: transform 0.2s, filter 0.2s;
+    filter: contrast(1) saturate(1.02);
+    transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1), filter 0.6s ease;
 }
 
 .card:hover .image {
-    filter: contrast(1.06) saturate(1.06);
-    transform: scale(1.01);
+    filter: contrast(1.02) saturate(1.04);
+    transform: scale(1.04);
 }
 
 /* Navigation Arrows */
@@ -36,26 +36,25 @@
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    width: 32px;
-    height: 32px;
+    width: 30px;
+    height: 30px;
     border-radius: 50%;
-    background-color: rgba(255, 255, 255, 0.9);
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    /* Slight subtle border */
+    background-color: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.04);
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     opacity: 0;
-    transition: opacity 0.2s, transform 0.1s;
+    transition: opacity 0.25s, transform 0.15s;
     z-index: 2;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
 }
 
 .navButton:hover {
     background-color: #fff;
-    transform: translateY(-50%) scale(1.04);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    transform: translateY(-50%) scale(1.05);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.12);
 }
 
 .prevButton {
@@ -70,39 +69,45 @@
     opacity: 1;
 }
 
-/* Favorite Heart */
+/* Favorite Heart Pop animation */
 .heartButton {
     position: absolute;
     top: 12px;
     right: 12px;
     z-index: 2;
-    color: rgba(0, 0, 0, 0.72);
-    /* Semi-transparent outline */
-    transition: transform 0.1s;
+    color: rgba(255, 255, 255, 0.9);
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .heartButton:active {
-    transform: scale(0.9);
+    transform: scale(0.85);
 }
 
 .heartButton svg {
-    fill: rgba(0, 0, 0, 0.58);
+    fill: rgba(0, 0, 0, 0.45);
     stroke: #fff;
-    stroke-width: 2.4px;
+    stroke-width: 2.2px;
     overflow: visible;
-    /* To allow stroke to sit outside */
 }
 
 .heartButton.favorited svg {
-    fill: var(--color-primary);
-    stroke: var(--color-primary);
+    fill: #ff385c; /* Standard premium travel favorite pink-red */
+    stroke: #ff385c;
+    animation: heartPop 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+}
+
+@keyframes heartPop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.22); }
+    100% { transform: scale(1); }
 }
 
 /* Info Section */
 .info {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 3px;
+    padding-top: 4px;
 }
 
 .headerRow {
@@ -112,57 +117,101 @@
 }
 
 .title {
-    font-weight: var(--font-weight-semibold);
+    font-weight: 600;
     color: var(--text-primary);
-    font-size: var(--font-size-md);
+    font-size: 15px;
+    letter-spacing: -0.01em;
 }
 
 .rating {
     display: flex;
     align-items: center;
     gap: 4px;
-    font-size: var(--font-size-md);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.rating svg {
+    color: #ff385c; /* Accent color star rating */
 }
 
 .subtitle {
     color: var(--text-secondary);
-    font-size: var(--font-size-md);
+    font-size: 14px;
 }
 
 .dates {
     color: var(--text-secondary);
-    font-size: var(--font-size-md);
+    font-size: 14px;
 }
 
 .priceRow {
-    margin-top: 6px;
+    margin-top: 4px;
     display: flex;
     align-items: baseline;
     gap: 4px;
 }
 
 .price {
-    font-weight: var(--font-weight-semibold);
+    font-weight: 700;
     color: var(--text-primary);
-    font-size: var(--font-size-md);
+    font-size: 15px;
 }
 
 .period {
     color: var(--text-primary);
-    font-size: var(--font-size-md);
+    font-size: 14px;
 }
 
+/* Premium Glassmorphic Badge */
 .guestFavorite {
     position: absolute;
     top: 12px;
     left: 12px;
-    background-color: rgba(255, 255, 255, 0.95);
-    padding: 4px 8px;
-    border-radius: var(--radius-md);
-    font-size: var(--font-size-xs);
-    font-weight: var(--font-weight-semibold);
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    padding: 5px 10px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--color-black);
     z-index: 2;
-    box-shadow: var(--shadow-sm);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+    letter-spacing: -0.01em;
+}
+
+/* Carousel Dots Indicator styling */
+.dots {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 5px;
+    z-index: 3;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+
+.card:hover .dots {
+    opacity: 1;
+}
+
+.dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.6);
+    transition: all 0.2s ease;
+}
+
+.activeDot {
+    width: 6px;
+    height: 6px;
+    background-color: #ffffff;
+    transform: scale(1.25);
 }
 
 @media (max-width: 744px) {

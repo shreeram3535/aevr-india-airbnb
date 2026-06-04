@@ -47,6 +47,7 @@ create table if not exists public.listings (
     id uuid primary key default gen_random_uuid(),
     host_id uuid not null references public.profiles (id) on delete cascade,
     category_id uuid not null references public.categories (id),
+    host_name text,
     title text not null,
     description text not null,
     price_per_night numeric(12, 2) not null,
@@ -73,6 +74,7 @@ create table if not exists public.listings (
 -- Backfill columns for environments where listings existed before these fields were introduced.
 alter table public.listings add column if not exists map_link text;
 alter table public.listings add column if not exists room_types jsonb not null default '[]'::jsonb;
+alter table public.listings add column if not exists host_name text;
 alter table public.profiles add column if not exists host_approval_status text not null default 'pending' check (host_approval_status in ('pending', 'approved', 'rejected'));
 alter table public.profiles add column if not exists host_reviewed_at timestamptz;
 alter table public.profiles add column if not exists host_reviewed_by uuid references public.profiles (id);

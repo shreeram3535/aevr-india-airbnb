@@ -4,6 +4,7 @@ import styles from './AdminProperties.module.css';
 import { authService } from '../services/auth';
 import { api } from '../services/api';
 import { hasSupabaseConfig } from '../services/supabase';
+import { SkeletonScreen } from '../components/SkeletonScreen';
 import type { Listing } from '../types';
 
 const formatPrice = (price: number, currency = 'INR') =>
@@ -71,7 +72,7 @@ export const AdminProperties = () => {
     };
 
     if (loading) {
-        return <div className={styles.page}><div className={styles.panel}>Loading admin properties...</div></div>;
+        return <div className={styles.page}><SkeletonScreen variant="admin-table" count={6} /></div>;
     }
 
     return (

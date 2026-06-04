@@ -69,8 +69,8 @@
   --shadow-floating: 0 6px 20px rgba(0, 0, 0, 0.2);
 
   /* Layout */
-  --header-height: 80px;
-  --category-bar-height: 76px;
+  --header-height: 60px;
+  --category-bar-height: 52px;
   --container-padding: 80px;
   /* Desktop padding */
 }
@@ -84,8 +84,8 @@
 @media (max-width: 744px) {
   :root {
     --container-padding: 24px;
-    --header-height: 64px;
-    --category-bar-height: 68px;
+    --header-height: 52px;
+    --category-bar-height: 46px;
     /* Slightly smaller on mobile */
   }
 }

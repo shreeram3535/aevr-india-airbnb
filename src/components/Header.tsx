@@ -110,12 +110,18 @@ export const Header: React.FC = () => {
                     <svg
                         width="32"
                         height="32"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
+                        viewBox="0 0 100 100"
                         xmlns="http://www.w3.org/2000/svg"
                     >
-                        <path d="M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3zm5 15h-2v-6H9v6H7v-7.81l5-4.5 5 4.5V18z" />
-                        <circle cx="12" cy="14" r="1.5" />
+                        <defs>
+                            <linearGradient id="header-logo-grad" x1="0%" y1="100%" x2="100%" y2="0%">
+                                <stop offset="0%" stopColor="#008489" />
+                                <stop offset="100%" stopColor="#00b3b0" />
+                            </linearGradient>
+                        </defs>
+                        <path d="M 50 12 L 85 45 C 89 49, 89 55, 85 59 L 80 64 C 76 68, 70 68, 66 64 L 50 48 L 34 64 C 30 68, 24 68, 20 64 L 15 59 C 11 55, 11 49, 15 45 Z" fill="url(#header-logo-grad)" />
+                        <path d="M 50 38 L 72 60 L 72 78 C 72 84, 67 89, 61 89 L 39 89 C 33 89, 28 84, 28 78 L 28 60 Z" fill="none" stroke="url(#header-logo-grad)" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M 40 70 C 40 70, 50 62, 50 62 C 50 62, 60 70, 60 70" fill="none" stroke="url(#header-logo-grad)" strokeWidth="6" strokeLinecap="round" />
                     </svg>
                     Aevr
                 </a>
