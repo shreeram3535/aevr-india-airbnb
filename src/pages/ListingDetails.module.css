@@ -1,5 +1,5 @@
 .container {
-    max-width: 1120px;
+    max-width: 1280px;
     margin: 0 auto;
     padding: calc(var(--header-height) + 24px) var(--container-padding) 40px;
 }
@@ -51,48 +51,96 @@
     background-color: var(--color-gray-50);
 }
 
-/* Photo Grid */
-.photoGrid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
+/* Desktop Gallery Slider */
+.desktopGallery {
+    position: relative;
+    margin-bottom: 32px;
     border-radius: var(--radius-xl);
     overflow: hidden;
     height: 480px;
-    /* specific height for desktop */
-    margin-bottom: 32px;
-    position: relative;
 }
 
-.mainPhoto {
+.desktopSlider {
+    display: flex;
+    gap: 6px;
     height: 100%;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-behavior: smooth;
+    scrollbar-width: none; /* Hide scrollbar for cleaner look */
 }
 
-.sidePhotos {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: 1fr 1fr;
-    gap: 8px;
+.desktopSlider::-webkit-scrollbar {
+    display: none;
 }
 
-.photo {
-    width: 100%;
+.desktopSlide {
+    flex: 0 0 auto;
     height: 100%;
-    object-fit: cover;
     cursor: pointer;
-    image-rendering: auto;
-    filter: contrast(1.03) saturate(1.04);
+    overflow: hidden;
+    position: relative;
+    border-radius: var(--radius-md);
+}
+
+.desktopSlideMedia {
+    height: 100%;
+    width: auto;
+    display: block;
+    object-fit: contain; /* Do not crop the image, show original aspect ratio */
     transition: transform 0.2s, filter 0.2s;
 }
 
-.photo:hover {
-    filter: contrast(1.06) saturate(1.06);
-    transform: scale(1.01);
+.desktopSlide:hover .desktopSlideMedia {
+    transform: scale(1.02);
 }
 
-.mediaCard {
-    width: 100%;
+.desktopVideoCard {
     height: 100%;
+    aspect-ratio: 16/9;
+    border: 1px solid var(--color-gray-100);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 24px;
+    background:
+        radial-gradient(circle at top, rgba(0, 132, 137, 0.18), transparent 45%),
+        linear-gradient(180deg, #f8fcfc 0%, #eef7f7 100%);
+    color: var(--color-primary);
+}
+
+.galleryNavBtn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid var(--color-gray-100);
+    box-shadow: var(--shadow-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+    transition: background-color 0.2s, transform 0.2s;
+    color: var(--text-primary);
+}
+
+.galleryNavBtn:hover {
+    background: #ffffff;
+    transform: translateY(-50%) scale(1.05);
+}
+
+.galleryNavBtnLeft {
+    left: 24px;
+}
+
+.galleryNavBtnRight {
+    right: 24px;
 }
 
 .mediaFrame {
@@ -678,7 +726,7 @@
         padding: calc(var(--header-height) + 24px) 0 40px;
     }
 
-    .photoGrid {
+    .desktopGallery {
         display: none;
     }
 
