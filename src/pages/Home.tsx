@@ -18,7 +18,10 @@ import {
     Gem,
     Castle,
     Tent,
-    Star
+    Star,
+    Mail,
+    Instagram,
+    MessageCircle
 } from 'lucide-react';
 import styles from '../App.module.css'; // Reusing the grid styles from App module
 import { Categories } from '../components/Categories';
@@ -415,6 +418,43 @@ export const Home = () => {
                     </div>
                 )}
             </main>
+
+            <div className={styles.contactFloatGroup}>
+                <a
+                    className={`${styles.contactFloatButton} ${styles.whatsappFloat}`}
+                    href="https://wa.me/918890807482"
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label="Message on WhatsApp"
+                >
+                    <img src="/whatsapp.svg" alt="" aria-hidden="true" />
+                </a>
+                <a
+                    className={`${styles.contactFloatButton} ${styles.emailFloat}`}
+                    href="https://mail.google.com/mail/?view=cm&fs=1&to=Aevrindia%40gmail.com"
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label="Email Aevrindia@gmail.com"
+                >
+                    <Mail size={30} aria-hidden="true" />
+                </a>
+                <a
+                    className={`${styles.contactFloatButton} ${styles.instagramFloat}`}
+                    href="https://www.instagram.com/aevrindia?igsh=c2dna3Z3Zm5hN293"
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label="Open Aevr India on Instagram"
+                >
+                    <Instagram size={30} aria-hidden="true" />
+                </a>
+                <button
+                    className={`${styles.contactFloatButton} ${styles.chatFloat}`}
+                    type="button"
+                    aria-label="Open contact options"
+                >
+                    <MessageCircle size={30} aria-hidden="true" />
+                </button>
+            </div>
         </>
     );
 };

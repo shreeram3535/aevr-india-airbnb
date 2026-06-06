@@ -419,6 +419,7 @@
     .favoriteToggle {
         grid-column: 1 / -1;
     }
+
 }
 
 .emptyState {
@@ -491,6 +492,172 @@
     border-color: var(--color-primary);
     color: var(--color-primary);
     background: rgba(0, 132, 137, 0.08);
+}
+
+.contactFloatGroup {
+    --contact-float-size: 62px;
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 1000;
+    width: var(--contact-float-size);
+    height: var(--contact-float-size);
+}
+
+.contactFloatGroup::before {
+    content: "";
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 210px;
+    height: 210px;
+    border-radius: 50%;
+}
+
+.contactFloatButton {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--contact-float-size);
+    height: var(--contact-float-size);
+    padding: 10px;
+    border: 1px solid var(--contact-border, rgba(0, 0, 0, 0.08));
+    border-radius: 50%;
+    background: var(--contact-background, var(--color-white));
+    color: var(--contact-color, var(--text-primary));
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16);
+    cursor: pointer;
+    text-decoration: none;
+    transform: translate(var(--contact-x, 0), var(--contact-y, 0)) scale(var(--contact-scale, 1));
+    transition: transform 0.26s cubic-bezier(0.2, 0.9, 0.2, 1.2), box-shadow 0.22s ease, opacity 0.18s ease;
+}
+
+.contactFloatButton:hover {
+    color: var(--contact-color, var(--text-primary));
+    --contact-scale: 1.12;
+    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.24);
+}
+
+.contactFloatButton:focus-visible {
+    outline: 3px solid var(--contact-focus, rgba(0, 0, 0, 0.18));
+    outline-offset: 3px;
+}
+
+.whatsappFloat,
+.emailFloat,
+.instagramFloat {
+    opacity: 0;
+    pointer-events: none;
+    --contact-scale: 0.78;
+}
+
+.contactFloatGroup:hover .whatsappFloat {
+    --contact-x: -132px;
+    --contact-y: 0;
+    --contact-scale: 1;
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.contactFloatGroup:hover .emailFloat {
+    --contact-x: -94px;
+    --contact-y: -94px;
+    --contact-scale: 1;
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.contactFloatGroup:hover .instagramFloat {
+    --contact-x: 0;
+    --contact-y: -132px;
+    --contact-scale: 1;
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.chatFloat {
+    z-index: 2;
+    --contact-background: #111827;
+    --contact-border: rgba(17, 24, 39, 0.18);
+    --contact-color: var(--color-white);
+    --contact-focus: rgba(17, 24, 39, 0.25);
+}
+
+.whatsappFloat {
+    --contact-border: rgba(37, 211, 102, 0.32);
+    --contact-focus: rgba(37, 211, 102, 0.35);
+}
+
+.emailFloat {
+    --contact-border: rgba(234, 67, 53, 0.28);
+    --contact-color: #d93025;
+    --contact-focus: rgba(234, 67, 53, 0.32);
+}
+
+.instagramFloat {
+    --contact-background: radial-gradient(circle at 30% 107%, #fdf497 0 18%, #fd5949 42%, #d6249f 64%, #285aeb 100%);
+    --contact-border: rgba(225, 48, 108, 0.28);
+    --contact-color: var(--color-white);
+    --contact-focus: rgba(225, 48, 108, 0.32);
+}
+
+.whatsappFloat img {
+    width: 40px;
+    height: 40px;
+    flex: 0 0 auto;
+}
+
+.emailFloat svg,
+.instagramFloat svg,
+.chatFloat svg {
+    width: 30px;
+    height: 30px;
+    stroke-width: 2.2;
+}
+
+.instagramFloat svg {
+    stroke: var(--color-white);
+}
+
+@media (max-width: 744px) {
+    .contactFloatGroup {
+        --contact-float-size: 56px;
+        right: 16px;
+        bottom: 16px;
+    }
+
+    .contactFloatGroup::before {
+        width: 180px;
+        height: 180px;
+    }
+
+    .contactFloatGroup:hover .whatsappFloat {
+        --contact-x: -112px;
+    }
+
+    .contactFloatGroup:hover .emailFloat {
+        --contact-x: -80px;
+        --contact-y: -80px;
+    }
+
+    .contactFloatGroup:hover .instagramFloat {
+        --contact-y: -112px;
+    }
+
+    .whatsappFloat img {
+        width: 36px;
+        height: 36px;
+    }
+
+    .emailFloat svg,
+    .instagramFloat svg,
+    .chatFloat svg {
+        width: 28px;
+        height: 28px;
+    }
 }
 
 /* My Visual Diary Premium Carousel Styles - ULTRA COMPACT SPACE-EFFICIENT VERSION */
