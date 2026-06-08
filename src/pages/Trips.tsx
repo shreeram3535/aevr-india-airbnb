@@ -5,6 +5,7 @@ import styles from './Trips.module.css';
 import { api } from '../services/api';
 import { authService } from '../services/auth';
 import { hasSupabaseConfig } from '../services/supabase';
+import { SkeletonScreen } from '../components/SkeletonScreen';
 import type { BookingHistoryItem } from '../types';
 
 type SessionUser = {
@@ -79,7 +80,7 @@ export const Trips = () => {
     }, [navigate]);
 
     if (loading) {
-        return <div className={styles.page}><div className={styles.loading}>Loading your trips...</div></div>;
+        return <div className={styles.page}><SkeletonScreen variant="trips" count={3} /></div>;
     }
 
     if (error) {

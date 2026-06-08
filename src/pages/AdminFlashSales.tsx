@@ -4,6 +4,7 @@ import styles from './AdminFlashSales.module.css';
 import { api } from '../services/api';
 import { authService } from '../services/auth';
 import { hasSupabaseConfig } from '../services/supabase';
+import { SkeletonScreen } from '../components/SkeletonScreen';
 import type { FlashSaleDrop, FlashSaleType, Listing } from '../types';
 
 const toDatetimeLocal = (iso: string) => {
@@ -139,7 +140,7 @@ export const AdminFlashSales = () => {
         }
     };
 
-    if (loading) return <div className={styles.page}><div className={styles.panel}>Loading flash sales...</div></div>;
+    if (loading) return <div className={styles.page}><SkeletonScreen variant="admin-form" /></div>;
     if (error && !listings.length) return <div className={styles.page}><div className={styles.panel}>{error}</div></div>;
 
     return (

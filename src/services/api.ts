@@ -23,6 +23,16 @@ import { supabase } from './supabase';
 import { coerceMediaItem, coerceMediaList, getImageUrlsFromMedia } from './media';
 
 const DELAY_MS = 800;
+const SHOW_DEV_ERRORS = import.meta.env.DEV;
+
+const describeSupabaseError = (error: unknown) => {
+    if (!error || typeof error !== 'object') {
+        return 'Unknown Supabase error.';
+    }
+
+    const record = error as { message?: string; details?: string; hint?: string };
+    return [record.message, record.details, record.hint].filter(Boolean).join(' ') || 'Unknown Supabase error.';
+};
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 
 type JoinedEntity<T> = T | T[] | null;
@@ -171,7 +181,6 @@ export type CurrentUserSummary = {
 const LISTING_SELECT = `
     host_id,
     id,
-    host_name,
     map_link,
     title,
     description,
@@ -221,6 +230,18 @@ const LISTING_SELECT = `
         )
     )
 `;
+const LISTING_SELECT_WITHOUT_HOST_NAME = LISTING_SELECT.replace(/\n\s*host_name,/, '');
+
+const isMissingHostNameColumnError = (error: unknown) => {
+    if (!error || typeof error !== 'object') {
+        return false;
+    }
+
+    const record = error as { message?: unknown; details?: unknown; hint?: unknown };
+    return [record.message, record.details, record.hint]
+        .filter((value): value is string => typeof value === 'string')
+        .some((value) => value.toLowerCase().includes('host_name'));
+};
 
 const first = <T,>(value: JoinedEntity<T>): T | null => {
     if (Array.isArray(value)) {
@@ -457,13 +478,14 @@ const FLASH_SALE_SELECT = `
         ${LISTING_SELECT}
     )
 `;
+const FLASH_SALE_SELECT_WITHOUT_HOST_NAME = FLASH_SALE_SELECT.replace(/\n\s*host_name,/, '');
 
 const fetchActiveFlashDrop = async (nowIso: string): Promise<FlashSaleDrop | null> => {
     if (!supabase) {
         return null;
     }
 
-    const { data, error } = await supabase
+    let { data, error } = await supabase
         .from('flash_sale_drops')
         .select(FLASH_SALE_SELECT)
         .eq('is_active', true)
@@ -472,6 +494,21 @@ const fetchActiveFlashDrop = async (nowIso: string): Promise<FlashSaleDrop | nul
         .order('start_at', { ascending: false })
         .limit(1)
         .maybeSingle();
+
+    if (isMissingHostNameColumnError(error)) {
+        const fallbackResult = await supabase
+            .from('flash_sale_drops')
+            .select(FLASH_SALE_SELECT_WITHOUT_HOST_NAME)
+            .eq('is_active', true)
+            .lte('start_at', nowIso)
+            .gt('end_at', nowIso)
+            .order('start_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+        data = fallbackResult.data as typeof data;
+        error = fallbackResult.error;
+    }
 
     if (error || !data) {
         return null;
@@ -627,9 +664,14 @@ const sortListingRows = (rows: SupabaseListingRow[], sort: ListingSortOption) =>
 
 const fetchSupabaseListings = async (filters: ListingFilters = {}): Promise<ListingsResponse> => {
     if (!supabase) {
+        if (SHOW_DEV_ERRORS) {
+            throw new Error('Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to .env, then restart the dev server.');
+        }
+
         return [];
     }
 
+    const supabaseClient = supabase;
     const {
         category,
         search,
@@ -644,59 +686,77 @@ const fetchSupabaseListings = async (filters: ListingFilters = {}): Promise<List
 
     const categoryId = category ? await resolveCategoryId(category) : null;
     if (category && category !== 'icons' && !categoryId) {
+        if (SHOW_DEV_ERRORS) {
+            throw new Error(`Category "${category}" was not found in Supabase. Seed active categories or clear the category filter.`);
+        }
+
         return [];
     }
 
-    let query = supabase
-        .from('listings')
-        .select(LISTING_SELECT)
-        .eq('is_active', true);
+    const buildQuery = (selectColumns: string) => {
+        let query = supabaseClient
+            .from('listings')
+            .select(selectColumns)
+            .eq('is_active', true);
 
-    if (categoryId) {
-        query = query.eq('category_id', categoryId);
-    }
+        if (categoryId) {
+            query = query.eq('category_id', categoryId);
+        }
 
-    if (typeof minPrice === 'number' && !Number.isNaN(minPrice)) {
-        query = query.gte('price_per_night', minPrice);
-    }
+        if (typeof minPrice === 'number' && !Number.isNaN(minPrice)) {
+            query = query.gte('price_per_night', minPrice);
+        }
 
-    if (typeof maxPrice === 'number' && !Number.isNaN(maxPrice)) {
-        query = query.lte('price_per_night', maxPrice);
-    }
+        if (typeof maxPrice === 'number' && !Number.isNaN(maxPrice)) {
+            query = query.lte('price_per_night', maxPrice);
+        }
 
-    if (typeof guests === 'number' && !Number.isNaN(guests)) {
-        query = query.gte('guest_count_max', guests);
-    }
+        if (typeof guests === 'number' && !Number.isNaN(guests)) {
+            query = query.gte('guest_count_max', guests);
+        }
 
-    if (typeof bedrooms === 'number' && !Number.isNaN(bedrooms)) {
-        query = query.gte('bedrooms', bedrooms);
-    }
+        if (typeof bedrooms === 'number' && !Number.isNaN(bedrooms)) {
+            query = query.gte('bedrooms', bedrooms);
+        }
 
-    if (typeof baths === 'number' && !Number.isNaN(baths)) {
-        query = query.gte('baths', baths);
-    }
+        if (typeof baths === 'number' && !Number.isNaN(baths)) {
+            query = query.gte('baths', baths);
+        }
 
-    if (guestFavoriteOnly) {
-        query = query.eq('is_guest_favorite', true);
-    }
+        if (guestFavoriteOnly) {
+            query = query.eq('is_guest_favorite', true);
+        }
 
-    if (search?.trim()) {
-        const q = search.trim();
-        query = query.or(`city.ilike.%${q}%,country.ilike.%${q}%,title.ilike.%${q}%`);
-    }
+        if (search?.trim()) {
+            const q = search.trim();
+            query = query.or(`city.ilike.%${q}%,country.ilike.%${q}%,title.ilike.%${q}%`);
+        }
 
-    const { data, error } = await query.order(
-        sort === 'price_asc'
-            ? 'price_per_night'
-            : sort === 'price_desc'
+        return query.order(
+            sort === 'price_asc'
                 ? 'price_per_night'
-                : sort === 'rating_desc'
-                    ? 'rating'
-                    : 'created_at',
-        { ascending: sort === 'price_asc' }
-    );
+                : sort === 'price_desc'
+                    ? 'price_per_night'
+                    : sort === 'rating_desc'
+                        ? 'rating'
+                        : 'created_at',
+            { ascending: sort === 'price_asc' }
+        );
+    };
+
+    let { data, error } = await buildQuery(LISTING_SELECT);
+
+    if (isMissingHostNameColumnError(error)) {
+        const fallbackResult = await buildQuery(LISTING_SELECT_WITHOUT_HOST_NAME);
+        data = fallbackResult.data as typeof data;
+        error = fallbackResult.error;
+    }
 
     if (error || !data) {
+        if (SHOW_DEV_ERRORS) {
+            throw new Error(`Could not load listings from Supabase. ${describeSupabaseError(error)}`);
+        }
+
         return [];
     }
 
@@ -711,10 +771,20 @@ const fetchSupabaseAdminListings = async (): Promise<ListingsResponse> => {
         return [];
     }
 
-    const { data, error } = await supabase
+    let { data, error } = await supabase
         .from('listings')
         .select(LISTING_SELECT)
         .order('created_at', { ascending: false });
+
+    if (isMissingHostNameColumnError(error)) {
+        const fallbackResult = await supabase
+            .from('listings')
+            .select(LISTING_SELECT_WITHOUT_HOST_NAME)
+            .order('created_at', { ascending: false });
+
+        data = fallbackResult.data as typeof data;
+        error = fallbackResult.error;
+    }
 
     if (error || !data) {
         return [];
@@ -728,11 +798,22 @@ const fetchSupabaseListingById = async (id: string): Promise<Listing | undefined
         return undefined;
     }
 
-    const { data, error } = await supabase
+    let { data, error } = await supabase
         .from('listings')
         .select(LISTING_SELECT)
         .eq('id', id)
         .maybeSingle();
+
+    if (isMissingHostNameColumnError(error)) {
+        const fallbackResult = await supabase
+            .from('listings')
+            .select(LISTING_SELECT_WITHOUT_HOST_NAME)
+            .eq('id', id)
+            .maybeSingle();
+
+        data = fallbackResult.data as typeof data;
+        error = fallbackResult.error;
+    }
 
     if (error || !data) {
         return undefined;
@@ -985,11 +1066,18 @@ export const api = {
     },
 
     fetchListings: (filters: ListingFilters = {}): Promise<ListingsResponse> => {
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
             setTimeout(() => {
                 fetchSupabaseListings(filters)
                     .then(resolve)
-                    .catch(() => resolve([]));
+                    .catch((error) => {
+                        if (SHOW_DEV_ERRORS) {
+                            reject(error);
+                            return;
+                        }
+
+                        resolve([]);
+                    });
             }, DELAY_MS);
         });
     },
@@ -1299,11 +1387,22 @@ export const api = {
             return [];
         }
 
-        const { data, error } = await supabase
+        let { data, error } = await supabase
             .from('listings')
             .select(LISTING_SELECT)
             .eq('host_id', hostId)
             .order('created_at', { ascending: false });
+
+        if (isMissingHostNameColumnError(error)) {
+            const fallbackResult = await supabase
+                .from('listings')
+                .select(LISTING_SELECT_WITHOUT_HOST_NAME)
+                .eq('host_id', hostId)
+                .order('created_at', { ascending: false });
+
+            data = fallbackResult.data as typeof data;
+            error = fallbackResult.error;
+        }
 
         if (error || !data) {
             return [];
@@ -1350,6 +1449,10 @@ export const api = {
 
         if (listingError || !listing) {
             throwSupabaseError(listingError, 'Unable to create listing');
+        }
+
+        if (!listing) {
+            throw new Error('Unable to create listing');
         }
 
         await persistListingMedia(listing.id, input.media, input.title);

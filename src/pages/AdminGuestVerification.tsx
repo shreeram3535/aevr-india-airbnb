@@ -4,6 +4,7 @@ import styles from './AdminGuestVerification.module.css';
 import { api } from '../services/api';
 import { authService } from '../services/auth';
 import { hasSupabaseConfig } from '../services/supabase';
+import { SkeletonScreen } from '../components/SkeletonScreen';
 import type { GuestVerificationUser } from '../types';
 
 export const AdminGuestVerification = () => {
@@ -60,7 +61,7 @@ export const AdminGuestVerification = () => {
     };
 
     if (loading) {
-        return <div className={styles.page}><div className={styles.card}>Loading guest verification...</div></div>;
+        return <div className={styles.page}><SkeletonScreen variant="admin-table" count={5} /></div>;
     }
 
     if (error && guests.length === 0) {

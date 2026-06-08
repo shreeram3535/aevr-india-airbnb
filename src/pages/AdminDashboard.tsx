@@ -4,6 +4,7 @@ import styles from './AdminDashboard.module.css';
 import { authService } from '../services/auth';
 import { api } from '../services/api';
 import { hasSupabaseConfig } from '../services/supabase';
+import { SkeletonScreen } from '../components/SkeletonScreen';
 
 export const AdminDashboard = () => {
     const navigate = useNavigate();
@@ -46,7 +47,7 @@ export const AdminDashboard = () => {
     }, [navigate]);
 
     if (loading) {
-        return <div className={styles.page}><div className={styles.panel}>Loading admin dashboard...</div></div>;
+        return <div className={styles.page}><SkeletonScreen variant="admin-dashboard" /></div>;
     }
 
     if (error) {

@@ -32,6 +32,7 @@ import {
     ChevronLeft,
     ChevronRight,
 } from 'lucide-react';
+import { SkeletonScreen } from '../components/SkeletonScreen';
 import styles from './ListingDetails.module.css';
 import { api } from '../services/api';
 import { authService } from '../services/auth';
@@ -326,6 +327,7 @@ export const ListingDetails = () => {
     const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
     const autoSubmitHandled = useRef(false);
     const mobileSliderRef = useRef<HTMLDivElement | null>(null);
+    const desktopSliderRef = useRef<HTMLDivElement | null>(null);
 
     const [checkIn, setCheckIn] = useState(() => {
         const tomorrow = new Date();
@@ -426,10 +428,6 @@ export const ListingDetails = () => {
         const roomMedia = selectedRoomType?.media ?? [];
         return roomMedia.length > 0 ? roomMedia : listingMedia;
     }, [listingMedia, selectedRoomType?.media]);
-    const coverMedia = galleryMedia[0] ?? listingMedia[0] ?? null;
-    const coverImage = coverMedia?.kind === 'image'
-        ? coverMedia.url
-        : coverMedia?.thumbnailUrl ?? listing?.images[0] ?? getFallbackImage();
     const localExperiences = useMemo(() => listing ? getLocalExperiences(listing) : [], [listing]);
     const hostPhone = normalizePhoneNumber(listing?.host.phone);
     const displayPhone = formatPhoneDisplay(listing?.host.phone);
@@ -482,6 +480,16 @@ export const ListingDetails = () => {
         setCurrentMediaIndex(nextIndex);
         scrollToMediaIndex(nextIndex);
     }, [currentMediaIndex, galleryMedia.length, scrollToMediaIndex]);
+
+    const handleDesktopScroll = useCallback((direction: 'prev' | 'next') => {
+        const slider = desktopSliderRef.current;
+        if (!slider) return;
+        const scrollAmount = slider.clientWidth * 0.75;
+        slider.scrollBy({
+            left: direction === 'next' ? scrollAmount : -scrollAmount,
+            behavior: 'smooth',
+        });
+    }, []);
 
     const submitBooking = useCallback(
         async (guestId: string, bookingOverride?: PendingBooking) => {
@@ -650,7 +658,7 @@ export const ListingDetails = () => {
             : 'Sign in to reserve this stay. We will save your selection while you log in.';
 
     if (loading) {
-        return <div className={styles.container} style={{ height: '80vh' }} />;
+        return <SkeletonScreen variant="listing-details" />;
     }
 
     if (!listing) {
@@ -690,49 +698,61 @@ export const ListingDetails = () => {
                 </div>
             </div>
 
-            <div className={styles.photoGrid}>
-                <div className={styles.mainPhoto} onClick={() => setShowPhotosModal(true)}>
-                    {coverMedia?.kind === 'video' && coverMedia.embedUrl ? (
-                        <iframe
-                            src={coverMedia.embedUrl}
-                            title={`${listing.title} video`}
-                            className={styles.mediaFrame}
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowFullScreen
-                        />
-                    ) : (
-                        <img src={coverImage} alt={listing.title} className={styles.photo} onError={renderImageFallback} />
-                    )}
-                </div>
-                <div className={styles.sidePhotos}>
-                    {galleryMedia.slice(1, 5).map((item, idx) => (
-                        item.kind === 'video' ? (
-                            <div key={`${item.url}-${idx}`} className={styles.mediaCard} onClick={() => setShowPhotosModal(true)}>
-                                {item.embedUrl ? (
+            <div className={styles.desktopGallery}>
+                {galleryMedia.length > 1 && (
+                    <>
+                        <button
+                            type="button"
+                            className={`${styles.galleryNavBtn} ${styles.galleryNavBtnLeft}`}
+                            onClick={() => handleDesktopScroll('prev')}
+                            aria-label="Previous photos"
+                        >
+                            <ChevronLeft size={24} />
+                        </button>
+                        <button
+                            type="button"
+                            className={`${styles.galleryNavBtn} ${styles.galleryNavBtnRight}`}
+                            onClick={() => handleDesktopScroll('next')}
+                            aria-label="Next photos"
+                        >
+                            <ChevronRight size={24} />
+                        </button>
+                    </>
+                )}
+                <div className={styles.desktopSlider} ref={desktopSliderRef}>
+                    {galleryMedia.map((item, idx) => (
+                        <div
+                            key={`${item.url}-${idx}`}
+                            className={styles.desktopSlide}
+                            onClick={() => {
+                                setCurrentMediaIndex(idx);
+                                setShowPhotosModal(true);
+                            }}
+                        >
+                            {item.kind === 'video' ? (
+                                item.embedUrl ? (
                                     <iframe
                                         src={item.embedUrl}
-                                        title={`${listing.title} video ${idx + 2}`}
-                                        className={styles.mediaFrame}
+                                        title={`${listing.title} video ${idx + 1}`}
+                                        className={styles.desktopSlideMedia}
                                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                         allowFullScreen
                                     />
                                 ) : (
-                                    <div className={styles.videoLinkCard}>
-                                        <PlayCircle size={26} />
+                                    <div className={styles.desktopVideoCard}>
+                                        <PlayCircle size={36} />
                                         <span>Open video</span>
                                     </div>
-                                )}
-                            </div>
-                        ) : (
-                            <img
-                                key={`${item.url}-${idx}`}
-                                src={item.url}
-                                alt={`${listing.title} view ${idx + 2}`}
-                                className={styles.photo}
-                                onClick={() => setShowPhotosModal(true)}
-                                onError={renderImageFallback}
-                            />
-                        )
+                                )
+                            ) : (
+                                <img
+                                    src={item.url}
+                                    alt={`${listing.title} view ${idx + 1}`}
+                                    className={styles.desktopSlideMedia}
+                                    onError={renderImageFallback}
+                                />
+                            )}
+                        </div>
                     ))}
                 </div>
                 <button className={styles.showAllButton} onClick={() => setShowPhotosModal(true)}>

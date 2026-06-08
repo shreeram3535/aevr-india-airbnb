@@ -7,6 +7,7 @@ import { authService } from '../services/auth';
 import { hasSupabaseConfig } from '../services/supabase';
 import { uploadListingImages } from '../services/storage';
 import { HostApprovalStatusView } from '../components/HostApprovalStatus';
+import { SkeletonScreen } from '../components/SkeletonScreen';
 import type { AvailabilityBlock, AvailabilityBlockStatus, Category, Listing, ListingMediaItem, RoomType } from '../types';
 import { createExternalVideoMedia } from '../services/media';
 
@@ -504,7 +505,7 @@ export const HostNewProperty = () => {
     }, [existingMedia, previewUrls, selectedFiles.length, videoLinks]);
 
     if (loading) {
-        return <div className={styles.page}><div className={styles.loading}>Loading property form...</div></div>;
+        return <div className={styles.page}><SkeletonScreen variant="property-form" /></div>;
     }
 
     if (hostApprovalStatus && hostApprovalStatus !== 'approved') {
