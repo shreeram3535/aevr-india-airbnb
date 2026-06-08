@@ -20,7 +20,6 @@ import {
     Tent,
     Star,
     Mail,
-    Instagram,
     MessageCircle
 } from 'lucide-react';
 import styles from '../App.module.css'; // Reusing the grid styles from App module
@@ -461,7 +460,7 @@ export const Home = () => {
                     rel="noreferrer"
                     aria-label="Open Aevr India on Instagram"
                 >
-                    <Instagram size={30} aria-hidden="true" />
+                    <img src="/instagram.svg" alt="" aria-hidden="true" />
                 </a>
                 <button
                     className={`${styles.contactFloatButton} ${styles.chatFloat}`}

@@ -115,12 +115,17 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
                     {/* Carousel Dots Indicators */}
                     {listing.images.length > 1 && (
                         <div className={styles.dots}>
-                            {listing.images.map((_, index) => (
-                                <div
-                                    key={index}
-                                    className={`${styles.dot} ${index === currentImageIndex ? styles.activeDot : ''}`}
-                                />
-                            ))}
+                            {Array.from({ length: Math.min(3, listing.images.length) }).map((_, index) => {
+                                const activeDotIndex = listing.images.length <= 3
+                                    ? currentImageIndex
+                                    : Math.min(2, Math.floor((currentImageIndex / listing.images.length) * 3));
+                                return (
+                                    <div
+                                        key={index}
+                                        className={`${styles.dot} ${index === activeDotIndex ? styles.activeDot : ''}`}
+                                    />
+                                );
+                            })}
                         </div>
                     )}
 

@@ -512,7 +512,7 @@
 }
 
 .contactFloatGroup {
-    --contact-float-size: 62px;
+    --contact-float-size: 48px;
     position: fixed;
     right: 24px;
     bottom: 24px;
@@ -526,8 +526,8 @@
     position: absolute;
     right: 0;
     bottom: 0;
-    width: 210px;
-    height: 210px;
+    width: 160px;
+    height: 160px;
     border-radius: 50%;
 }
 
@@ -540,7 +540,7 @@
     justify-content: center;
     width: var(--contact-float-size);
     height: var(--contact-float-size);
-    padding: 10px;
+    padding: 8px;
     border: 1px solid var(--contact-border, rgba(0, 0, 0, 0.08));
     border-radius: 50%;
     background: var(--contact-background, var(--color-white));
@@ -572,7 +572,7 @@
 }
 
 .contactFloatGroup:hover .whatsappFloat {
-    --contact-x: -132px;
+    --contact-x: -100px;
     --contact-y: 0;
     --contact-scale: 1;
     opacity: 1;
@@ -580,8 +580,8 @@
 }
 
 .contactFloatGroup:hover .emailFloat {
-    --contact-x: -94px;
-    --contact-y: -94px;
+    --contact-x: -71px;
+    --contact-y: -71px;
     --contact-scale: 1;
     opacity: 1;
     pointer-events: auto;
@@ -589,7 +589,7 @@
 
 .contactFloatGroup:hover .instagramFloat {
     --contact-x: 0;
-    --contact-y: -132px;
+    --contact-y: -100px;
     --contact-scale: 1;
     opacity: 1;
     pointer-events: auto;
@@ -615,65 +615,59 @@
 }
 
 .instagramFloat {
-    --contact-background: radial-gradient(circle at 30% 107%, #fdf497 0 18%, #fd5949 42%, #d6249f 64%, #285aeb 100%);
-    --contact-border: rgba(225, 48, 108, 0.28);
-    --contact-color: var(--color-white);
-    --contact-focus: rgba(225, 48, 108, 0.32);
+    --contact-border: rgba(225, 48, 108, 0.24);
+    --contact-focus: rgba(225, 48, 108, 0.28);
 }
 
-.whatsappFloat img {
-    width: 40px;
-    height: 40px;
+.whatsappFloat img,
+.instagramFloat img {
+    width: 30px;
+    height: 30px;
     flex: 0 0 auto;
 }
 
 .emailFloat svg,
-.instagramFloat svg,
 .chatFloat svg {
-    width: 30px;
-    height: 30px;
+    width: 22px;
+    height: 22px;
     stroke-width: 2.2;
-}
-
-.instagramFloat svg {
-    stroke: var(--color-white);
 }
 
 @media (max-width: 744px) {
     .contactFloatGroup {
-        --contact-float-size: 56px;
+        --contact-float-size: 40px;
         right: 16px;
         bottom: 16px;
     }
 
     .contactFloatGroup::before {
-        width: 180px;
-        height: 180px;
+        width: 130px;
+        height: 130px;
     }
 
     .contactFloatGroup:hover .whatsappFloat {
-        --contact-x: -112px;
+        --contact-x: -84px;
     }
 
     .contactFloatGroup:hover .emailFloat {
-        --contact-x: -80px;
-        --contact-y: -80px;
+        --contact-x: -60px;
+        --contact-y: -60px;
     }
 
     .contactFloatGroup:hover .instagramFloat {
-        --contact-y: -112px;
+        --contact-y: -84px;
     }
 
-    .whatsappFloat img {
-        width: 36px;
-        height: 36px;
+    .whatsappFloat img,
+    .instagramFloat img {
+        width: 24px;
+        height: 24px;
     }
 
     .emailFloat svg,
-    .instagramFloat svg,
     .chatFloat svg {
-        width: 28px;
-        height: 28px;
+        width: 18px;
+        height: 18px;
     }
 }
 
