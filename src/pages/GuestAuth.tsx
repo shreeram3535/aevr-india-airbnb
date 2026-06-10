@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import styles from './HostAuth.module.css';
+import { Eye, EyeOff, ArrowLeft, Compass } from 'lucide-react';
+import styles from './GuestAuth.module.css';
 import { authService } from '../services/auth';
 import { hasSupabaseConfig } from '../services/supabase';
 import { SkeletonScreen } from '../components/SkeletonScreen';
@@ -47,6 +48,8 @@ const getSafeNextPath = (value: string | null) => {
     return value;
 };
 
+
+
 export const GuestAuth = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
@@ -57,9 +60,11 @@ export const GuestAuth = () => {
     const [fullName, setFullName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [message, setMessage] = useState<string | null>(null);
+    const [messageType, setMessageType] = useState<'info' | 'error'>('error');
 
     useEffect(() => {
         const loadSession = async () => {
@@ -85,6 +90,7 @@ export const GuestAuth = () => {
                 const { error } = await authService.signIn(email, password);
                 if (error) {
                     setMessage(error.message);
+                    setMessageType('error');
                     return;
                 }
 
@@ -95,16 +101,19 @@ export const GuestAuth = () => {
             const { error, data } = await authService.signUp(email, password, fullName, 'guest');
             if (error) {
                 setMessage(error.message);
+                setMessageType('error');
                 return;
             }
 
             if (data.session) {
                 navigate(nextPath, { replace: true });
             } else {
+                setMessageType('info');
                 setMessage('Account created. Check your email to verify your account, then come back to finish your booking.');
             }
         } catch (error) {
             setMessage(error instanceof Error ? error.message : 'Unable to continue');
+            setMessageType('error');
         } finally {
             setSubmitting(false);
         }
@@ -116,46 +125,41 @@ export const GuestAuth = () => {
 
     return (
         <div className={styles.page}>
-            <div className={styles.hero}>
-                <div className={styles.badge}>Guest mode</div>
-                <h1>{pendingBooking ? 'Create your guest account to finish booking' : 'Sign in to book and manage your trips'}</h1>
-                <p>
-                    Create a guest account to reserve a stay, track your bookings, and keep your order history in one place.
-                </p>
+            <button type="button" className={styles.backLink} onClick={() => navigate('/')}>
+                <ArrowLeft size={16} /> Back to browsing
+            </button>
+
+            <div className={styles.formCard}>
+                <div className={styles.brandLogo}>
+                    <Compass size={32} strokeWidth={1.5} />
+                    <span>AEVR Guest</span>
+                </div>
+
                 {pendingBooking && (
-                    <div className={styles.alert}>
-                        You have a booking waiting for you. After you sign in or create your guest account, we’ll take you back to the room and complete it.
+                    <div className={styles.bookingNotice}>
+                        <strong>Booking reservation pending</strong>
+                        <span>Sign in or create an account below, and we'll automatically route you to complete your reservation.</span>
                     </div>
                 )}
-                <div className={styles.heroStats}>
-                    <div>
-                        <strong>Book easily</strong>
-                        <span>Reserve after login</span>
-                    </div>
-                    <div>
-                        <strong>Track trips</strong>
-                        <span>See all bookings</span>
-                    </div>
-                    <div>
-                        <strong>Simple</strong>
-                        <span>Email and password</span>
-                    </div>
-                </div>
-            </div>
 
-            <div className={styles.card}>
+                <div className={styles.formHeader}>
+                    <h2>{mode === 'sign-in' ? 'Welcome back' : 'Create guest account'}</h2>
+                    <p>{mode === 'sign-in' ? 'Sign in to manage your trips.' : 'Sign up to start booking stays.'}</p>
+                </div>
+
+                {/* Tab Switcher */}
                 <div className={styles.tabs}>
                     <button
                         type="button"
-                        className={mode === 'sign-in' ? styles.activeTab : styles.tab}
-                        onClick={() => setMode('sign-in')}
+                        className={`${styles.tab} ${mode === 'sign-in' ? styles.tabActive : ''}`}
+                        onClick={() => { setMode('sign-in'); setMessage(null); }}
                     >
                         Sign in
                     </button>
                     <button
                         type="button"
-                        className={mode === 'sign-up' ? styles.activeTab : styles.tab}
-                        onClick={() => setMode('sign-up')}
+                        className={`${styles.tab} ${mode === 'sign-up' ? styles.tabActive : ''}`}
+                        onClick={() => { setMode('sign-up'); setMessage(null); }}
                     >
                         Sign up
                     </button>
@@ -163,7 +167,7 @@ export const GuestAuth = () => {
 
                 {!hasSupabaseConfig && (
                     <div className={styles.alert}>
-                        Supabase env vars are missing. Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` to enable auth.
+                        Supabase env vars are missing. Add <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_ANON_KEY</code>.
                     </div>
                 )}
 
@@ -171,43 +175,66 @@ export const GuestAuth = () => {
                     {mode === 'sign-up' && (
                         <label className={styles.field}>
                             <span>Full name</span>
-                            <input
-                                type="text"
-                                value={fullName}
-                                onChange={(e) => setFullName(e.target.value)}
-                                placeholder="Your name"
-                                required
-                            />
+                            <div className={styles.inputWrapper}>
+                                <input
+                                    type="text"
+                                    value={fullName}
+                                    onChange={(e) => setFullName(e.target.value)}
+                                    placeholder="Your name"
+                                    required
+                                />
+                            </div>
                         </label>
                     )}
 
                     <label className={styles.field}>
                         <span>Email</span>
-                        <input
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            placeholder="you@example.com"
-                            required
-                        />
+                        <div className={styles.inputWrapper}>
+                            <input
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                placeholder="you@example.com"
+                                required
+                            />
+                        </div>
                     </label>
 
                     <label className={styles.field}>
                         <span>Password</span>
-                        <input
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            placeholder="••••••••"
-                            minLength={6}
-                            required
-                        />
+                        <div className={styles.inputWrapper}>
+                            <input
+                                type={showPassword ? 'text' : 'password'}
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                placeholder="••••••••"
+                                minLength={6}
+                                required
+                            />
+                            <button
+                                type="button"
+                                className={styles.eyeBtn}
+                                onClick={() => setShowPassword((v) => !v)}
+                                tabIndex={-1}
+                                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                            >
+                                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                            </button>
+                        </div>
                     </label>
 
-                    {message && <div className={styles.message}>{message}</div>}
+                    {message && (
+                        <div className={`${styles.message} ${messageType === 'error' ? styles.messageError : styles.messageInfo}`}>
+                            {message}
+                        </div>
+                    )}
 
                     <button type="submit" className={styles.submitButton} disabled={submitting || !hasSupabaseConfig}>
-                        {submitting ? 'Please wait...' : mode === 'sign-in' ? 'Continue' : 'Create guest account'}
+                        {submitting
+                            ? 'Please wait...'
+                            : mode === 'sign-in'
+                                ? 'Continue'
+                                : 'Create guest account'}
                     </button>
                 </form>
 

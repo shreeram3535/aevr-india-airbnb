@@ -15,25 +15,18 @@ export const Footer: React.FC = () => {
                         <li><a href={WHATSAPP_URL} target="_blank" rel="noreferrer">WhatsApp: +91 88908 07482</a></li>
                         <li><a href={INSTAGRAM_URL} target="_blank" rel="noreferrer">Instagram: @aevrindia</a></li>
                         <li><a href="#">Help Center</a></li>
-                        <li><a href="#">Disability support</a></li>
                     </ul>
                 </div>
                 <div className={styles.section}>
                     <h3>Hosting</h3>
                     <ul>
                         <li><a href="#">Aevr your home</a></li>
-                        <li><a href="#">AirCover for Hosts</a></li>
-                        <li><a href="#">Hosting resources</a></li>
-                        <li><a href="#">Community forum</a></li>
                     </ul>
                 </div>
                 <div className={styles.section}>
                     <h3>Aevr</h3>
                     <ul>
-                        <li><a href="#">Newsroom</a></li>
                         <li><a href="#">New features</a></li>
-                        <li><a href="#">Careers</a></li>
-                        <li><a href="#">Investors</a></li>
                     </ul>
                 </div>
             </div>
