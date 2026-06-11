@@ -95,32 +95,3 @@
   }
 }
 
-[data-theme='dark'] {
-  --color-body-bg: #121212;          /* Black background */
-  --color-white: #1e1e1e;            /* Dark surface cards */
-  --color-black: #f5f5f5;            /* White text */
-  --color-section-bg: #222222;       /* Dark section background */
-  --color-header-bg: rgba(30, 30, 30, 0.85);
-  --color-card-bg: linear-gradient(135deg, rgba(184, 138, 90, 0.08) 0%, rgba(30, 30, 30, 0.9) 50%, rgba(122, 158, 174, 0.08) 100%);
-  --color-card-border: rgba(122, 158, 174, 0.22);
-  --color-card-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-  --color-card-shadow-hover: 0 12px 30px rgba(0, 0, 0, 0.4);
-  
-  /* Gray neutrals for dark mode */
-  --color-gray-50: #292929;
-  --color-gray-100: #3a3a3a;
-  --color-gray-200: #a0a0a0;
-  --color-gray-300: #c0c0c0;
-  --color-gray-400: #4a4a4a;
-  
-  /* Text overrides */
-  --text-primary: var(--color-black);
-  --text-secondary: var(--color-gray-200);
-  --text-light: #ffffff;
-  
-  /* Extra adjustments for box shadows and borders in dark mode */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
-  --shadow-md: 0 6px 16px rgba(0, 0, 0, 0.6);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.7);
-  --shadow-floating: 0 6px 20px rgba(0, 0, 0, 0.8);
-}

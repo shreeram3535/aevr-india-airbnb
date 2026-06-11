@@ -16,8 +16,6 @@ import {
     LogIn,
     Instagram,
     MessageCircle,
-    Sun,
-    Moon,
     SlidersHorizontal
 } from 'lucide-react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
@@ -44,20 +42,10 @@ export const Header: React.FC = () => {
         }
     };
 
-    const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-        const saved = localStorage.getItem('theme');
-        if (saved === 'dark' || saved === 'light') return saved;
-        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    });
-
     useEffect(() => {
-        document.documentElement.setAttribute('data-theme', theme);
-        localStorage.setItem('theme', theme);
-    }, [theme]);
-
-    const toggleTheme = () => {
-        setTheme(prev => prev === 'light' ? 'dark' : 'light');
-    };
+        localStorage.removeItem('theme');
+        document.documentElement.setAttribute('data-theme', 'light');
+    }, []);
 
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [currentUserName, setCurrentUserName] = useState<string | null>(null);
@@ -282,10 +270,7 @@ export const Header: React.FC = () => {
                         Home
                     </button>
 
-                    <button type="button" className={styles.drawerItem} onClick={toggleTheme}>
-                        {theme === 'light' ? <Moon size={18} className={styles.drawerItemIcon} /> : <Sun size={18} className={styles.drawerItemIcon} />}
-                        {theme === 'light' ? 'Dark Mode' : 'Light Mode'}
-                    </button>
+
 
                     {!currentUserRole ? (
                         <button type="button" className={styles.drawerItem} onClick={() => handleNavigate('/auth')}>
