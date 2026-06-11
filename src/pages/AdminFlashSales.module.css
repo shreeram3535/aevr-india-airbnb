@@ -79,3 +79,24 @@
     color: #b4233f;
     font-size: var(--font-size-sm);
 }
+
+.datetimePickerGroup {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.datetimePickerGroup input[type="date"] {
+    flex: 2;
+}
+
+.datetimePickerGroup select {
+    flex: 1;
+}
+
+.separator {
+    font-weight: bold;
+    color: var(--text-secondary);
+}
+
+

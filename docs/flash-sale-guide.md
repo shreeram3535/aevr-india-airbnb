@@ -15,7 +15,7 @@ This guide explains how to set up and run a flash sale in Aevr.
   - `Verified by AevrLux` badge
   - Live countdown
   - Original price + sale price
-- Each sale window runs for exactly **72 hours** from `start_at`.
+- Each sale window runs from the selected `start_at` to `end_at` (minimum 1 hour duration).
 - The sale auto-hides after expiry.
 
 ## 3. Open the flash sale admin screen
@@ -37,9 +37,8 @@ From the Flash Sale Control page:
    - `manual_price` (exact sale price)
 3. Enter sale value.
 4. Choose `Start at` datetime.
-5. Click `Save & Activate`.
-
-The app computes `end_at = start_at + 72 hours` automatically.
+5. Choose `End at` datetime (must be at least 1 hour after start).
+6. Click `Save & Activate`.
 
 ## 5. Deactivate a flash sale
 
@@ -49,7 +48,7 @@ The app computes `end_at = start_at + 72 hours` automatically.
 ## 6. DB behavior and constraints
 
 - Table: `public.flash_sale_drops`
-- Trigger: `ensure_flash_sale_window()` enforces 72-hour window.
+- Note: There is no longer a database trigger enforcing a hardcoded 72-hour window. The `end_at` timestamp is manually scheduled.
 - Only one active drop at a time:
   - unique partial index on `is_active = true`
 - Policies:

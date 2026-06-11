@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './AdminFlashSales.module.css';
 import { api } from '../services/api';
@@ -19,6 +19,104 @@ const toDatetimeLocal = (iso: string) => {
     return `${y}-${m}-${d}T${hh}:${mm}`;
 };
 
+const formatTo12Hour = (isoOrDate: string | Date | null | undefined) => {
+    if (!isoOrDate) return '';
+    const date = new Date(isoOrDate);
+    if (Number.isNaN(date.getTime())) return '';
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const d = pad(date.getDate());
+    const m = pad(date.getMonth() + 1);
+    const y = date.getFullYear();
+    let hours = date.getHours();
+    const minutes = pad(date.getMinutes());
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+    return `${d}-${m}-${y} ${pad(hours)}:${minutes} ${ampm}`;
+};
+
+const parseDatetimeParts = (val: string) => {
+    if (!val) {
+        return { date: '', hour: '12', minute: '00', ampm: 'AM' };
+    }
+    const d = new Date(val);
+    if (Number.isNaN(d.getTime())) {
+        return { date: '', hour: '12', minute: '00', ampm: 'AM' };
+    }
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const datePart = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    let hours = d.getHours();
+    const minutes = pad(d.getMinutes());
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+    return {
+        date: datePart,
+        hour: String(hours),
+        minute: minutes,
+        ampm: ampm
+    };
+};
+
+const buildDatetimeFromParts = (date: string, hour: string, minute: string, ampm: string) => {
+    if (!date) return '';
+    let hours = Number(hour);
+    if (ampm === 'PM' && hours < 12) {
+        hours += 12;
+    } else if (ampm === 'AM' && hours === 12) {
+        hours = 0;
+    }
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${date}T${pad(hours)}:${pad(Number(minute))}`;
+};
+
+interface CustomDateTimePickerProps {
+    value: string;
+    onChange: (newValue: string) => void;
+}
+
+const CustomDateTimePicker = ({ value, onChange }: CustomDateTimePickerProps) => {
+    const { date, hour, minute, ampm } = parseDatetimeParts(value);
+
+    const update = (newDate: string, newHour: string, newMinute: string, newAmpm: string) => {
+        onChange(buildDatetimeFromParts(newDate, newHour, newMinute, newAmpm));
+    };
+
+    return (
+        <div className={styles.datetimePickerGroup}>
+            <input 
+                type="date" 
+                value={date} 
+                onChange={(e) => update(e.target.value, hour, minute, ampm)} 
+            />
+            <select 
+                value={hour} 
+                onChange={(e) => update(date, e.target.value, minute, ampm)}
+            >
+                {Array.from({ length: 12 }, (_, i) => String(i + 1)).map((h) => (
+                    <option key={h} value={h}>{h}</option>
+                ))}
+            </select>
+            <span className={styles.separator}>:</span>
+            <select 
+                value={minute} 
+                onChange={(e) => update(date, hour, e.target.value, ampm)}
+            >
+                {Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0')).map((m) => (
+                    <option key={m} value={m}>{m}</option>
+                ))}
+            </select>
+            <select 
+                value={ampm} 
+                onChange={(e) => update(date, hour, minute, e.target.value)}
+            >
+                <option value="AM">AM</option>
+                <option value="PM">PM</option>
+            </select>
+        </div>
+    );
+};
+
 export const AdminFlashSales = () => {
     const navigate = useNavigate();
     const [listings, setListings] = useState<Listing[]>([]);
@@ -31,6 +129,9 @@ export const AdminFlashSales = () => {
     const [saleType, setSaleType] = useState<FlashSaleType>('percent');
     const [saleValue, setSaleValue] = useState('20');
     const [startAt, setStartAt] = useState('');
+    const [endAt, setEndAt] = useState('');
+
+
 
     useEffect(() => {
         const load = async () => {
@@ -65,23 +166,20 @@ export const AdminFlashSales = () => {
                 setSaleType(drop.saleType);
                 setSaleValue(String(drop.saleValue));
                 setStartAt(toDatetimeLocal(drop.startAt));
+                setEndAt(toDatetimeLocal(drop.endAt));
             } else {
                 const firstListing = allListings[0];
                 if (firstListing) setListingId(firstListing.id);
                 const defaultStart = new Date(Date.now() + (15 * 60 * 1000));
                 setStartAt(toDatetimeLocal(defaultStart.toISOString()));
+                const defaultEnd = new Date(defaultStart.getTime() + (72 * 60 * 60 * 1000));
+                setEndAt(toDatetimeLocal(defaultEnd.toISOString()));
             }
             setLoading(false);
         };
 
         load();
     }, [navigate]);
-
-    const computedEndAt = useMemo(() => {
-        const start = new Date(startAt);
-        if (Number.isNaN(start.getTime())) return null;
-        return new Date(start.getTime() + (72 * 60 * 60 * 1000));
-    }, [startAt]);
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -102,6 +200,16 @@ export const AdminFlashSales = () => {
             return;
         }
 
+        const end = new Date(endAt);
+        if (Number.isNaN(end.getTime())) {
+            setError('Please provide a valid end date/time.');
+            return;
+        }
+        if (end.getTime() <= start.getTime() + (60 * 60 * 1000)) {
+            setError('End date must be at least 1 hour after the start date.');
+            return;
+        }
+
         const numericSaleValue = Number(saleValue);
         if (!Number.isFinite(numericSaleValue) || numericSaleValue <= 0) {
             setError('Sale value must be greater than 0.');
@@ -115,9 +223,11 @@ export const AdminFlashSales = () => {
                 saleType,
                 saleValue: numericSaleValue,
                 startAt: start.toISOString(),
+                endAt: end.toISOString(),
             });
             setCurrentDrop(drop);
             setStartAt(toDatetimeLocal(drop.startAt));
+            setEndAt(toDatetimeLocal(drop.endAt));
             setSaleValue(String(drop.saleValue));
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Unable to save flash sale drop.');
@@ -147,11 +257,11 @@ export const AdminFlashSales = () => {
         <div className={styles.page}>
             <div className={styles.panel}>
                 <h1>Flash Sale Control</h1>
-                <p>Schedule one active property drop at a time for 72 hours.</p>
+                <p>Schedule one active property drop at a time.</p>
 
                 {currentDrop && (
                     <div className={styles.currentDrop}>
-                        <strong>Current drop:</strong> {currentDrop.listing.title} | {new Date(currentDrop.startAt).toLocaleString()} to {new Date(currentDrop.endAt).toLocaleString()}
+                        <strong>Current drop:</strong> {currentDrop.listing.title} | {formatTo12Hour(currentDrop.startAt)} to {formatTo12Hour(currentDrop.endAt)}
                     </div>
                 )}
 
@@ -181,12 +291,14 @@ export const AdminFlashSales = () => {
 
                     <label>
                         Start at
-                        <input value={startAt} onChange={(e) => setStartAt(e.target.value)} type="datetime-local" />
+                        <CustomDateTimePicker value={startAt} onChange={setStartAt} />
                     </label>
 
-                    <div className={styles.endInfo}>
-                        End at (+72h): {computedEndAt ? computedEndAt.toLocaleString() : 'Invalid start date'}
-                    </div>
+                    <label>
+                        End at
+                        <CustomDateTimePicker value={endAt} onChange={setEndAt} />
+                        <span className={styles.endInfo}>Min 1 hour after start</span>
+                    </label>
 
                     {error && <div className={styles.error}>{error}</div>}
 

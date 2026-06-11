@@ -1338,7 +1338,14 @@ export const api = {
         if (startAt.getTime() < Date.now()) {
             throw new Error('Start date cannot be in the past');
         }
-        const endAt = new Date(startAt.getTime() + (72 * 60 * 60 * 1000));
+
+        const endAt = new Date(input.endAt);
+        if (Number.isNaN(endAt.getTime())) {
+            throw new Error('Invalid end date');
+        }
+        if (endAt.getTime() <= startAt.getTime() + (60 * 60 * 1000)) {
+            throw new Error('End date must be at least 1 hour after the start date');
+        }
 
         await supabase.from('flash_sale_drops').update({ is_active: false }).eq('is_active', true);
 

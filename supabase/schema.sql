@@ -839,21 +839,7 @@ create table if not exists public.flash_sale_drops (
     constraint flash_sale_valid_window check (end_at > start_at)
 );
 
-create or replace function public.ensure_flash_sale_window()
-returns trigger
-language plpgsql
-as $$
-begin
-    new.end_at = new.start_at + interval '72 hours';
-    return new;
-end;
-$$;
 
-drop trigger if exists flash_sale_drops_enforce_window on public.flash_sale_drops;
-create trigger flash_sale_drops_enforce_window
-before insert or update of start_at
-on public.flash_sale_drops
-for each row execute procedure public.ensure_flash_sale_window();
 
 drop trigger if exists flash_sale_drops_updated_at on public.flash_sale_drops;
 create trigger flash_sale_drops_updated_at

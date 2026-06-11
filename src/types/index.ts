@@ -197,6 +197,7 @@ export interface UpsertFlashSaleInput {
     saleType: FlashSaleType;
     saleValue: number;
     startAt: string;
+    endAt: string;
 }
 
 export interface Favorite {
