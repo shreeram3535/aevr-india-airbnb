@@ -7,7 +7,9 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 6px var(--container-padding);
+    padding: 0 var(--container-padding);
+    height: 70px;
+    box-sizing: border-box;
     transition: all 0.2s ease-in-out;
 }
 
@@ -104,7 +106,7 @@
 
 @media (max-width: 744px) {
     .categoriesWrapper {
-        padding: 10px var(--container-padding);
+        padding: 0 var(--container-padding);
     }
 
     .filterButton {

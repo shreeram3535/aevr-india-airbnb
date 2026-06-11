@@ -52,7 +52,7 @@ create table if not exists public.listings (
     description text not null,
     price_per_night numeric(12, 2) not null,
     currency text not null default 'INR',
-    rating numeric(3, 2) not null default 0,
+    rating numeric(3, 2) not null default 5.00,
     review_count integer not null default 0,
     is_guest_favorite boolean not null default false,
     availability_summary text,

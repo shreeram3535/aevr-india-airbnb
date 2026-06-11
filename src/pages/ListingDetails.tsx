@@ -1106,27 +1106,29 @@ export const ListingDetails = () => {
                                 </div>
                             )}
 
-                            <label className={styles.formField}>
-                                <span>Rooms</span>
-                                <select value={roomCount} onChange={(e) => setRoomCount(Number(e.target.value))}>
-                                    {Array.from({ length: selectedRoomType?.totalCount ?? 1 }, (_, index) => index + 1).map((value) => (
-                                        <option key={value} value={value}>
-                                            {value} room{value > 1 ? 's' : ''}
-                                        </option>
-                                    ))}
-                                </select>
-                            </label>
+                            <div className={styles.dateGrid}>
+                                <label className={styles.formField}>
+                                    <span>Rooms</span>
+                                    <select value={roomCount} onChange={(e) => setRoomCount(Number(e.target.value))}>
+                                        {Array.from({ length: selectedRoomType?.totalCount ?? 1 }, (_, index) => index + 1).map((value) => (
+                                            <option key={value} value={value}>
+                                                {value} room{value > 1 ? 's' : ''}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </label>
 
-                            <label className={styles.formField}>
-                                <span>Guests</span>
-                                <select value={guestCount} onChange={(e) => setGuestCount(Number(e.target.value))}>
-                                    {[1, 2, 3, 4].map((value) => (
-                                        <option key={value} value={value}>
-                                            {value} guest{value > 1 ? 's' : ''}
-                                        </option>
-                                    ))}
-                                </select>
-                            </label>
+                                <label className={styles.formField}>
+                                    <span>Guests</span>
+                                    <select value={guestCount} onChange={(e) => setGuestCount(Number(e.target.value))}>
+                                        {[1, 2, 3, 4].map((value) => (
+                                            <option key={value} value={value}>
+                                                {value} guest{value > 1 ? 's' : ''}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </label>
+                            </div>
 
                             <button
                                 type="button"
@@ -1137,13 +1139,6 @@ export const ListingDetails = () => {
                                 {submittingBooking ? 'Please wait...' : bookingActionLabel}
                             </button>
 
-                            <div className={styles.sidebarContactSection}>
-                                <div className={styles.sidebarContactLabel}>Contact</div>
-                                <a href={whatsappHref} target="_blank" rel="noreferrer" className={styles.sidebarWhatsappButton}>
-                                    <img src="/whatsapp.svg" alt="" className={styles.whatsappIcon} aria-hidden="true" />
-                                    <span>WhatsApp</span>
-                                </a>
-                            </div>
 
                             <div className={styles.bookingNote}>
                                 {bookingHeadline}. You will not be charged yet.

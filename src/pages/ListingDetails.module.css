@@ -57,7 +57,7 @@
     margin-bottom: 32px;
     border-radius: var(--radius-xl);
     overflow: hidden;
-    height: 480px;
+    height: 400px;
 }
 
 .desktopSlider {
@@ -202,7 +202,7 @@
 }
 
 .hostSection {
-    padding: 24px 0;
+    padding: 16px 0;
     border-bottom: 1px solid var(--color-gray-100);
     display: flex;
     justify-content: space-between;
@@ -222,7 +222,7 @@
 }
 
 .feature {
-    padding: 24px 0;
+    padding: 16px 0;
     border-bottom: 1px solid var(--color-gray-100);
     display: flex;
     gap: 16px;
@@ -249,13 +249,13 @@
 }
 
 .description {
-    padding: 32px 0;
+    padding: 24px 0;
     border-bottom: 1px solid var(--color-gray-100);
     line-height: 1.6;
 }
 
 .contactSection {
-    padding: 24px 0 32px;
+    padding: 16px 0 24px;
     border-bottom: 1px solid var(--color-gray-100);
     display: flex;
     flex-direction: column;
@@ -325,7 +325,7 @@
 }
 
 .amenities {
-    padding: 32px 0;
+    padding: 24px 0;
 }
 
 .amenities h2 {
@@ -360,7 +360,7 @@
 }
 
 .localExperiences {
-    padding: 32px 0;
+    padding: 24px 0;
     border-top: 1px solid var(--color-gray-100);
     border-bottom: 1px solid var(--color-gray-100);
 }
@@ -549,6 +549,7 @@
     border-radius: 16px;
     padding: 12px 14px;
     font: inherit;
+    line-height: normal;
     color: var(--text-primary);
     background: var(--color-white);
 }
@@ -637,7 +638,7 @@
     height: 88px;
     object-fit: cover;
     border-radius: 14px;
-    border: 1px solid var(--color-gray-100);
+    border: 0.5mm solid var(--color-gray-100);
     image-rendering: auto;
     filter: contrast(1.03) saturate(1.04);
 }
@@ -645,7 +646,7 @@
 .roomVideoCard {
     border-radius: 14px;
     overflow: hidden;
-    border: 1px solid var(--color-gray-100);
+    border: 0.5mm solid var(--color-gray-100);
     background: #fff;
     min-height: 88px;
 }

@@ -15,9 +15,12 @@ import {
     LogOut, 
     LogIn,
     Instagram,
-    MessageCircle
+    MessageCircle,
+    Sun,
+    Moon,
+    SlidersHorizontal
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { api } from '../services/api';
 import { authService } from '../services/auth';
 
@@ -25,10 +28,56 @@ export const Header: React.FC = () => {
     const instagramUrl = 'https://www.instagram.com/aevrindia?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==';
     const whatsappUrl = 'https://wa.me/918890807482';
     const navigate = useNavigate();
+    const { pathname } = useLocation();
+    const [searchParams] = useSearchParams();
+
+    const activeFiltersCount = Array.from(searchParams.keys()).filter(key => 
+        ['category', 'sort', 'minPrice', 'maxPrice', 'guests', 'bedrooms', 'baths', 'favorites'].includes(key) && 
+        (key !== 'sort' || searchParams.get('sort') !== 'recommended')
+    ).length;
+
+    const handleFilterClick = () => {
+        if (pathname === '/') {
+            window.dispatchEvent(new CustomEvent('toggle-filters'));
+        } else {
+            navigate('/?showFilters=true');
+        }
+    };
+
+    const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+        const saved = localStorage.getItem('theme');
+        if (saved === 'dark' || saved === 'light') return saved;
+        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    });
+
+    useEffect(() => {
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('theme', theme);
+    }, [theme]);
+
+    const toggleTheme = () => {
+        setTheme(prev => prev === 'light' ? 'dark' : 'light');
+    };
+
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [currentUserName, setCurrentUserName] = useState<string | null>(null);
     const [currentUserRole, setCurrentUserRole] = useState<'guest' | 'host' | 'admin' | null>(null);
     const [currentUserAvatarUrl, setCurrentUserAvatarUrl] = useState<string | null>(null);
+    const [isScrolled, setIsScrolled] = useState(false);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            if (window.scrollY > 30) {
+                setIsScrolled(true);
+            } else {
+                setIsScrolled(false);
+            }
+        };
+        window.addEventListener('scroll', handleScroll);
+        handleScroll();
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
 
     useEffect(() => {
         const loadUser = async () => {
@@ -55,6 +104,7 @@ export const Header: React.FC = () => {
 
         loadUser();
     }, []);
+
 
     const getUserInitials = () => {
         if (!currentUserName) return null;
@@ -102,61 +152,88 @@ export const Header: React.FC = () => {
     const initials = getUserInitials();
 
     return (
-        <header className={styles.header}>
-            {/* Logo */}
-            <div className={styles.logoContainer}>
-                <a href="/" className={styles.logoText} onClick={(e) => { e.preventDefault(); navigate('/'); }}>
-                    {/* Nest Logo */}
-                    <svg
-                        width="32"
-                        height="32"
-                        viewBox="0 0 100 100"
-                        xmlns="http://www.w3.org/2000/svg"
+        <>
+            <header className={`${styles.header} ${pathname === '/' && !isScrolled ? styles.headerTransparent : ''}`}>
+                {/* Logo */}
+                <div className={styles.logoContainer}>
+                    <a href="/" className={styles.logoAnchor} onClick={(e) => { e.preventDefault(); navigate('/'); }}>
+                        {/* Gold Sunset Brand Icon */}
+                        <svg viewBox="0 0 100 100" className={styles.logoIcon}>
+                            <circle cx="50" cy="50" r="45" fill="none" stroke="#B88A5A" strokeWidth="4" />
+                            <path d="M 20 65 L 80 65" stroke="#B88A5A" strokeWidth="4" />
+                            <path d="M 50 20 L 50 65" stroke="#B88A5A" strokeWidth="4" />
+                            <path d="M 30 65 A 20 20 0 0 1 70 65" fill="none" stroke="#B88A5A" strokeWidth="4" />
+                        </svg>
+                        <div className={styles.logoTextWrapper}>
+                            <span className={styles.logoText}>AEVR</span>
+                            <span className={styles.logoSubtext}>STAYS THAT STAY WITH YOU</span>
+                        </div>
+                    </a>
+                </div>
+
+                {/* User Menu / Right Actions */}
+                <div className={styles.userMenu}>
+                    <button 
+                        type="button" 
+                        className={styles.wishlistBtn}
+                        onClick={() => navigate('/favorites')}
+                        aria-label="View Wishlist"
                     >
-                        <defs>
-                            <linearGradient id="header-logo-grad" x1="0%" y1="100%" x2="100%" y2="0%">
-                                <stop offset="0%" stopColor="#008489" />
-                                <stop offset="100%" stopColor="#00b3b0" />
-                            </linearGradient>
-                        </defs>
-                        <path d="M 50 12 L 85 45 C 89 49, 89 55, 85 59 L 80 64 C 76 68, 70 68, 66 64 L 50 48 L 34 64 C 30 68, 24 68, 20 64 L 15 59 C 11 55, 11 49, 15 45 Z" fill="url(#header-logo-grad)" />
-                        <path d="M 50 38 L 72 60 L 72 78 C 72 84, 67 89, 61 89 L 39 89 C 33 89, 28 84, 28 78 L 28 60 Z" fill="none" stroke="url(#header-logo-grad)" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
-                        <path d="M 40 70 C 40 70, 50 62, 50 62 C 50 62, 60 70, 60 70" fill="none" stroke="url(#header-logo-grad)" strokeWidth="6" strokeLinecap="round" />
-                    </svg>
-                    Aevr
-                </a>
-            </div>
+                        <Heart size={18} />
+                        <span>Wishlist</span>
+                    </button>
 
-            {/* User Menu */}
-            <div className={styles.userMenu}>
-                
-                <button 
-                    type="button" 
-                    className={styles.profileMenu}
-                    aria-label="Open navigation drawer"
-                    aria-expanded={isMenuOpen}
-                    onClick={() => setIsMenuOpen((prev) => !prev)}
-                >
-                    <Menu size={18} />
-                    <div className={styles.avatar}>
-                        {currentUserAvatarUrl ? (
-                            <img src={currentUserAvatarUrl} alt={currentUserName ?? 'Avatar'} className={styles.avatarImage} />
-                        ) : initials ? (
-                            <span className={styles.avatarInitials}>{initials}</span>
-                        ) : (
-                            <div className={styles.defaultGuestAvatar} aria-label="Default avatar">
-                                <User size={16} className={styles.guestAvatarIcon} />
-                            </div>
+                    <button 
+                        type="button" 
+                        className={styles.filterToggleBtn}
+                        onClick={handleFilterClick}
+                        aria-label="Toggle filters"
+                    >
+                        <SlidersHorizontal size={18} />
+                        <span>Filters</span>
+                        {activeFiltersCount > 0 && (
+                            <span className={styles.filterBadge}>{activeFiltersCount}</span>
                         )}
-                    </div>
-                </button>
-            </div>
+                    </button>
 
-            {/* Drawer Overlay Backdrop */}
-            <div 
-                className={`${styles.drawerBackdrop} ${isMenuOpen ? styles.backdropOpen : ''}`} 
-                onClick={() => setIsMenuOpen(false)}
-            />
+                    {!currentUserName ? (
+                        <button 
+                            type="button" 
+                            className={styles.loginBtn}
+                            onClick={() => navigate('/auth')}
+                        >
+                            Login / Sign up
+                        </button>
+                    ) : (
+                        <button 
+                            type="button" 
+                            className={styles.profileMenu}
+                            aria-label="Open navigation drawer"
+                            aria-expanded={isMenuOpen}
+                            onClick={() => setIsMenuOpen((prev) => !prev)}
+                        >
+                            <Menu size={18} />
+                            <div className={styles.avatar}>
+                                {currentUserAvatarUrl ? (
+                                    <img src={currentUserAvatarUrl} alt={currentUserName} className={styles.avatarImage} />
+                                ) : initials ? (
+                                    <span className={styles.avatarInitials}>{initials}</span>
+                                ) : (
+                                    <div className={styles.defaultGuestAvatar} aria-label="Default avatar">
+                                        <User size={16} className={styles.guestAvatarIcon} />
+                                    </div>
+                                )}
+                            </div>
+                        </button>
+                    )}
+                </div>
+            </header>
+
+        {/* Drawer Overlay Backdrop */}
+        <div 
+            className={`${styles.drawerBackdrop} ${isMenuOpen ? styles.backdropOpen : ''}`} 
+            onClick={() => setIsMenuOpen(false)}
+        />
 
             {/* Right Side Drawer Panel */}
             <div className={`${styles.drawerPanel} ${isMenuOpen ? styles.drawerOpen : ''}`} role="menu" aria-label="Navigation Drawer">
@@ -203,6 +280,11 @@ export const Header: React.FC = () => {
                     <button type="button" className={styles.drawerItem} onClick={() => handleNavigate('/')}>
                         <Home size={18} className={styles.drawerItemIcon} />
                         Home
+                    </button>
+
+                    <button type="button" className={styles.drawerItem} onClick={toggleTheme}>
+                        {theme === 'light' ? <Moon size={18} className={styles.drawerItemIcon} /> : <Sun size={18} className={styles.drawerItemIcon} />}
+                        {theme === 'light' ? 'Dark Mode' : 'Light Mode'}
                     </button>
 
                     {!currentUserRole ? (
@@ -280,6 +362,6 @@ export const Header: React.FC = () => {
                     </a>
                 </div>
             </div>
-        </header>
+        </>
     );
 };
