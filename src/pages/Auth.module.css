@@ -1,0 +1,303 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   Auth.module.css — Centered Minimalism & Premium Login UI
+   ════════════════════════════════════════════════════════════════════════ */
+
+.page {
+    min-height: calc(100vh - var(--header-height));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 24px;
+    background-color: #faf9f6; /* Warm neutral luxury off-white */
+    position: relative;
+}
+
+.backLink {
+    position: absolute;
+    top: 32px;
+    left: 40px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    font-weight: 400;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: color 0.15s;
+}
+
+.backLink:hover {
+    color: var(--text-primary);
+}
+
+/* Centered Form Card */
+.formCard {
+    width: 100%;
+    max-width: 420px;
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    border-radius: 20px;
+    padding: 40px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    position: relative;
+    z-index: 1;
+}
+
+/* Centered Brand Logo */
+.brandLogo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    color: var(--color-primary);
+    font-size: 1.45rem;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    margin-bottom: 4px;
+}
+
+.brandLogo svg {
+    color: var(--color-primary);
+}
+
+.formHeader {
+    text-align: center;
+}
+
+.formHeader h2 {
+    font-size: 1.75rem;
+    font-weight: 300;
+    letter-spacing: -0.03em;
+    margin-bottom: 6px;
+    color: var(--text-primary);
+}
+
+.formHeader p {
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    font-weight: 300;
+}
+
+/* Centered Minimalist Underline-style Tabs */
+.tabs {
+    display: flex;
+    justify-content: center;
+    border-bottom: 1px solid #ebebeb;
+    padding: 0;
+    gap: 24px;
+}
+
+.tab {
+    padding: 10px 0;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.tabActive {
+    color: var(--color-primary);
+    border-bottom-color: var(--color-primary);
+}
+
+/* Form Styling */
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.field > span {
+    font-size: 0.75rem;
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Visual Role Selector */
+.roleGroup {
+    display: flex;
+    gap: 12px;
+    margin-top: 2px;
+}
+
+.roleOption {
+    flex: 1;
+    position: relative;
+    cursor: pointer;
+}
+
+.roleOption input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.roleCard {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    transition: all 0.2s ease;
+    gap: 5px;
+}
+
+.roleCardIcon {
+    color: #94a3b8;
+}
+
+.roleCardTitle {
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.roleOption input:checked + .roleCard {
+    border-color: var(--color-primary);
+    background: rgba(0, 132, 137, 0.03);
+}
+
+.roleOption input:checked + .roleCard .roleCardIcon {
+    color: var(--color-primary);
+}
+
+.roleOption input:checked + .roleCard .roleCardTitle {
+    color: var(--color-primary);
+    font-weight: 600;
+}
+
+/* Clean inputs */
+.inputWrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.inputWrapper input {
+    width: 100%;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: var(--font-size-md);
+    background: #ffffff;
+    color: var(--text-primary);
+    transition: border-color 0.15s, box-shadow 0.15s;
+    font-family: inherit;
+}
+
+.inputWrapper input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 4px rgba(0, 132, 137, 0.05);
+}
+
+.eyeBtn {
+    position: absolute;
+    right: 12px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    padding: 4px;
+    border-radius: 6px;
+    transition: color 0.15s;
+}
+
+.eyeBtn:hover {
+    color: var(--text-primary);
+}
+
+/* Alerts */
+.alert {
+    background: rgba(190, 18, 60, 0.05);
+    color: #9f1239;
+    border: 1px solid rgba(190, 18, 60, 0.1);
+    border-radius: 12px;
+    padding: 10px 12px;
+    font-size: var(--font-size-sm);
+    line-height: 1.4;
+}
+
+.message {
+    border-radius: 12px;
+    padding: 10px 12px;
+    font-size: var(--font-size-sm);
+    line-height: 1.4;
+}
+
+.messageError {
+    background: rgba(190, 18, 60, 0.05);
+    color: #9f1239;
+    border: 1px solid rgba(190, 18, 60, 0.1);
+}
+
+.messageInfo {
+    background: rgba(0, 132, 137, 0.05);
+    color: var(--color-primary);
+    border: 1px solid rgba(0, 132, 137, 0.1);
+}
+
+/* Clean primary button */
+.submitButton {
+    width: 100%;
+    padding: 13px 24px;
+    border-radius: var(--radius-full);
+    border: none;
+    background: var(--color-primary);
+    color: #ffffff;
+    font-weight: var(--font-weight-semibold);
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(0, 132, 137, 0.2);
+    letter-spacing: 0.01em;
+}
+
+.submitButton:hover:not(:disabled) {
+    background: var(--color-primary-hover);
+    box-shadow: 0 6px 16px rgba(0, 132, 137, 0.25);
+    transform: translateY(-1px);
+}
+
+.submitButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* RESPONSIVE DESIGN */
+@media (max-width: 860px) {
+    .page {
+        padding: 40px 16px;
+    }
+
+    .backLink {
+        position: static;
+        margin-bottom: 20px;
+        align-self: flex-start;
+    }
+}
