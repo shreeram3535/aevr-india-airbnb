@@ -1,20 +1,31 @@
 .card {
+    background: var(--color-card-bg);
+    border: 1px solid var(--color-card-border);
+    border-radius: 20px;
+    padding: 12px;
     display: flex;
     flex-direction: column;
     gap: 12px;
     cursor: pointer;
     position: relative;
-    group: pointer;
-    /* Concept for grouping hover effects */
+    height: 100%;
+    box-shadow: var(--color-card-shadow);
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--color-card-shadow-hover);
 }
 
 /* Image Carousel */
 .imageContainer {
     position: relative;
-    aspect-ratio: 20 / 19;
-    border-radius: var(--radius-xl);
+    aspect-ratio: 4 / 3;
+    border-radius: 14px;
     overflow: hidden;
     background-color: #ececec;
+    border: 1px solid rgba(0, 0, 0, 0.035);
 }
 
 .image {
@@ -22,13 +33,11 @@
     height: 100%;
     object-fit: cover;
     image-rendering: auto;
-    filter: contrast(1) saturate(1.02);
-    transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1), filter 0.6s ease;
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .card:hover .image {
-    filter: contrast(1.02) saturate(1.04);
-    transform: scale(1.04);
+    transform: scale(1.03);
 }
 
 /* Navigation Arrows */
@@ -36,17 +45,17 @@
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    width: 30px;
-    height: 30px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
-    background-color: rgba(255, 255, 255, 0.95);
+    background-color: rgba(255, 255, 255, 0.9);
     border: 1px solid rgba(0, 0, 0, 0.04);
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     opacity: 0;
-    transition: opacity 0.25s, transform 0.15s;
+    transition: opacity 0.2s, transform 0.15s;
     z-index: 2;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
 }
@@ -69,116 +78,174 @@
     opacity: 1;
 }
 
-/* Favorite Heart Pop animation */
+/* Favorite Heart Icon */
 .heartButton {
     position: absolute;
     top: 12px;
     right: 12px;
-    z-index: 2;
-    color: rgba(255, 255, 255, 0.9);
+    z-index: 4;
+    width: 32px;
+    height: 32px;
+    background-color: transparent;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    cursor: pointer;
     transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .heartButton:active {
-    transform: scale(0.85);
+    transform: scale(0.9);
 }
 
 .heartButton svg {
-    fill: rgba(0, 0, 0, 0.45);
-    stroke: #fff;
+    fill: none;
+    stroke: currentColor;
     stroke-width: 2.2px;
+    transition: stroke 0.2s, fill 0.2s;
     overflow: visible;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+}
+
+.heartButton.favorited {
+    color: #ff385c;
 }
 
 .heartButton.favorited svg {
-    fill: #ff385c; /* Standard premium travel favorite pink-red */
+    fill: #ff385c;
     stroke: #ff385c;
-    animation: heartPop 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.15));
+    animation: heartPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
 }
 
 @keyframes heartPop {
     0% { transform: scale(1); }
-    50% { transform: scale(1.22); }
+    50% { transform: scale(1.2); }
     100% { transform: scale(1); }
+}
+
+/* AEVR Choice / Guest Favorite Badge */
+.guestFavorite {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background-color: #ffffff;
+    color: var(--color-black);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 5px 14px;
+    border-radius: var(--radius-full);
+    z-index: 4;
+    letter-spacing: 0.02em;
+    box-shadow: 0 4px 12px rgba(40, 43, 43, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.8);
 }
 
 /* Info Section */
 .info {
     display: flex;
     flex-direction: column;
-    gap: 3px;
-    padding-top: 4px;
+    gap: 8px;
+    padding: 4px 0;
 }
 
-.headerRow {
+.rowOne {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
+}
+
+.location {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-gray-200);
 }
 
 .title {
-    font-weight: 600;
-    color: var(--text-primary);
-    font-size: 15px;
-    letter-spacing: -0.01em;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--color-black);
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: -2px;
+}
+
+/* Amenities Row */
+.amenitiesRow {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 2px;
+    margin-bottom: 2px;
+}
+
+.amenityItem {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--color-gray-200);
+    font-weight: 500;
+}
+
+.amenityIcon {
+    color: var(--color-gray-200);
+    stroke-width: 1.8px;
+}
+
+.rowFour {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin-top: 4px;
+}
+
+.priceAndPeriod {
+    display: flex;
+    align-items: baseline;
+    gap: 2px;
+}
+
+.price {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--color-black);
+}
+
+.period {
+    font-size: 13px;
+    color: var(--color-gray-200);
+    font-weight: 500;
+}
+
+.statusRight {
+    display: flex;
+    align-items: center;
+}
+
+.goldNewLabel {
+    color: var(--color-primary-hover);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
 }
 
 .rating {
     display: flex;
     align-items: center;
     gap: 4px;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 500;
+    color: var(--color-gray-200);
 }
 
-.rating svg {
-    color: #ff385c; /* Accent color star rating */
-}
-
-.subtitle {
-    color: var(--text-secondary);
-    font-size: 14px;
-}
-
-.dates {
-    color: var(--text-secondary);
-    font-size: 14px;
-}
-
-.priceRow {
-    margin-top: 4px;
-    display: flex;
-    align-items: baseline;
-    gap: 4px;
-}
-
-.price {
-    font-weight: 700;
-    color: var(--text-primary);
-    font-size: 15px;
-}
-
-.period {
-    color: var(--text-primary);
-    font-size: 14px;
-}
-
-/* Premium Glassmorphic Badge */
-.guestFavorite {
-    position: absolute;
-    top: 12px;
-    left: 12px;
-    background: rgba(255, 255, 255, 0.92);
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.5);
-    padding: 5px 10px;
-    border-radius: 8px;
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--color-black);
-    z-index: 2;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
-    letter-spacing: -0.01em;
+.starIcon {
+    color: var(--color-accent);
+    fill: var(--color-accent);
 }
 
 /* Carousel Dots Indicator styling */
@@ -217,7 +284,6 @@
 @media (max-width: 744px) {
     .navButton {
         opacity: 1;
-        /* Always show arrows on touch devices if needed, or rely on swipe (not implemented yet) */
         width: 28px;
         height: 28px;
     }

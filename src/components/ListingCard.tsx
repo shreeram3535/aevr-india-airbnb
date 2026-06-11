@@ -1,10 +1,76 @@
 import React, { useState, useEffect } from 'react';
 import styles from './ListingCard.module.css';
 import type { Listing } from '../types';
-import { Star, Heart, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Heart, ChevronLeft, ChevronRight, Star, BedDouble, Users, Waves, Mountain, Compass } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { favoritesService } from '../services/favorites';
 import { getFallbackImage } from '../services/media';
+
+const getFormattedLocation = (city: string, country: string) => {
+    const cleanCity = city.trim();
+    const cleanCityLower = cleanCity.toLowerCase();
+    if (cleanCityLower === 'alibaug') return 'Alibaug, Maharashtra';
+    if (cleanCityLower === 'udaipur') return 'Udaipur, Rajasthan';
+    if (cleanCityLower === 'manali') return 'Manali, Himachal Pradesh';
+    if (cleanCityLower === 'goa') return 'Goa';
+    if (cleanCityLower === 'jaipur') return 'Jaipur, Rajasthan';
+    if (cleanCityLower === 'munnar') return 'Munnar, Kerala';
+    if (cleanCityLower === 'coorg') return 'Coorg, Karnataka';
+    if (cleanCityLower === 'shimla') return 'Shimla, Himachal Pradesh';
+    if (cleanCityLower === 'pondicherry') return 'Puducherry';
+    
+    if (country.toLowerCase() === 'india') return cleanCity;
+    return `${cleanCity}, ${country}`;
+};
+
+const getSpecialAmenity = (listing: Listing) => {
+    const title = listing.title.toLowerCase();
+    const desc = listing.description.toLowerCase();
+    const cat = listing.category.toLowerCase();
+    const city = listing.location.city.toLowerCase();
+
+    // Match Mountain View
+    if (
+        title.includes('mountain') || title.includes('hill') || title.includes('himalayan') || title.includes('pine') ||
+        desc.includes('mountain') || desc.includes('hill') || desc.includes('himalayan') ||
+        cat === 'amazing-views' || cat === 'cabins' ||
+        city === 'manali' || city === 'shimla' || city === 'coorg' || city === 'munnar'
+    ) {
+        return { label: 'Mountain View', Icon: Mountain };
+    }
+
+    // Match Lake View / Water View
+    if (
+        title.includes('lake') || title.includes('backwater') || title.includes('haveli') || title.includes('aaravali') || 
+        desc.includes('lake') || desc.includes('backwater')
+    ) {
+        return { label: 'Lake View', Icon: Waves };
+    }
+
+    // Match Private Pool / Beach View
+    if (
+        title.includes('pool') || title.includes('beach') || title.includes('sol banyan') || title.includes('ekaant') ||
+        desc.includes('pool') || desc.includes('beach') ||
+        cat === 'amazing-pools' || cat === 'beachfront' ||
+        city === 'goa' || city === 'alibaug' || city === 'pondicherry'
+    ) {
+        return { label: 'Private Pool', Icon: Waves };
+    }
+
+    // Fallback check in listing's amenities array
+    if (listing.amenities.some(a => a.toLowerCase().includes('pool'))) {
+        return { label: 'Private Pool', Icon: Waves };
+    }
+    if (listing.amenities.some(a => a.toLowerCase().includes('mountain'))) {
+        return { label: 'Mountain View', Icon: Mountain };
+    }
+    if (listing.amenities.some(a => a.toLowerCase().includes('lake'))) {
+        return { label: 'Lake View', Icon: Waves };
+    }
+
+    // Ultimate Fallback
+    return { label: 'Garden View', Icon: Compass };
+};
 
 interface ListingCardProps {
     listing: Listing;
@@ -12,7 +78,7 @@ interface ListingCardProps {
 
 export const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
-    const [isFavorited, setIsFavorited] = useState(favoritesService.isFavorite(listing.id));
+    const [isFavorited, setIsFavorited] = useState(() => favoritesService.isFavorite(listing.id));
     const imageCount = listing.images.length;
     const hasImages = imageCount > 0;
     const fallbackMedia = listing.media.find((item) => item.kind === 'video' && item.thumbnailUrl)?.thumbnailUrl;
@@ -21,25 +87,12 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
         : fallbackMedia ?? getFallbackImage();
 
     useEffect(() => {
-        setIsFavorited(favoritesService.isFavorite(listing.id));
-
-        // Sync with external updates (e.g. from other tabs or components)
         const handleUpdate = () => {
             setIsFavorited(favoritesService.isFavorite(listing.id));
         };
         window.addEventListener('favorites-updated', handleUpdate);
         return () => window.removeEventListener('favorites-updated', handleUpdate);
     }, [listing.id]);
-
-    useEffect(() => {
-        setCurrentImageIndex(0);
-    }, [listing.id]);
-
-    useEffect(() => {
-        if (currentImageIndex >= imageCount) {
-            setCurrentImageIndex(0);
-        }
-    }, [currentImageIndex, imageCount]);
 
     const nextImage = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -57,9 +110,8 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
 
     const toggleFavorite = (e: React.MouseEvent) => {
         e.stopPropagation();
-        e.preventDefault(); // Prevent link click
+        e.preventDefault();
         favoritesService.toggleFavorite(listing.id);
-        // State updates via event listener, but optimistic update helps responsiveness.
         setIsFavorited((current) => !current);
     };
 
@@ -68,6 +120,10 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
         currency: listing.currency ?? 'INR',
         maximumFractionDigits: 0,
     }).format(listing.price);
+
+    const beds = listing.beds ?? Math.max(1, Math.ceil((listing.guestCountMax ?? 4) / 2));
+    const guests = listing.guestCountMax ?? (beds * 2);
+    const { label: specialAmenityLabel, Icon: SpecialAmenityIcon } = getSpecialAmenity(listing);
 
     return (
         <div className={styles.card}>
@@ -92,7 +148,7 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
                                 aria-label="Previous image"
                                 className={`${styles.navButton} ${styles.prevButton}`}
                                 onClick={prevImage}
-                                style={{ display: currentImageIndex === 0 ? 'none' : 'flex' }} // Airbnb style: hide prev on first image
+                                style={{ display: currentImageIndex === 0 ? 'none' : 'flex' }}
                             >
                                 <ChevronLeft size={16} />
                             </button>
@@ -108,8 +164,8 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
                     )}
 
                     {/* Guest Favorite Badge */}
-                    {listing.isGuestFavorite && (
-                        <div className={styles.guestFavorite}>Guest favorite</div>
+                    {(listing.isGuestFavorite || listing.title.toLowerCase().includes('ekaant')) && (
+                        <div className={styles.guestFavorite}>AEVR Choice</div>
                     )}
 
                     {/* Carousel Dots Indicators */}
@@ -137,26 +193,50 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
                         onClick={toggleFavorite}
                         style={{ zIndex: 4 }}
                     >
-                        <Heart size={24} fill={isFavorited ? 'currentColor' : 'rgba(0,0,0,0.5)'} />
+                        <Heart size={16} />
                     </button>
-
                 </div>
 
                 <div className={styles.info}>
-                    <div className={styles.headerRow}>
-                        <div className={styles.title}>{listing.title}</div>
-                        <div className={styles.rating}>
-                            <Star size={14} fill="currentColor" />
-                            <span>{listing.rating}</span>
+                    <div className={styles.rowOne}>
+                        <div className={styles.location}>
+                            {getFormattedLocation(listing.location.city, listing.location.country)}
+                        </div>
+                        <div className={styles.statusRight}>
+                            {listing.reviewCount === 0 || listing.rating === 0 ? (
+                                <span className={styles.goldNewLabel}>New</span>
+                            ) : (
+                                <span className={styles.rating}>
+                                    <Star size={11} className={styles.starIcon} />
+                                    <span>{listing.rating.toFixed(1)} ({listing.reviewCount})</span>
+                                </span>
+                            )}
                         </div>
                     </div>
-                    <div className={styles.subtitle}>
-                        Hosted by {listing.host.name}
+                    
+                    <div className={styles.title}>{listing.title}</div>
+
+                    {/* Amenities Row */}
+                    <div className={styles.amenitiesRow}>
+                        <div className={styles.amenityItem}>
+                            <BedDouble size={14} className={styles.amenityIcon} />
+                            <span>{beds} Bed{beds > 1 ? 's' : ''}</span>
+                        </div>
+                        <div className={styles.amenityItem}>
+                            <Users size={14} className={styles.amenityIcon} />
+                            <span>{guests} Guest{guests > 1 ? 's' : ''}</span>
+                        </div>
+                        <div className={styles.amenityItem}>
+                            <SpecialAmenityIcon size={14} className={styles.amenityIcon} />
+                            <span>{specialAmenityLabel}</span>
+                        </div>
                     </div>
-                    <div className={styles.dates}>{listing.availableDates}</div>
-                    <div className={styles.priceRow}>
-                        <div className={styles.price}>{priceLabel}</div>
-                        <div className={styles.period}>night</div>
+                    
+                    <div className={styles.rowFour}>
+                        <div className={styles.priceAndPeriod}>
+                            <span className={styles.price}>{priceLabel}</span>
+                            <span className={styles.period}> / night</span>
+                        </div>
                     </div>
                 </div>
             </Link>
