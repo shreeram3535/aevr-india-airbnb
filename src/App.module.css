@@ -967,6 +967,9 @@
     position: relative;
     width: 100%;
     min-height: 600px;
+    background-image: url('/coastal_calm_hero.png');
+    background-size: cover;
+    background-position: center;
     color: var(--color-black);
     padding-top: calc(var(--header-height) + 80px);
     padding-bottom: 0;
@@ -978,24 +981,12 @@
     border-bottom: none;
     margin-bottom: 0px;
     box-sizing: border-box;
-    overflow: hidden;
-}
-
-.heroSection::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-image: url('/coastal_calm_hero.png');
-    background-size: cover;
-    background-position: center;
-    filter: contrast(1.12) brightness(0.9) saturate(1.02);
-    z-index: 0;
 }
 
 .heroOverlay {
     position: absolute;
     inset: 0;
-    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.25) 0%, rgba(0, 0, 0, 0.55) 100%);
+    background: linear-gradient(to bottom, rgba(40, 43, 43, 0.45) 0%, rgba(40, 43, 43, 0.7) 100%);
     z-index: 1;
 }
 
