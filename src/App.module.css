@@ -988,7 +988,7 @@
     background-image: url('/coastal_calm_hero.png');
     background-size: cover;
     background-position: center;
-    filter: contrast(1.28) brightness(0.85) saturate(1.08);
+    filter: contrast(1.12) brightness(0.9) saturate(1.02);
     z-index: 0;
 }
 
