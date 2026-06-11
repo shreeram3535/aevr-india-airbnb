@@ -1,16 +1,29 @@
 :root {
   /* Brand Colors */
-  --color-primary: #008489;
-  --color-primary-hover: #006c70;
+  --color-primary: #7A9EAE;
+  --color-primary-hover: #638392;
+  --color-accent: #B88A5A;
+  --color-cream-bg: #E9DCC9;
+  --color-section-bg: #F4EDE4;
 
   /* Neutrals */
   --color-white: #ffffff;
-  --color-black: #222222;
+  --color-black: #282B2B;
   --color-gray-50: #f7f7f7;
   --color-gray-100: #dddddd;
-  --color-gray-200: #717171;
+  --color-gray-200: #767676;
   --color-gray-300: #6a6a6a;
   --color-gray-400: #b0b0b0;
+  
+  /* Redesign Colors */
+  --color-dark-bg: #121212;
+  --color-dark-surface: #181818;
+  --color-body-bg: #FCFAF7;
+  --color-header-bg: rgba(252, 250, 247, 0.85);
+  --color-card-bg: linear-gradient(135deg, rgba(244, 237, 228, 0.4) 0%, rgba(255, 255, 255, 0.9) 50%, rgba(122, 158, 174, 0.12) 100%);
+  --color-card-border: rgba(122, 158, 174, 0.15);
+  --color-card-shadow: 0 4px 20px rgba(122, 158, 174, 0.05);
+  --color-card-shadow-hover: 0 12px 30px rgba(122, 158, 174, 0.12);
 
   /* Text Colors */
   --text-primary: var(--color-black);
@@ -18,16 +31,8 @@
   --text-light: var(--color-white);
 
   /* Typography */
-  --font-family: -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    Roboto,
-    Helvetica,
-    Arial,
-    sans-serif,
-    "Apple Color Emoji",
-    "Segoe UI Emoji",
-    "Segoe UI Symbol";
+  --font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-serif: 'Playfair Display', Georgia, serif;
   --font-size-xs: 0.75rem;
   /* 12px */
   --font-size-sm: 0.875rem;
@@ -69,23 +74,53 @@
   --shadow-floating: 0 6px 20px rgba(0, 0, 0, 0.2);
 
   /* Layout */
-  --header-height: 60px;
+  --header-height: 80px;
   --category-bar-height: 52px;
-  --container-padding: 80px;
+  --container-padding: 1.5cm;
   /* Desktop padding */
 }
 
 @media (max-width: 1128px) {
   :root {
-    --container-padding: 40px;
+    --container-padding: 20px;
   }
 }
 
 @media (max-width: 744px) {
   :root {
-    --container-padding: 24px;
-    --header-height: 52px;
+    --container-padding: 16px;
+    --header-height: 68px;
     --category-bar-height: 46px;
     /* Slightly smaller on mobile */
   }
+}
+
+[data-theme='dark'] {
+  --color-body-bg: #121212;          /* Black background */
+  --color-white: #1e1e1e;            /* Dark surface cards */
+  --color-black: #f5f5f5;            /* White text */
+  --color-section-bg: #222222;       /* Dark section background */
+  --color-header-bg: rgba(30, 30, 30, 0.85);
+  --color-card-bg: linear-gradient(135deg, rgba(184, 138, 90, 0.08) 0%, rgba(30, 30, 30, 0.9) 50%, rgba(122, 158, 174, 0.08) 100%);
+  --color-card-border: rgba(122, 158, 174, 0.22);
+  --color-card-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  --color-card-shadow-hover: 0 12px 30px rgba(0, 0, 0, 0.4);
+  
+  /* Gray neutrals for dark mode */
+  --color-gray-50: #292929;
+  --color-gray-100: #3a3a3a;
+  --color-gray-200: #a0a0a0;
+  --color-gray-300: #c0c0c0;
+  --color-gray-400: #4a4a4a;
+  
+  /* Text overrides */
+  --text-primary: var(--color-black);
+  --text-secondary: var(--color-gray-200);
+  --text-light: #ffffff;
+  
+  /* Extra adjustments for box shadows and borders in dark mode */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 6px 16px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.7);
+  --shadow-floating: 0 6px 20px rgba(0, 0, 0, 0.8);
 }

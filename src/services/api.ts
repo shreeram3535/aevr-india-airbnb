@@ -1443,6 +1443,7 @@ export const api = {
                 is_guest_favorite: input.isGuestFavorite ?? false,
                 availability_summary: input.availabilitySummary ?? null,
                 room_types: serializeRoomTypes(input.roomTypes),
+                rating: 5.0,
             })
             .select(LISTING_SELECT)
             .single();

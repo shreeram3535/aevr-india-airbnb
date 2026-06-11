@@ -4,41 +4,206 @@
     left: 0;
     right: 0;
     height: var(--header-height);
-    background-color: var(--color-white);
-    border-bottom: 1px solid var(--color-gray-100);
+    background-color: var(--color-header-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(40, 43, 43, 0.08);
+    box-shadow: 0 2px 16px rgba(40, 43, 43, 0.03);
     z-index: 1000;
     padding: 0 var(--container-padding);
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: var(--spacing-4);
+    transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.headerTransparent {
+    background-color: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border-bottom: 1px solid rgba(40, 43, 43, 0) !important;
+    box-shadow: none !important;
 }
 
 /* Logo Section */
 .logoContainer {
-    flex: 1 0 140px;
+    flex: 1 0 220px;
     display: flex;
     align-items: center;
 }
 
-.logoText {
-    color: var(--color-primary);
-    font-weight: var(--font-weight-bold);
-    font-size: var(--font-size-2xl);
-    letter-spacing: -0.02em;
+.logoAnchor {
     display: flex;
     align-items: center;
-    gap: var(--spacing-2);
+    gap: 10px;
+    text-decoration: none;
+}
+
+.logoIcon {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+}
+
+.logoTextWrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    line-height: 1.1;
+}
+
+.logoText {
+    color: var(--color-black);
+    font-weight: 800;
+    font-size: 22px;
+    letter-spacing: 0.04em;
+    font-family: 'Outfit', -apple-system, sans-serif;
+    text-transform: uppercase;
+}
+
+.logoSubtext {
+    color: var(--color-gray-200);
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-top: 1px;
 }
 
 /* User Menu (Right) */
 .userMenu {
-    flex: 0 0 auto;
+    flex: 1 0 260px;
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    gap: var(--spacing-2);
+    gap: var(--spacing-4);
 }
+
+.centerNav {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-6);
+    justify-content: center;
+    flex: 2;
+}
+
+.navLink {
+    color: var(--color-black);
+    font-size: 15px;
+    font-weight: 500;
+    opacity: 0.85;
+    transition: opacity 0.2s, color 0.2s;
+    text-decoration: none;
+    user-select: none;
+}
+
+.navLink:hover {
+    opacity: 1;
+    color: var(--color-primary);
+}
+
+.dropdownLink {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.navChevron {
+    opacity: 0.7;
+    transition: transform 0.2s;
+}
+
+.dropdownLink:hover .navChevron {
+    transform: translateY(1px);
+}
+
+.wishlistBtn {
+    background: transparent;
+    border: none;
+    color: var(--color-black);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.wishlistBtn:hover {
+    background-color: rgba(40, 43, 43, 0.04);
+    color: var(--color-primary);
+}
+
+.languageBtn {
+    background: transparent;
+    border: none;
+    color: var(--color-black);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.languageBtn:hover {
+    background-color: rgba(40, 43, 43, 0.04);
+}
+
+.langChevron {
+    opacity: 0.7;
+}
+
+.loginBtn {
+    background-color: #1B365D;
+    color: var(--color-white);
+    font-size: 14px;
+    font-weight: 600;
+    padding: 10px 24px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+    white-space: nowrap;
+}
+
+.loginBtn:hover {
+    background-color: #122543;
+}
+
+.loginBtn:active {
+    transform: scale(0.97);
+}
+
+.becomeHostBtn {
+    background-color: var(--color-primary);
+    color: #121212;
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    padding: 8px 16px;
+    border-radius: var(--radius-full);
+    border: none;
+    cursor: pointer;
+    transition: transform 0.2s, background-color 0.2s;
+    user-select: none;
+}
+
+.becomeHostBtn:hover {
+    background-color: var(--color-primary-hover);
+    transform: translateY(-1px);
+}
+
+.becomeHostBtn:active {
+    transform: translateY(0);
+}
+
 
 /* Right-Side Drawer Backdrop Overlay */
 .drawerBackdrop {
@@ -317,11 +482,11 @@
     padding: 5px 5px 5px 12px;
     border: 1px solid var(--color-gray-100);
     background-color: var(--color-white);
-    color: inherit;
+    color: var(--color-black);
     font-family: inherit;
     border-radius: 21px;
     margin-left: var(--spacing-1);
-    transition: box-shadow 0.2s, transform 0.1s;
+    transition: box-shadow 0.2s, transform 0.1s, background-color 0.3s, border-color 0.3s;
     cursor: pointer;
     outline: none;
 }
@@ -447,6 +612,11 @@
     .drawerPanel {
         max-width: 300px;
     }
+
+    .centerNav,
+    .favoriteIconBtn {
+        display: none !important;
+    }
 }
 
 .defaultGuestAvatar {
@@ -463,4 +633,115 @@
 .guestAvatarIcon {
     color: var(--color-white);
     opacity: 0.95;
+}
+
+/* Scroll-aware Transparent Header overrides */
+.headerTransparent .logoText {
+    color: var(--color-white) !important;
+}
+
+.headerTransparent .logoSubtext {
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.headerTransparent .logoIcon circle,
+.headerTransparent .logoIcon path {
+    stroke: var(--color-white) !important;
+}
+
+.headerTransparent .navLink {
+    color: var(--color-white) !important;
+    opacity: 0.95;
+}
+
+.headerTransparent .navLink:hover {
+    opacity: 1;
+    color: var(--color-white) !important;
+}
+
+.headerTransparent .navChevron {
+    color: var(--color-white) !important;
+}
+
+.headerTransparent .wishlistBtn {
+    color: var(--color-white) !important;
+}
+
+.headerTransparent .wishlistBtn:hover {
+    background-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+.headerTransparent .languageBtn {
+    color: var(--color-white) !important;
+}
+
+.headerTransparent .languageBtn:hover {
+    background-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+.headerTransparent .loginBtn {
+    background-color: var(--color-white) !important;
+    color: var(--color-black) !important;
+}
+
+.headerTransparent .loginBtn:hover {
+    background-color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.headerTransparent .profileMenu {
+    border-color: rgba(255, 255, 255, 0.45) !important;
+    background-color: rgba(255, 255, 255, 0.12) !important;
+    color: var(--color-white) !important;
+}
+
+.headerTransparent .profileMenu:hover {
+    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.15) !important;
+    background-color: rgba(255, 255, 255, 0.22) !important;
+}
+
+.headerTransparent .profileMenu svg {
+    color: var(--color-white) !important;
+}
+
+.filterToggleBtn {
+    background: transparent;
+    border: none;
+    color: var(--color-black);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.filterToggleBtn:hover {
+    background-color: rgba(40, 43, 43, 0.04);
+    color: var(--color-primary);
+}
+
+.headerTransparent .filterToggleBtn {
+    color: var(--color-white) !important;
+}
+
+.headerTransparent .filterToggleBtn:hover {
+    background-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+.filterBadge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--color-primary);
+    color: var(--color-white);
+    font-size: 10px;
+    font-weight: 700;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    border-radius: 50%;
+    margin-left: 2px;
 }
