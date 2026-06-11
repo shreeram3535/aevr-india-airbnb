@@ -637,7 +637,7 @@
 
 /* Scroll-aware Transparent Header overrides */
 .headerTransparent .logoText {
-    color: var(--color-white) !important;
+    color: #ffffff !important;
 }
 
 .headerTransparent .logoSubtext {
@@ -646,25 +646,25 @@
 
 .headerTransparent .logoIcon circle,
 .headerTransparent .logoIcon path {
-    stroke: var(--color-white) !important;
+    stroke: #ffffff !important;
 }
 
 .headerTransparent .navLink {
-    color: var(--color-white) !important;
+    color: #ffffff !important;
     opacity: 0.95;
 }
 
 .headerTransparent .navLink:hover {
     opacity: 1;
-    color: var(--color-white) !important;
+    color: #ffffff !important;
 }
 
 .headerTransparent .navChevron {
-    color: var(--color-white) !important;
+    color: #ffffff !important;
 }
 
 .headerTransparent .wishlistBtn {
-    color: var(--color-white) !important;
+    color: #ffffff !important;
 }
 
 .headerTransparent .wishlistBtn:hover {
@@ -672,7 +672,7 @@
 }
 
 .headerTransparent .languageBtn {
-    color: var(--color-white) !important;
+    color: #ffffff !important;
 }
 
 .headerTransparent .languageBtn:hover {
@@ -680,8 +680,8 @@
 }
 
 .headerTransparent .loginBtn {
-    background-color: var(--color-white) !important;
-    color: var(--color-black) !important;
+    background-color: #ffffff !important;
+    color: #282B2B !important;
 }
 
 .headerTransparent .loginBtn:hover {
@@ -691,7 +691,7 @@
 .headerTransparent .profileMenu {
     border-color: rgba(255, 255, 255, 0.45) !important;
     background-color: rgba(255, 255, 255, 0.12) !important;
-    color: var(--color-white) !important;
+    color: #ffffff !important;
 }
 
 .headerTransparent .profileMenu:hover {
@@ -700,7 +700,7 @@
 }
 
 .headerTransparent .profileMenu svg {
-    color: var(--color-white) !important;
+    color: #ffffff !important;
 }
 
 .filterToggleBtn {
@@ -724,7 +724,7 @@
 }
 
 .headerTransparent .filterToggleBtn {
-    color: var(--color-white) !important;
+    color: #ffffff !important;
 }
 
 .headerTransparent .filterToggleBtn:hover {
