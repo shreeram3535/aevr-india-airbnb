@@ -23,9 +23,7 @@ import {
     Minus,
     Search,
     Building2,
-    Headphones,
     Compass,
-    Smile,
     Leaf,
     Music,
     Users,
@@ -465,48 +463,6 @@ export const Home = () => {
                                 <Search size={18} />
                             </button>
                         </form>
-                    </div>
-                </div>
-
-                {/* Stats Bar */}
-                <div className={styles.statsBar}>
-                    <div className={styles.statsContainer}>
-                        <div className={styles.statItem}>
-                            <div className={styles.statIconWrapper}>
-                                <Building2 className={styles.statIcon} size={20} />
-                            </div>
-                            <div className={styles.statTextGroup}>
-                                <span className={styles.statNumber}>500+</span>
-                                <span className={styles.statLabel}>Verified Villas</span>
-                            </div>
-                        </div>
-                        <div className={styles.statItem}>
-                            <div className={styles.statIconWrapper}>
-                                <Star className={styles.statIcon} size={20} />
-                            </div>
-                            <div className={styles.statTextGroup}>
-                                <span className={styles.statNumber}>4.8</span>
-                                <span className={styles.statLabel}>Average Rating</span>
-                            </div>
-                        </div>
-                        <div className={styles.statItem}>
-                            <div className={styles.statIconWrapper}>
-                                <Smile className={styles.statIcon} size={20} />
-                            </div>
-                            <div className={styles.statTextGroup}>
-                                <span className={styles.statNumber}>1000+</span>
-                                <span className={styles.statLabel}>Happy Guests</span>
-                            </div>
-                        </div>
-                        <div className={styles.statItem}>
-                            <div className={styles.statIconWrapper}>
-                                <Headphones className={styles.statIcon} size={20} />
-                            </div>
-                            <div className={styles.statTextGroup}>
-                                <span className={styles.statNumber}>24/7</span>
-                                <span className={styles.statLabel}>Customer Support</span>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>

@@ -654,11 +654,6 @@ Please let me know the next steps for confirming the booking.`;
                 <h1 className={styles.title}>{listing.title}</h1>
                 <div className={styles.subHeading}>
                     <div className={styles.ratingLoc}>
-                        <Star size={14} fill="currentColor" />
-                        <span>{listing.rating}</span>
-                        <span>·</span>
-                        <span style={{ textDecoration: 'underline' }}>{listing.reviewCount} reviews</span>
-                        <span>·</span>
                         <span style={{ textDecoration: 'underline' }}>{listing.location.city}, {listing.location.country}</span>
                     </div>
                     <div className={styles.actions}>
