@@ -23,6 +23,16 @@ const getFormattedLocation = (city: string, country: string) => {
     return `${cleanCity}, ${country}`;
 };
 
+const getHostedByLabel = (listing: { category: string; price: number }) => {
+    const normalizedCategory = listing.category.toLowerCase();
+    const isLuxeCategory = normalizedCategory.includes('luxe') || normalizedCategory.includes('luxury');
+    const isHighPrice = listing.price >= 10000;
+    if (isLuxeCategory || isHighPrice) {
+        return 'Hosted by Aevr Luxe';
+    }
+    return 'Hosted by Aevr';
+};
+
 const getSpecialAmenity = (listing: Listing) => {
     const title = listing.title.toLowerCase();
     const desc = listing.description.toLowerCase();
@@ -215,6 +225,7 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
                     </div>
                     
                     <div className={styles.title}>{listing.title}</div>
+                    <div className={styles.hostedBy}>{getHostedByLabel({ category: listing.category, price: listing.price })}</div>
 
                     {/* Amenities Row */}
                     <div className={styles.amenitiesRow}>

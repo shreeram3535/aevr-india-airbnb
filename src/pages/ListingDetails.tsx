@@ -235,6 +235,16 @@ const formatPhoneDisplay = (value?: string | null) => {
     return normalized;
 };
 
+const getHostedByLabel = (listing: { category?: string; price?: number }) => {
+    const normalizedCategory = listing.category?.toLowerCase() ?? '';
+    const isLuxeCategory = normalizedCategory.includes('luxe') || normalizedCategory.includes('luxury');
+    const isHighPrice = (listing.price ?? 0) >= 10000;
+    if (isLuxeCategory || isHighPrice) {
+        return 'Aevr Luxe';
+    }
+    return 'Aevr';
+};
+
 const fallbackRoomTypes = (listing?: Listing): RoomType[] => {
     if (!listing) {
         return [];
@@ -818,7 +828,7 @@ Please let me know the next steps for confirming the booking.`;
                 <div className={styles.leftColumn}>
                     <div className={styles.hostSection}>
                         <div className={styles.hostInfo}>
-                            <h2>Hosted by {listing.host.name}</h2>
+                            <h2>Hosted by {getHostedByLabel({ category: listing.category, price: listing.price })}</h2>
                             <p style={{ color: 'var(--text-secondary)' }}>
                                 {listing.host.isSuperhost && 'Superhost · '}
                                 {listingSummary || 'Flexible stay'}
