@@ -126,6 +126,7 @@ export const AdminFlashSales = () => {
     const [error, setError] = useState<string | null>(null);
 
     const [listingId, setListingId] = useState('');
+    const [internalName, setInternalName] = useState('');
     const [saleType, setSaleType] = useState<FlashSaleType>('percent');
     const [saleValue, setSaleValue] = useState('20');
     const [startAt, setStartAt] = useState('');
@@ -181,6 +182,11 @@ export const AdminFlashSales = () => {
         load();
     }, [navigate]);
 
+    useEffect(() => {
+        const selectedListing = listings.find((l) => l.id === listingId);
+        setInternalName(selectedListing?.internalName ?? '');
+    }, [listingId, listings]);
+
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
@@ -218,6 +224,11 @@ export const AdminFlashSales = () => {
 
         setSaving(true);
         try {
+            await api.updateListingInternalName(listingId, internalName);
+            setListings((prev) =>
+                prev.map((l) => (l.id === listingId ? { ...l, internalName } : l))
+            );
+
             const drop = await api.upsertScheduledDrop({
                 listingId,
                 saleType,
@@ -275,6 +286,18 @@ export const AdminFlashSales = () => {
                             ))}
                         </select>
                     </label>
+
+                    {listingId && (
+                        <label>
+                            Internal Name (Admin only)
+                            <input
+                                type="text"
+                                value={internalName}
+                                onChange={(e) => setInternalName(e.target.value)}
+                                placeholder="e.g. Premium Lakefront Villa"
+                            />
+                        </label>
+                    )}
 
                     <label>
                         Sale type
