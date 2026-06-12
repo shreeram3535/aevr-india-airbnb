@@ -221,7 +221,6 @@ export const AdminFlashSales = () => {
             setSavingInternalName(false);
         }
     };
-
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
