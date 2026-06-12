@@ -73,6 +73,7 @@ export interface Listing {
     hostId?: string;
     mapLink?: string;
     isActive?: boolean;
+    internalName?: string;
 }
 
 export interface RoomType {

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Lock, ChevronDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import styles from './AdminFlashSales.module.css';
 import { api } from '../services/api';
@@ -126,10 +127,14 @@ export const AdminFlashSales = () => {
     const [error, setError] = useState<string | null>(null);
 
     const [listingId, setListingId] = useState('');
+    const [internalName, setInternalName] = useState('');
     const [saleType, setSaleType] = useState<FlashSaleType>('percent');
     const [saleValue, setSaleValue] = useState('20');
     const [startAt, setStartAt] = useState('');
     const [endAt, setEndAt] = useState('');
+    const [savingInternalName, setSavingInternalName] = useState(false);
+    const [internalNameSaved, setInternalNameSaved] = useState(false);
+    const [dropdownOpen, setDropdownOpen] = useState(false);
 
 
 
@@ -181,6 +186,42 @@ export const AdminFlashSales = () => {
         load();
     }, [navigate]);
 
+    useEffect(() => {
+        const handleClose = () => setDropdownOpen(false);
+        document.addEventListener('click', handleClose);
+        return () => document.removeEventListener('click', handleClose);
+    }, []);
+
+    const toggleDropdown = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setDropdownOpen((prev) => !prev);
+    };
+
+    useEffect(() => {
+        const selectedListing = listings.find((l) => l.id === listingId);
+        setInternalName(selectedListing?.internalName ?? '');
+        setInternalNameSaved(false);
+    }, [listingId, listings]);
+
+    const handleSaveInternalName = async () => {
+        if (!listingId) return;
+        setSavingInternalName(true);
+        setInternalNameSaved(false);
+        setError(null);
+        try {
+            await api.updateListingInternalName(listingId, internalName);
+            setListings((prev) =>
+                prev.map((l) => (l.id === listingId ? { ...l, internalName } : l))
+            );
+            setInternalNameSaved(true);
+            setTimeout(() => setInternalNameSaved(false), 3000);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Unable to save internal name.');
+        } finally {
+            setSavingInternalName(false);
+        }
+    };
+
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
@@ -218,6 +259,11 @@ export const AdminFlashSales = () => {
 
         setSaving(true);
         try {
+            await api.updateListingInternalName(listingId, internalName);
+            setListings((prev) =>
+                prev.map((l) => (l.id === listingId ? { ...l, internalName } : l))
+            );
+
             const drop = await api.upsertScheduledDrop({
                 listingId,
                 saleType,
@@ -268,13 +314,92 @@ export const AdminFlashSales = () => {
                 <form onSubmit={handleSave} className={styles.form}>
                     <label>
                         Property
-                        <select value={listingId} onChange={(e) => setListingId(e.target.value)}>
-                            <option value="">Select property</option>
-                            {listings.map((listing) => (
-                                <option key={listing.id} value={listing.id}>{listing.title} - {listing.location.city}</option>
-                            ))}
-                        </select>
+                        <div className={styles.customDropdown}>
+                            <button
+                                type="button"
+                                className={styles.dropdownTrigger}
+                                onClick={toggleDropdown}
+                            >
+                                <span>
+                                    {listingId
+                                        ? (listings.find((l) => l.id === listingId)?.title ?? '') + ' - ' + (listings.find((l) => l.id === listingId)?.location.city ?? '')
+                                        : 'Select property'}
+                                </span>
+                                <ChevronDown size={16} />
+                            </button>
+
+                            {dropdownOpen && (
+                                <div className={styles.dropdownMenu} onClick={(e) => e.stopPropagation()}>
+                                    <button
+                                        type="button"
+                                        className={`${styles.dropdownOption} ${!listingId ? styles.dropdownOptionActive : ''}`}
+                                        onClick={() => {
+                                            setListingId('');
+                                            setDropdownOpen(false);
+                                        }}
+                                    >
+                                        <span className={styles.optionMainText}>Select property</span>
+                                    </button>
+                                    {listings.map((listing) => {
+                                        const isActive = listingId === listing.id;
+                                        return (
+                                            <button
+                                                key={listing.id}
+                                                type="button"
+                                                className={`${styles.dropdownOption} ${isActive ? styles.dropdownOptionActive : ''}`}
+                                                onClick={() => {
+                                                    setListingId(listing.id);
+                                                    setDropdownOpen(false);
+                                                }}
+                                            >
+                                                <span className={styles.optionMainText}>
+                                                    {listing.title} - {listing.location.city}
+                                                </span>
+                                                <span className={styles.optionSubText}>
+                                                    {listing.internalName
+                                                        ? `Internal: ${listing.internalName}`
+                                                        : 'Internal: not set'}
+                                                </span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
                     </label>
+
+                    {listingId && (
+                        <div className={styles.internalNameCard}>
+                            <div className={styles.internalNameHeader}>
+                                <div className={styles.internalNameLabelGroup}>
+                                    <Lock size={16} />
+                                    <span>Internal Name (Admin only)</span>
+                                </div>
+                                {internalNameSaved && (
+                                    <span className={styles.savedFeedback}>
+                                        Saved ✓
+                                    </span>
+                                )}
+                            </div>
+                            <div className={styles.internalNameRow}>
+                                <input
+                                    type="text"
+                                    value={internalName}
+                                    onChange={(e) => setInternalName(e.target.value)}
+                                    placeholder="e.g. Premium Lakefront Villa"
+                                    className={styles.internalNameInput}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={handleSaveInternalName}
+                                    disabled={savingInternalName}
+                                    className={styles.internalNameSaveBtn}
+                                >
+                                    {savingInternalName ? 'Saving...' : 'Save'}
+                                </button>
+                            </div>
+                        </div>
+                    )}
 
                     <label>
                         Sale type
