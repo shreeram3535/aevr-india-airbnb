@@ -67,6 +67,7 @@ type SupabaseListingRow = {
     beds: number | null;
     baths: number | null;
     is_active: boolean;
+    internal_name?: string | null;
     room_types: unknown | null;
     category: JoinedEntity<{
         id: string;
@@ -200,6 +201,7 @@ const LISTING_SELECT = `
     beds,
     baths,
     is_active,
+    internal_name,
     category:categories (
         id,
         slug,
@@ -371,6 +373,7 @@ const mapListing = (row: SupabaseListingRow): Listing => {
         roomTypes,
         mapLink: row.map_link ?? undefined,
         isActive: row.is_active,
+        internalName: row.internal_name ?? undefined,
     };
 };
 
@@ -1801,5 +1804,20 @@ export const api = {
         }
 
         return mapBooking(data as unknown as SupabaseBookingRow);
+    },
+
+    updateListingInternalName: async (listingId: string, internalName: string): Promise<void> => {
+        if (!supabase) {
+            throw new Error('Supabase is not configured');
+        }
+
+        const { error } = await supabase
+            .from('listings')
+            .update({ internal_name: internalName })
+            .eq('id', listingId);
+
+        if (error) {
+            throw error;
+        }
     },
 };
