@@ -8,7 +8,7 @@ import { hasSupabaseConfig } from '../services/supabase';
 import { uploadListingImages } from '../services/storage';
 import { HostApprovalStatusView } from '../components/HostApprovalStatus';
 import { SkeletonScreen } from '../components/SkeletonScreen';
-import type { AvailabilityBlock, AvailabilityBlockStatus, Category, Listing, ListingMediaItem, RoomType } from '../types';
+import type { AvailabilityBlock, AvailabilityBlockStatus, Category, Listing, ListingMediaItem, RoomType, Experience, ExperienceCategory } from '../types';
 import { createExternalVideoMedia } from '../services/media';
 
 type FormState = {
@@ -42,6 +42,16 @@ type RoomTypeFormState = {
     videoLinks: string;
 };
 
+type ExperienceFormState = {
+    id: string;
+    title: string;
+    category: ExperienceCategory;
+    description: string;
+    iconOrImage: string;
+    distance: string;
+    travelTime: string;
+};
+
 const initialState: FormState = {
     title: '',
     description: '',
@@ -71,6 +81,16 @@ const createRoomTypeRow = (overrides: Partial<RoomTypeFormState> = {}): RoomType
     existingMedia: overrides.existingMedia ?? [],
     photoFiles: overrides.photoFiles ?? [],
     videoLinks: overrides.videoLinks ?? '',
+});
+
+const createExperienceRow = (overrides: Partial<ExperienceFormState> = {}): ExperienceFormState => ({
+    id: overrides.id ?? crypto.randomUUID(),
+    title: overrides.title ?? '',
+    category: overrides.category ?? 'Attraction',
+    description: overrides.description ?? '',
+    iconOrImage: overrides.iconOrImage ?? '',
+    distance: overrides.distance ?? '',
+    travelTime: overrides.travelTime ?? '',
 });
 
 const listingToForm = (listing: Listing): FormState => ({
@@ -112,6 +132,21 @@ const roomTypesToForm = (roomTypes?: RoomType[], fallbackPrice?: number): RoomTy
     );
 };
 
+const experiencesToForm = (experiences?: Experience[]): ExperienceFormState[] => {
+    if (!experiences || experiences.length === 0) {
+        return [];
+    }
+    return experiences.map(exp => createExperienceRow({
+        id: exp.id,
+        title: exp.title,
+        category: exp.category,
+        description: exp.description,
+        iconOrImage: exp.iconOrImage ?? '',
+        distance: exp.distance ?? '',
+        travelTime: exp.travelTime ?? '',
+    }));
+};
+
 const parseVideoLinks = (value: string, startingSortOrder = 0) =>
     value
         .split(/\n|,/)
@@ -141,6 +176,7 @@ export const HostNewProperty = () => {
     const [categories, setCategories] = useState<Category[]>([]);
     const [form, setForm] = useState<FormState>(initialState);
     const [roomTypes, setRoomTypes] = useState<RoomTypeFormState[]>([createRoomTypeRow()]);
+    const [localExperiences, setLocalExperiences] = useState<ExperienceFormState[]>([]);
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const [previewUrls, setPreviewUrls] = useState<string[]>([]);
     const [existingMedia, setExistingMedia] = useState<ListingMediaItem[]>([]);
@@ -192,6 +228,7 @@ export const HostNewProperty = () => {
                 } else {
                     setForm(listingToForm(listing));
                     setRoomTypes(roomTypesToForm(listing.roomTypes, listing.price));
+                    setLocalExperiences(experiencesToForm(listing.localExperiences));
                     setExistingMedia(listing.media);
                     setVideoLinks(listing.media.filter((item) => item.kind === 'video').map((item) => item.url).join('\n'));
                     setAvailabilityBlocks(await api.fetchAvailabilityBlocks(listingId));
@@ -202,6 +239,7 @@ export const HostNewProperty = () => {
                 categorySlug: data.find((item) => item.slug && item.slug !== 'icons')?.slug ?? current.categorySlug,
                 }));
                 setRoomTypes([createRoomTypeRow()]);
+                setLocalExperiences([]);
                 setExistingMedia([]);
                 setVideoLinks('');
             }
@@ -284,6 +322,24 @@ export const HostNewProperty = () => {
         });
     };
 
+    const updateExperience = (experienceId: string, field: keyof ExperienceFormState) => (
+        event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    ) => {
+        setLocalExperiences((current) =>
+            current.map((experience) =>
+                experience.id === experienceId ? { ...experience, [field]: event.target.value } : experience
+            )
+        );
+    };
+
+    const addExperience = () => {
+        setLocalExperiences((current) => [...current, createExperienceRow()]);
+    };
+
+    const removeExperience = (experienceId: string) => {
+        setLocalExperiences((current) => current.filter((experience) => experience.id !== experienceId));
+    };
+
     const refreshAvailabilityBlocks = async () => {
         if (!listingId) {
             return;
@@ -363,6 +419,20 @@ export const HostNewProperty = () => {
                 throw new Error('Add at least one room type with a price and count.');
             }
 
+            const normalizedExperiences = localExperiences.map((exp, index): Experience | null => {
+                const title = exp.title.trim();
+                if (!title) return null;
+                return {
+                    id: exp.id || `${index}-${title.toLowerCase().replace(/\s+/g, '-')}`,
+                    title,
+                    category: exp.category,
+                    description: exp.description.trim(),
+                    iconOrImage: exp.iconOrImage.trim() || undefined,
+                    distance: exp.distance.trim() || undefined,
+                    travelTime: exp.travelTime.trim() || undefined,
+                };
+            }).filter((item): item is Experience => item !== null);
+
             const startingPrice = Math.min(...normalizedRoomTypes.map((roomType) => roomType.pricePerNight));
             const hostName = form.hostName.trim();
 
@@ -403,6 +473,7 @@ export const HostNewProperty = () => {
                 amenityLabels: form.amenityLabels.split(',').map((item) => item.trim()).filter(Boolean),
                 isGuestFavorite: false,
                 roomTypes: normalizedRoomTypes,
+                localExperiences: normalizedExperiences.length > 0 ? normalizedExperiences : undefined,
                 ...(propertyMedia.length > 0 ? { media: propertyMedia } : {}),
             };
 
@@ -670,6 +741,96 @@ export const HostNewProperty = () => {
                                         </>
                                     );
                                 })()}
+                            </article>
+                        ))}
+                    </div>
+                </section>
+
+                <section className={styles.roomTypesSection}>
+                    <div className={styles.sectionHeader}>
+                        <div>
+                            <h2>Local Experiences & Nearby Attractions</h2>
+                            <p>Help guests discover the best attractions, activities, food spots, cultural experiences, and hidden gems near your property.</p>
+                        </div>
+                        <button type="button" className={styles.secondaryButton} onClick={addExperience}>
+                            <Plus size={16} /> Add experience
+                        </button>
+                    </div>
+
+                    <div className={styles.roomTypesList}>
+                        {localExperiences.map((experience, index) => (
+                            <article key={experience.id} className={styles.roomTypeCard}>
+                                <div className={styles.grid}>
+                                    <label className={styles.field}>
+                                        <span>Title</span>
+                                        <input
+                                            value={experience.title}
+                                            onChange={updateExperience(experience.id, 'title')}
+                                            placeholder="e.g. Sunset Boat Tour"
+                                            required={localExperiences.length > 0 && !!experience.title}
+                                        />
+                                    </label>
+                                    <label className={styles.field}>
+                                        <span>Category</span>
+                                        <select
+                                            value={experience.category}
+                                            onChange={updateExperience(experience.id, 'category')}
+                                        >
+                                            <option value="Attraction">Attraction</option>
+                                            <option value="Activity">Activity</option>
+                                            <option value="Food & Dining">Food & Dining</option>
+                                            <option value="Nature">Nature</option>
+                                            <option value="Adventure">Adventure</option>
+                                            <option value="Shopping">Shopping</option>
+                                            <option value="Culture & Heritage">Culture & Heritage</option>
+                                            <option value="Wellness">Wellness</option>
+                                            <option value="Nightlife">Nightlife</option>
+                                            <option value="Other">Other</option>
+                                        </select>
+                                    </label>
+                                </div>
+                                <label className={styles.field}>
+                                    <span>Description</span>
+                                    <textarea
+                                        value={experience.description}
+                                        onChange={updateExperience(experience.id, 'description')}
+                                        placeholder="Short description of the experience..."
+                                        rows={2}
+                                        required={localExperiences.length > 0 && !!experience.title}
+                                    />
+                                </label>
+                                <div className={styles.grid}>
+                                    <label className={styles.field}>
+                                        <span>Icon or Image URL (Optional)</span>
+                                        <input
+                                            value={experience.iconOrImage}
+                                            onChange={updateExperience(experience.id, 'iconOrImage')}
+                                            placeholder="e.g. 🚤 or https://..."
+                                        />
+                                    </label>
+                                    <label className={styles.field}>
+                                        <span>Distance (Optional)</span>
+                                        <input
+                                            value={experience.distance}
+                                            onChange={updateExperience(experience.id, 'distance')}
+                                            placeholder="e.g. 2 km"
+                                        />
+                                    </label>
+                                    <label className={styles.field}>
+                                        <span>Travel Time (Optional)</span>
+                                        <input
+                                            value={experience.travelTime}
+                                            onChange={updateExperience(experience.id, 'travelTime')}
+                                            placeholder="e.g. 10 mins walk"
+                                        />
+                                    </label>
+                                </div>
+                                <div className={styles.roomTypeFooter}>
+                                    <span className={styles.roomTypeIndex}>Experience {index + 1}</span>
+                                    <button type="button" className={styles.roomTypeRemove} onClick={() => removeExperience(experience.id)}>
+                                        <Trash2 size={16} /> Remove
+                                    </button>
+                                </div>
                             </article>
                         ))}
                     </div>

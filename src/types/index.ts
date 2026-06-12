@@ -39,6 +39,18 @@ export interface Location {
     lng: number;
 }
 
+export type ExperienceCategory = 'Attraction' | 'Activity' | 'Food & Dining' | 'Nature' | 'Adventure' | 'Shopping' | 'Culture & Heritage' | 'Wellness' | 'Nightlife' | 'Other';
+
+export interface Experience {
+    id: string;
+    title: string;
+    category: ExperienceCategory;
+    description: string;
+    iconOrImage?: string;
+    distance?: string;
+    travelTime?: string;
+}
+
 export interface Review {
     id: string;
     userId: string;
@@ -70,6 +82,7 @@ export interface Listing {
     baths?: number;
     availabilitySummary?: string;
     roomTypes?: RoomType[];
+    localExperiences?: Experience[];
     hostId?: string;
     mapLink?: string;
     isActive?: boolean;
@@ -224,6 +237,7 @@ export interface CreateListingInput {
     isGuestFavorite?: boolean;
     availabilitySummary?: string;
     roomTypes: RoomType[];
+    localExperiences?: Experience[];
     media: ListingMediaItem[];
     amenityLabels: string[];
 }

@@ -18,6 +18,8 @@ import type {
     HostApprovalStatus,
     UpsertFlashSaleInput,
     ListingMediaItem,
+    Experience,
+    ExperienceCategory,
 } from '../types';
 import { supabase } from './supabase';
 import { coerceMediaItem, coerceMediaList, getImageUrlsFromMedia } from './media';
@@ -68,6 +70,7 @@ type SupabaseListingRow = {
     baths: number | null;
     is_active: boolean;
     room_types: unknown | null;
+    local_experiences: unknown | null;
     category: JoinedEntity<{
         id: string;
         slug: string;
@@ -191,6 +194,7 @@ const LISTING_SELECT = `
     is_guest_favorite,
     availability_summary,
     room_types,
+    local_experiences,
     city,
     country,
     lat,
@@ -317,6 +321,38 @@ const serializeRoomTypes = (roomTypes: RoomType[]) =>
             .filter((item): item is ListingMediaItem => item !== null),
     }));
 
+const normalizeExperiences = (value: unknown): Experience[] => {
+    if (!Array.isArray(value)) return [];
+    return value.map((item, index): Experience | null => {
+        if (!item || typeof item !== 'object') return null;
+        const record = item as Record<string, unknown>;
+        const title = typeof record.title === 'string' ? record.title.trim() : '';
+        const description = typeof record.description === 'string' ? record.description.trim() : '';
+        const category = typeof record.category === 'string' ? record.category.trim() as ExperienceCategory : 'Other';
+        if (!title) return null;
+        return {
+            id: typeof record.id === 'string' && record.id ? record.id : `${index}-${title.toLowerCase().replace(/\s+/g, '-')}`,
+            title,
+            category,
+            description,
+            iconOrImage: typeof record.iconOrImage === 'string' ? record.iconOrImage.trim() : undefined,
+            distance: typeof record.distance === 'string' ? record.distance.trim() : undefined,
+            travelTime: typeof record.travelTime === 'string' ? record.travelTime.trim() : undefined,
+        };
+    }).filter((item): item is Experience => item !== null);
+};
+
+const serializeExperiences = (experiences: Experience[]) => 
+    experiences.map(exp => ({
+        id: exp.id,
+        title: exp.title,
+        category: exp.category,
+        description: exp.description,
+        iconOrImage: exp.iconOrImage || null,
+        distance: exp.distance || null,
+        travelTime: exp.travelTime || null,
+    }));
+
 const mapListing = (row: SupabaseListingRow): Listing => {
     const category = first(row.category);
     const host = first(row.host);
@@ -330,6 +366,7 @@ const mapListing = (row: SupabaseListingRow): Listing => {
         .map((entry) => entry.amenity?.label)
         .filter((label): label is string => Boolean(label));
     const roomTypes = normalizeRoomTypes(row.room_types);
+    const localExperiences = normalizeExperiences(row.local_experiences);
     const displayHostName = row.host_name?.trim() || host?.full_name?.trim() || 'Host';
 
     return {
@@ -369,6 +406,7 @@ const mapListing = (row: SupabaseListingRow): Listing => {
         baths: row.baths ?? undefined,
         availabilitySummary: row.availability_summary ?? undefined,
         roomTypes,
+        localExperiences,
         mapLink: row.map_link ?? undefined,
         isActive: row.is_active,
     };
@@ -1443,6 +1481,7 @@ export const api = {
                 is_guest_favorite: input.isGuestFavorite ?? false,
                 availability_summary: input.availabilitySummary ?? null,
                 room_types: serializeRoomTypes(input.roomTypes),
+                local_experiences: input.localExperiences ? serializeExperiences(input.localExperiences) : undefined,
                 rating: 5.0,
             })
             .select(LISTING_SELECT)
@@ -1505,6 +1544,7 @@ export const api = {
                 baths: input.baths,
                 availability_summary: input.availabilitySummary ?? null,
                 room_types: serializeRoomTypes(input.roomTypes),
+                local_experiences: input.localExperiences ? serializeExperiences(input.localExperiences) : undefined,
                 host_id: hostId,
             })
             .eq('id', listingId)
@@ -1565,6 +1605,7 @@ export const api = {
                 baths: input.baths,
                 availability_summary: input.availabilitySummary ?? null,
                 room_types: serializeRoomTypes(input.roomTypes),
+                local_experiences: input.localExperiences ? serializeExperiences(input.localExperiences) : undefined,
             })
             .eq('id', listingId)
             .select(LISTING_SELECT)
