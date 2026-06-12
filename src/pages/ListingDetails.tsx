@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ElementType, type SyntheticEvent } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import {
     Star,
     Heart,
     Share,
     Grid,
     Key,
-    Calendar,
     MapPin,
     Wifi,
     Car,
@@ -302,16 +301,13 @@ const readPendingBooking = (): PendingBooking | null => {
     }
 };
 
-const savePendingBooking = (booking: PendingBooking) => {
-    sessionStorage.setItem(PENDING_BOOKING_KEY, JSON.stringify(booking));
-};
+
 
 const clearPendingBooking = () => {
     sessionStorage.removeItem(PENDING_BOOKING_KEY);
 };
 
 export const ListingDetails = () => {
-    const navigate = useNavigate();
     const { id } = useParams<{ id: string }>();
     const [listing, setListing] = useState<Listing | undefined>(undefined);
     const [loading, setLoading] = useState(true);
@@ -321,7 +317,6 @@ export const ListingDetails = () => {
     const [bookingError, setBookingError] = useState<string | null>(null);
     const [submittingBooking, setSubmittingBooking] = useState(false);
     const [isVerifiedGuest, setIsVerifiedGuest] = useState(false);
-    const [currentUserRole, setCurrentUserRole] = useState<'guest' | 'host' | 'admin' | null>(null);
     const [copied, setCopied] = useState(false);
     const [showPhotosModal, setShowPhotosModal] = useState(false);
     const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
@@ -357,7 +352,6 @@ export const ListingDetails = () => {
             ]);
             setListing(data);
             setAvailabilityBlocks(blocks);
-            setCurrentUserRole(currentUser?.role ?? null);
             setIsVerifiedGuest(currentUser?.role === 'guest' && currentUser.isVerifiedGuest);
             setIsFavorited(favoritesService.isFavorite(id));
             setLoading(false);
@@ -604,58 +598,39 @@ export const ListingDetails = () => {
         continuePendingBooking();
     }, [id, listing, roomTypes, submitBooking]);
 
-    const handleBooking = async () => {
+    const handleBooking = () => {
         if (!listing || !id) return;
-
-        const bookingCheckIn = checkIn;
-        const bookingCheckOut = checkOut;
-        const bookingGuestCount = guestCount;
 
         if (nights <= 0) {
             setBookingError('Please choose a valid check-in and checkout date.');
             return;
         }
 
-        const blockedRange = availabilityBlocks.find((block) => rangesOverlap(bookingCheckIn, bookingCheckOut, block.startDate, block.endDate));
-        if (blockedRange) {
-            setBookingError(
-                blockedRange.status === 'restricted'
-                    ? 'Those dates are restricted by the host. Please choose another range.'
-                    : 'Those dates are already booked. Please choose another range.'
-            );
-            return;
-        }
+        setBookingError(null);
 
-        if (bookingGuestCount < 1 || bookingGuestCount > guestLimit) {
-            setBookingError(`Please choose between 1 and ${guestLimit} guests.`);
-            return;
-        }
+        const whatsappMessage = `Hey!
 
-        const session = await authService.getSession();
-        if (!session) {
-            savePendingBooking({
-                listingId: id,
-                checkIn: bookingCheckIn,
-                checkOut: bookingCheckOut,
-                guestCount: bookingGuestCount,
-                roomTypeName: selectedRoomType?.name ?? 'Standard stay',
-                roomTypePrice: selectedRoomType?.pricePerNight ?? listing.price,
-                roomCount,
-            });
-            navigate(`/guest/auth?next=${encodeURIComponent(`/rooms/${id}`)}&mode=sign-up`);
-            return;
-        }
+I would like to reserve this property.
 
-        await submitBooking(session.user.id);
+Property Link:
+${window.location.href}
+
+Booking Details:
+• Check-in: ${checkIn}
+• Check-out: ${checkOut}
+• Room Type: ${selectedRoomType?.name ?? 'Standard stay'}
+• Rooms: ${roomCount}
+• Guests (including children): ${guestCount}
+
+Please let me know the next steps for confirming the booking.`;
+
+        const whatsappUrl = `https://wa.me/918890807482?text=${encodeURIComponent(whatsappMessage)}`;
+        window.open(whatsappUrl, '_blank');
     };
 
     const bookingHeadline = 'Reserve now';
     const bookingActionLabel = 'Reserve';
-    const bookingTrustNote = isVerifiedGuest
-        ? 'Your verified guest profile is ready for safer, faster booking.'
-        : currentUserRole
-            ? 'Complete your booking details. Admin verification is required to display the AEVR VERIFIED GUEST badge.'
-            : 'Sign in to reserve this stay. We will save your selection while you log in.';
+    const bookingTrustNote = 'Complete your booking details. Clicking Reserve will redirect you to WhatsApp to submit your reservation enquiry.';
 
     if (loading) {
         return <SkeletonScreen variant="listing-details" />;
@@ -892,9 +867,23 @@ export const ListingDetails = () => {
                         </div>
                     )}
                     <div className={styles.feature}>
-                        <div className={styles.featureIcon}><Calendar size={24} /></div>
+                        <div className={styles.featureIcon}>
+                            <img src="/whatsapp.svg" alt="WhatsApp" style={{ width: '24px', height: '24px', display: 'block' }} />
+                        </div>
                         <div className={styles.featureText}>
-                            <h3>{listing.availabilitySummary ?? 'Flexible cancellation policy'}</h3>
+                            <h3>Know More About This Property</h3>
+                            <p>
+                                <a
+                                    href={`https://wa.me/918890807482?text=${encodeURIComponent(
+                                        `Hey!\nI want to enquire about this property.\n\nProperty Link:\n${window.location.href}`
+                                    )}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    style={{ color: 'var(--color-primary)', textDecoration: 'underline', fontWeight: 600 }}
+                                >
+                                    Enquire via WhatsApp
+                                </a>
+                            </p>
                         </div>
                     </div>
 
