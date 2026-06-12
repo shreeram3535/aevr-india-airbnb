@@ -14,6 +14,7 @@ import { HostApprovalStatusView } from '../components/HostApprovalStatus';
 import { SkeletonScreen } from '../components/SkeletonScreen';
 import type { AvailabilityBlock, AvailabilityBlockStatus, Category, Listing, ListingMediaItem, RoomType } from '../types';
 import { createExternalVideoMedia } from '../services/media';
+import { extractCoordsFromGoogleMapsUrl } from '../services/mapUtils';
 
 /* ─── Types ──────────────────────────────────────────────────────────────── */
 
@@ -535,8 +536,10 @@ export const HostNewProperty = () => {
                 city: form.city,
                 country: form.country,
                 mapLink: form.mapLink,
-                lat: 0,
-                lng: 0,
+                ...(() => {
+                    const extracted = extractCoordsFromGoogleMapsUrl(form.mapLink);
+                    return extracted ? { lat: extracted.lat, lng: extracted.lng } : { lat: 0, lng: 0 };
+                })(),
                 guestCountMax: Number(form.guestCountMax),
                 bedrooms: Number(form.bedrooms),
                 beds: Number(form.beds),
