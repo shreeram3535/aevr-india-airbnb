@@ -31,6 +31,8 @@ import {
     Phone,
     ChevronLeft,
     ChevronRight,
+    Minus,
+    Plus,
 } from 'lucide-react';
 import { SkeletonScreen } from '../components/SkeletonScreen';
 import styles from './ListingDetails.module.css';
@@ -39,6 +41,8 @@ import { authService } from '../services/auth';
 import { favoritesService } from '../services/favorites';
 import type { AvailabilityBlock, Listing, RoomType } from '../types';
 import { getFallbackImage } from '../services/media';
+import { FuzzyMap } from '../components/FuzzyMap';
+import { hasValidCoords, extractCoordsFromGoogleMapsUrl } from '../services/mapUtils';
 
 const amenityIcons: Record<string, ElementType> = {
     wifi: Wifi,
@@ -161,17 +165,28 @@ const parseInputDate = (value: string) => {
 };
 
 const addDays = (value: string, days: number) => {
-    const date = parseInputDate(value);
-    date.setUTCDate(date.getUTCDate() + days);
-    return dateToInput(date);
+    if (!value) return '';
+    try {
+        const date = parseInputDate(value);
+        if (Number.isNaN(date.getTime())) return '';
+        date.setUTCDate(date.getUTCDate() + days);
+        return dateToInput(date);
+    } catch {
+        return '';
+    }
 };
 
 const nightsBetween = (checkIn: string, checkOut: string) => {
     if (!checkIn || !checkOut) return 0;
-    const start = parseInputDate(checkIn).getTime();
-    const end = parseInputDate(checkOut).getTime();
-    const nights = Math.round((end - start) / (1000 * 60 * 60 * 24));
-    return nights > 0 ? nights : 0;
+    try {
+        const start = parseInputDate(checkIn).getTime();
+        const end = parseInputDate(checkOut).getTime();
+        if (Number.isNaN(start) || Number.isNaN(end)) return 0;
+        const nights = Math.round((end - start) / (1000 * 60 * 60 * 24));
+        return nights > 0 ? nights : 0;
+    } catch {
+        return 0;
+    }
 };
 
 const rangesOverlap = (startA: string, endA: string, startB: string, endB: string) => {
@@ -337,9 +352,9 @@ export const ListingDetails = () => {
     const [checkOut, setCheckOut] = useState(() => {
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
-        const nextWeek = new Date(tomorrow);
-        nextWeek.setDate(nextWeek.getDate() + 4);
-        return dateToInput(nextWeek);
+        const nextDay = new Date(tomorrow);
+        nextDay.setDate(nextDay.getDate() + 1);
+        return dateToInput(nextDay);
     });
     const [guestCount, setGuestCount] = useState(1);
     const [selectedRoomTypeId, setSelectedRoomTypeId] = useState('');
@@ -395,12 +410,14 @@ export const ListingDetails = () => {
     }, [selectedRoomType]);
 
     useEffect(() => {
-        if (checkOut <= checkIn) {
+        if (checkIn && checkOut && checkOut <= checkIn) {
             setCheckOut(addDays(checkIn, 1));
         }
     }, [checkIn, checkOut]);
 
-    const guestLimit = 4;
+    const guestLimit = useMemo(() => {
+        return selectedRoomType?.maxGuests ?? listing?.guestCountMax ?? 4;
+    }, [selectedRoomType, listing]);
 
     useEffect(() => {
         setGuestCount((current) => Math.min(current, guestLimit));
@@ -850,19 +867,8 @@ export const ListingDetails = () => {
                         <div className={styles.hostInfo}>
                             <h2>Hosted by {listing.host.name}</h2>
                             <p style={{ color: 'var(--text-secondary)' }}>
-                                {listing.host.isSuperhost && 'Superhost · '}
                                 {listingSummary || 'Flexible stay'}
                             </p>
-                            {listing.mapLink && (
-                                <a
-                                    href={listing.mapLink}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    style={{ display: 'inline-flex', marginTop: '10px', color: 'var(--color-primary)', fontWeight: 600 }}
-                                >
-                                    Open on Google Maps
-                                </a>
-                            )}
                         </div>
                         <div className={styles.hostAvatar}>
                             {listing.host.avatarUrl ? (
@@ -875,6 +881,65 @@ export const ListingDetails = () => {
                         </div>
                     </div>
 
+                    {/* ── Where you'll be ─────────────────────── */}
+                    {(() => {
+                        const dbCoords = hasValidCoords(listing.location.lat, listing.location.lng)
+                            ? { lat: listing.location.lat, lng: listing.location.lng }
+                            : null;
+                        const linkCoords = !dbCoords && listing.mapLink
+                            ? extractCoordsFromGoogleMapsUrl(listing.mapLink)
+                            : null;
+                        const coords = dbCoords ?? linkCoords;
+
+                        if (coords) {
+                            return (
+                                <div className={styles.whereSection}>
+                                    <h2>Where you'll be</h2>
+                                    <p className={styles.whereSubtitle}>
+                                        <MapPin size={14} />
+                                        {listing.location.city}, {listing.location.country}
+                                    </p>
+                                    <FuzzyMap
+                                        lat={coords.lat}
+                                        lng={coords.lng}
+                                        listingId={listing.id}
+                                        city={listing.location.city}
+                                    />
+                                    {listing.mapLink && (
+                                        <a
+                                            href={listing.mapLink}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            style={{ display: 'inline-flex', marginTop: '10px', color: 'var(--color-primary)', fontWeight: 600, fontSize: 14 }}
+                                        >
+                                            Open on Google Maps
+                                        </a>
+                                    )}
+                                </div>
+                            );
+                        }
+                        if (listing.mapLink) {
+                            return (
+                                <div className={styles.whereSection}>
+                                    <h2>Where you'll be</h2>
+                                    <p className={styles.whereSubtitle}>
+                                        <MapPin size={14} />
+                                        {listing.location.city}, {listing.location.country}
+                                    </p>
+                                    <a
+                                        href={listing.mapLink}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        style={{ display: 'inline-flex', marginTop: '10px', color: 'var(--color-primary)', fontWeight: 600 }}
+                                    >
+                                        Open on Google Maps
+                                    </a>
+                                </div>
+                            );
+                        }
+                        return null;
+                    })()}
+
                     <div className={styles.feature}>
                         <div className={styles.featureIcon}><Key size={24} /></div>
                         <div className={styles.featureText}>
@@ -882,15 +947,7 @@ export const ListingDetails = () => {
                             <p>Check yourself in with the lockbox.</p>
                         </div>
                     </div>
-                    {listing.host.isSuperhost && (
-                        <div className={styles.feature}>
-                            <div className={styles.featureIcon}><Star size={24} /></div>
-                            <div className={styles.featureText}>
-                                <h3>{listing.host.name} is a Superhost</h3>
-                                <p>Superhosts are experienced, highly rated Hosts.</p>
-                            </div>
-                        </div>
-                    )}
+
                     <div className={styles.feature}>
                         <div className={styles.featureIcon}><Calendar size={24} /></div>
                         <div className={styles.featureText}>
@@ -1109,24 +1166,56 @@ export const ListingDetails = () => {
                             <div className={styles.dateGrid}>
                                 <label className={styles.formField}>
                                     <span>Rooms</span>
-                                    <select value={roomCount} onChange={(e) => setRoomCount(Number(e.target.value))}>
-                                        {Array.from({ length: selectedRoomType?.totalCount ?? 1 }, (_, index) => index + 1).map((value) => (
-                                            <option key={value} value={value}>
-                                                {value} room{value > 1 ? 's' : ''}
-                                            </option>
-                                        ))}
-                                    </select>
+                                    <div className={styles.counterSelector}>
+                                        <button
+                                            type="button"
+                                            className={styles.selectorBtn}
+                                            onClick={() => setRoomCount(prev => Math.max(1, prev - 1))}
+                                            disabled={roomCount <= 1}
+                                            aria-label="Decrease rooms"
+                                        >
+                                            <Minus size={14} />
+                                        </button>
+                                        <span className={styles.selectorValueText}>
+                                            {roomCount} room{roomCount > 1 ? 's' : ''}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            className={styles.selectorBtn}
+                                            onClick={() => setRoomCount(prev => Math.min(selectedRoomType?.totalCount ?? 1, prev + 1))}
+                                            disabled={roomCount >= (selectedRoomType?.totalCount ?? 1)}
+                                            aria-label="Increase rooms"
+                                        >
+                                            <Plus size={14} />
+                                        </button>
+                                    </div>
                                 </label>
 
                                 <label className={styles.formField}>
                                     <span>Guests</span>
-                                    <select value={guestCount} onChange={(e) => setGuestCount(Number(e.target.value))}>
-                                        {[1, 2, 3, 4].map((value) => (
-                                            <option key={value} value={value}>
-                                                {value} guest{value > 1 ? 's' : ''}
-                                            </option>
-                                        ))}
-                                    </select>
+                                    <div className={styles.counterSelector}>
+                                        <button
+                                            type="button"
+                                            className={styles.selectorBtn}
+                                            onClick={() => setGuestCount(prev => Math.max(1, prev - 1))}
+                                            disabled={guestCount <= 1}
+                                            aria-label="Decrease guests"
+                                        >
+                                            <Minus size={14} />
+                                        </button>
+                                        <span className={styles.selectorValueText}>
+                                            {guestCount} guest{guestCount > 1 ? 's' : ''}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            className={styles.selectorBtn}
+                                            onClick={() => setGuestCount(prev => Math.min(guestLimit, prev + 1))}
+                                            disabled={guestCount >= guestLimit}
+                                            aria-label="Increase guests"
+                                        >
+                                            <Plus size={14} />
+                                        </button>
+                                    </div>
                                 </label>
                             </div>
 

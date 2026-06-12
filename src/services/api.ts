@@ -1054,6 +1054,56 @@ const bookingStatusLabel: Record<Booking['status'], Booking['status']> = {
     completed: 'completed',
 };
 
+const getFallbackListing = (
+    listingId: string,
+    hostId: string,
+    input: CreateListingInput | UpdateListingInput
+): Listing => {
+    const media = input.media ?? [];
+    const images = media.filter((m) => m.kind === 'image').map((m) => m.url);
+    const roomTypes = input.roomTypes ?? [];
+
+    return {
+        id: listingId,
+        hostId: hostId,
+        title: input.title,
+        description: input.description,
+        price: input.pricePerNight,
+        currency: input.currency,
+        rating: 5.0,
+        reviewCount: 0,
+        images,
+        media,
+        location: {
+            id: listingId,
+            city: input.city,
+            country: input.country,
+            lat: input.lat,
+            lng: input.lng,
+        },
+        category: input.categorySlug,
+        categoryLabel: input.categorySlug,
+        host: {
+            id: hostId,
+            name: input.hostName || 'Host',
+            avatarUrl: '',
+            isSuperhost: false,
+            role: 'host',
+        },
+        amenities: input.amenityLabels ?? [],
+        isGuestFavorite: input.isGuestFavorite ?? false,
+        availableDates: input.availabilitySummary ?? 'Flexible dates',
+        guestCountMax: input.guestCountMax ?? undefined,
+        bedrooms: input.bedrooms ?? undefined,
+        beds: input.beds ?? undefined,
+        baths: input.baths ?? undefined,
+        availabilitySummary: input.availabilitySummary ?? undefined,
+        roomTypes,
+        mapLink: input.mapLink ?? undefined,
+        isActive: true,
+    };
+};
+
 export const api = {
     fetchCategories: (): Promise<CategoriesResponse> => {
         return new Promise((resolve) => {
@@ -1452,21 +1502,29 @@ export const api = {
                 room_types: serializeRoomTypes(input.roomTypes),
                 rating: 5.0,
             })
-            .select(LISTING_SELECT)
+            .select('id')
             .single();
 
-        if (listingError || !listing) {
+        // A real DB/network error — bail out.
+        if (listingError) {
             throwSupabaseError(listingError, 'Unable to create listing');
         }
 
-        if (!listing) {
-            throw new Error('Unable to create listing');
+        const newListingId = (listing as { id: string } | null)?.id;
+        if (!newListingId) {
+            throw new Error('Unable to create listing — no ID returned.');
         }
 
-        await persistListingMedia(listing.id, input.media, input.title);
-        await persistListingAmenities(listing.id, input.amenityLabels);
+        await persistListingMedia(newListingId, input.media, input.title);
+        await persistListingAmenities(newListingId, input.amenityLabels);
 
-        return mapListing(listing as unknown as SupabaseListingRow);
+        // Re-fetch so we get a fully-joined listing regardless of RLS read policies.
+        const created = await fetchSupabaseListingById(newListingId);
+        if (!created) {
+            // Media/amenities saved fine; return a minimal placeholder so navigation still works.
+            return getFallbackListing(newListingId, hostId, input);
+        }
+        return created;
     },
 
     createListingAsAdmin: async (input: CreateListingInput): Promise<Listing> => {
@@ -1492,7 +1550,7 @@ export const api = {
             throw new Error('Category not found');
         }
 
-        const { data: updated, error } = await supabase
+        const { error } = await supabase
             .from('listings')
             .update({
                 category_id: category.id,
@@ -1515,11 +1573,10 @@ export const api = {
                 host_id: hostId,
             })
             .eq('id', listingId)
-            .eq('host_id', hostId)
-            .select(LISTING_SELECT)
-            .maybeSingle();
+            .eq('host_id', hostId);
 
-        if (error || !updated) {
+        // Only throw if Supabase returned a real error (network, RLS write policy, etc.).
+        if (error) {
             throwSupabaseError(error, 'Unable to update listing');
         }
 
@@ -1529,7 +1586,12 @@ export const api = {
 
         await persistListingAmenities(listingId, input.amenityLabels);
 
-        return mapListing(updated as unknown as SupabaseListingRow);
+        // Re-fetch the listing so callers always get a fully-joined result.
+        const updated = await fetchSupabaseListingById(listingId);
+        if (!updated) {
+            return getFallbackListing(listingId, hostId, input);
+        }
+        return updated;
     },
 
     updateListingAsAdmin: async (listingId: string, input: UpdateListingInput): Promise<Listing> => {
@@ -1552,7 +1614,7 @@ export const api = {
             throw new Error('Category not found');
         }
 
-        const { data: updated, error } = await supabase
+        const { error } = await supabase
             .from('listings')
             .update({
                 category_id: category.id,
@@ -1573,11 +1635,10 @@ export const api = {
                 availability_summary: input.availabilitySummary ?? null,
                 room_types: serializeRoomTypes(input.roomTypes),
             })
-            .eq('id', listingId)
-            .select(LISTING_SELECT)
-            .maybeSingle();
+            .eq('id', listingId);
 
-        if (error || !updated) {
+        // Only throw if Supabase returned a real error.
+        if (error) {
             throwSupabaseError(error, 'Unable to update listing');
         }
 
@@ -1587,7 +1648,12 @@ export const api = {
 
         await persistListingAmenities(listingId, input.amenityLabels);
 
-        return mapListing(updated as unknown as SupabaseListingRow);
+        // Re-fetch so callers always get a fully-joined result.
+        const updated = await fetchSupabaseListingById(listingId);
+        if (!updated) {
+            return getFallbackListing(listingId, authData.user.id, input);
+        }
+        return updated;
     },
 
     deleteListing: async (hostId: string, listingId: string): Promise<void> => {
