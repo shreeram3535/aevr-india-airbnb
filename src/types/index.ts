@@ -114,8 +114,7 @@ export type ListingSortOption = 'recommended' | 'price_asc' | 'price_desc' | 'ra
 export type FlashSaleType = 'percent' | 'manual_price';
 
 export interface ListingFilters {
-    category?: string;
-    search?: string;
+    category?: string;    luxurySection?: boolean;    search?: string;
     sort?: ListingSortOption;
     maxPrice?: number;
     minPrice?: number;
@@ -229,6 +228,7 @@ export interface CreateListingInput {
     media: ListingMediaItem[];
     amenityLabels: string[];
 }
+
 
 export type ListingsResponse = Listing[];
 export type CategoriesResponse = Category[];
