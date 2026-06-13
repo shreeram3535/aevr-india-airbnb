@@ -95,7 +95,8 @@ const parseSortParam = (value: string | null): ListingSortOption => {
 export const Home = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const categoryParam = searchParams.get('category');
-    const categoryFilter = categoryParam && categoryParam !== 'icons' ? categoryParam : undefined;
+    const luxurySection = searchParams.get('luxurySection') === '1';
+    const categoryFilter = !luxurySection && categoryParam && categoryParam !== 'icons' ? categoryParam : undefined;
     const search = searchParams.get('search') ?? undefined;
     const sort = parseSortParam(searchParams.get('sort'));
     const minBudgetParam = clampBudgetParam(parseNumberParam(searchParams.get('minPrice')));
@@ -193,6 +194,7 @@ export const Home = () => {
         if (categoryParam === id) {
             next.delete('category');
         } else {
+            next.delete('luxurySection');
             next.set('category', id);
         }
         setSearchParams(next);
@@ -200,7 +202,7 @@ export const Home = () => {
 
     const clearFilters = () => {
         const params = new URLSearchParams(searchParams);
-        ['category', 'sort', 'minPrice', 'maxPrice', 'guests', 'bedrooms', 'baths', 'favorites'].forEach((key) => params.delete(key));
+        ['category', 'luxurySection', 'sort', 'minPrice', 'maxPrice', 'guests', 'bedrooms', 'baths', 'favorites'].forEach((key) => params.delete(key));
         setSearchParams(params);
     };
 
@@ -246,6 +248,7 @@ export const Home = () => {
             try {
                 const filters: ListingFilters = {
                     category: categoryFilter,
+                    luxurySection,
                     search,
                     sort,
                     minPrice,
@@ -282,7 +285,7 @@ export const Home = () => {
             }
         };
         loadListings();
-    }, [categoryFilter, search, sort, minPrice, maxPrice, guests, bedrooms, baths, guestFavoriteOnly]);
+    }, [categoryFilter, luxurySection, search, sort, minPrice, maxPrice, guests, bedrooms, baths, guestFavoriteOnly]);
 
     const formatBudget = (value: number) =>
         new Intl.NumberFormat('en-IN', {
@@ -304,6 +307,7 @@ export const Home = () => {
 
     const activeFiltersCount = [
         Boolean(categoryFilter),
+        luxurySection,
         sort !== 'recommended',
         minPrice !== undefined,
         maxPrice !== undefined,
@@ -511,7 +515,35 @@ export const Home = () => {
                 </div>
             </div>
 
-            <main className={styles.homeMainContainer}>
+                {/* Mode toggle: Aevr / Aevr Luxe (placed below stats) */}
+                <div className={styles.homeModeToggle}>
+                    <button
+                        type="button"
+                        className={`${styles.modeButton} ${!luxurySection ? styles.modeButtonActive : ''}`}
+                        onClick={() => {
+                            const next = new URLSearchParams(searchParams);
+                            next.delete('luxurySection');
+                            next.delete('category');
+                            setSearchParams(next);
+                        }}
+                    >
+                        Aevr
+                    </button>
+                    <button
+                        type="button"
+                        className={`${styles.modeButton} ${luxurySection ? `${styles.modeButtonActive} ${styles.modeButtonActiveLuxe}` : ''}`}
+                        onClick={() => {
+                            const next = new URLSearchParams(searchParams);
+                            next.delete('category');
+                            next.set('luxurySection', '1');
+                            setSearchParams(next);
+                        }}
+                    >
+                        Aevr Luxe
+                    </button>
+                </div>
+
+            <main className={`${styles.homeMainContainer} ${luxurySection ? styles.homeModeLuxe : styles.homeModeAevr}`}>
                 {hasActiveDrop && activeDrop && (
                     <section className={styles.flashSaleCard}>
                         <img
@@ -537,6 +569,19 @@ export const Home = () => {
                             </div>
                             <a className={styles.flashSaleCta} href={`/rooms/${activeDrop.listing.id}`}>View drop</a>
                         </div>
+                    </section>
+                )}
+
+                {luxurySection ? (
+                    <section className={`${styles.modeDescriptionCard} ${styles.modeDescriptionCardLuxe}`}>
+                        <span className={styles.modeDescBadge}>Aevr Luxe</span>
+                        <h2 className={`${styles.modeDescTitle} ${styles.modeDescTitleLuxe}`}>Discover premium villas & luxury stays</h2>
+                        <p className={styles.modeDescText}>Step into a world of iconic estates and unforgettable retreats, curated for guests who seek the rare and refined.</p>
+                    </section>
+                ) : (
+                    <section className={styles.modeDescriptionCard}>
+                        <h2 className={styles.modeDescTitle}>Explore Our Curated Villas</h2>
+                        <p className={styles.modeDescText}>Discover beautiful homes and authentic experiences handpicked for discerning travelers.</p>
                     </section>
                 )}
 
@@ -809,11 +854,16 @@ export const Home = () => {
                         <p>{listingError}</p>
                     </div>
                 ) : listings.length > 0 ? (
-                    <div className={styles.grid}>
-                        {listings.map((listing) => (
-                            <ListingCard key={listing.id} listing={listing} />
-                        ))}
-                    </div>
+                    <>
+                        <div className={styles.sectionHeaderRow}>
+                            <h2 className={styles.sectionHeading}>{luxurySection ? 'Aevr Luxe stays' : 'Featured stays'}</h2>
+                        </div>
+                        <div className={styles.grid}>
+                            {listings.map((listing) => (
+                                <ListingCard key={listing.id} listing={listing} />
+                            ))}
+                        </div>
+                    </>
                 ) : (
                     <div className={styles.emptyState}>
                         <h2>No listings found</h2>
