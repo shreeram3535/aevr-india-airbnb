@@ -620,90 +620,72 @@
 /* Home mode toggle and background variants */
 .homeModeToggle {
     display: flex;
-    gap: 16px;
-    align-items: center;
-    justify-content: center;
-    padding: 20px 24px;
-    margin: 24px 0;
-    width: 100%;
+    position: relative;
+    background: rgba(40, 43, 43, 0.04);
+    border: 1px solid rgba(40, 43, 43, 0.06);
+    border-radius: 30px;
+    padding: 4px;
+    margin: 28px auto;
+    width: fit-content;
+    box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.04);
+    box-sizing: border-box;
+}
+
+.sliderIndicator {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    bottom: 4px;
+    width: calc(50% - 4px);
+    background: var(--color-primary);
+    border-radius: 26px;
+    z-index: 1;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), background 0.4s ease, box-shadow 0.4s ease;
+    box-shadow: 0 4px 12px rgba(122, 158, 174, 0.2);
+}
+
+.sliderIndicatorLuxe {
+    transform: translateX(100%);
+    background: linear-gradient(135deg, #d4b89f 0%, #b88a5a 50%, #a67a4a 100%);
+    box-shadow: 0 4px 12px rgba(184, 138, 90, 0.4);
 }
 
 .modeButton {
-    padding: 14px 32px;
-    border-radius: 28px;
-    border: 2px solid transparent;
-    background: var(--color-white);
-    color: var(--text-secondary);
-    font-weight: var(--font-weight-bold);
-    font-size: var(--font-size-sm);
-    letter-spacing: 0.04em;
+    position: relative;
+    z-index: 2;
+    padding: 10px 24px;
+    font-size: 13px;
+    font-weight: 700;
     text-transform: uppercase;
-    box-shadow: 0 12px 40px rgba(18, 24, 32, 0.08);
-    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    letter-spacing: 0.08em;
+    color: var(--text-secondary);
+    background: transparent;
+    border: none;
     cursor: pointer;
-    box-sizing: border-box;
+    transition: color 0.3s ease, transform 0.2s ease;
+    min-width: 130px;
+    text-align: center;
+    border-radius: 26px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    box-sizing: border-box;
 }
 
 .modeButton:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 16px 50px rgba(18, 24, 32, 0.12);
-    background: #f5f5f5;
+    color: var(--text-primary);
 }
 
 .modeButtonActive {
-    background: linear-gradient(135deg, #6fa5b8 0%, #5a8fa5 100%);
-    border-color: transparent;
-    color: #fff;
-    box-shadow: 
-        0 20px 60px rgba(90, 143, 165, 0.25),
-        inset 0 1px 0 rgba(255, 255, 255, 0.4),
-        inset 0 -20px 30px rgba(0, 0, 0, 0.08),
-        0 0 30px rgba(122, 158, 174, 0.2);
-    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-    position: relative;
-    overflow: hidden;
-}
-
-.modeButtonActive::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: radial-gradient(ellipse at top center, rgba(255, 255, 255, 0.2) 0%, transparent 60%);
-    pointer-events: none;
-}
-
-.modeButtonActive:hover {
-    background: linear-gradient(135deg, #5a8fa5 0%, #4a7a90 100%);
-    transform: translateY(-3px);
-    box-shadow: 
-        0 24px 70px rgba(90, 143, 165, 0.35),
-        inset 0 1px 0 rgba(255, 255, 255, 0.4),
-        inset 0 -20px 30px rgba(0, 0, 0, 0.1),
-        0 0 40px rgba(122, 158, 174, 0.3);
+    color: var(--color-white) !important;
 }
 
 .modeButtonActiveLuxe {
-    background: linear-gradient(135deg, #d4b89f 0%, #b88a5a 50%, #a67a4a 100%);
-    box-shadow: 
-        0 20px 60px rgba(184, 138, 90, 0.15),
-        inset 0 1px 0 rgba(255, 255, 255, 0.3);
-    position: relative;
-    overflow: hidden;
-    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.modeButtonActiveLuxe:hover {
-    background: linear-gradient(135deg, #b88a5a 0%, #a67a4a 50%, #8b6b39 100%);
-    transform: translateY(-3px);
-    box-shadow: 
-        0 24px 70px rgba(184, 138, 90, 0.25),
-        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    font-family: var(--font-serif);
+    font-style: italic;
+    text-transform: capitalize;
+    letter-spacing: 0.02em;
+    font-weight: 600;
 }
 
 .modeDescriptionCard {
@@ -2145,7 +2127,7 @@
 }
 
 .bottomDashboardContainer {
-    max-width: 1200px;
+    max-width: 100%;
     margin: 0 auto;
     display: grid;
     grid-template-columns: 1.1fr 1.4fr 1.1fr;

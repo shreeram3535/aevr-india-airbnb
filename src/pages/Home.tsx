@@ -473,6 +473,7 @@ export const Home = () => {
 
                 {/* Mode toggle: Aevr / Aevr Luxe (placed below stats) */}
                 <div className={styles.homeModeToggle}>
+                    <div className={`${styles.sliderIndicator} ${luxurySection ? styles.sliderIndicatorLuxe : ''}`} />
                     <button
                         type="button"
                         className={`${styles.modeButton} ${!luxurySection ? styles.modeButtonActive : ''}`}

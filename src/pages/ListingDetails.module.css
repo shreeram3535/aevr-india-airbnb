@@ -1170,3 +1170,285 @@
     color: var(--text-secondary);
     margin-bottom: 4px;
 }
+
+/* Custom Dropdown Trigger & Date Trigger Styling */
+.dateTriggerBtn,
+.customSelectTrigger {
+    width: 100%;
+    border: 1px solid var(--color-gray-100);
+    border-radius: 16px;
+    padding: 12px 14px;
+    font: inherit;
+    line-height: normal;
+    color: var(--text-primary);
+    background: var(--color-white);
+    text-align: left;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    min-height: 48px;
+    box-sizing: border-box;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dateTriggerBtn:hover,
+.customSelectTrigger:hover {
+    border-color: var(--color-primary);
+}
+
+.dateTriggerActive {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px rgba(122, 158, 174, 0.15);
+    outline: none;
+}
+
+.dropdownChevron {
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+    color: var(--text-secondary);
+}
+
+.chevronRotated {
+    transform: rotate(180deg);
+}
+
+/* Custom Select Container & Dropdown Overlay */
+.customSelectContainer {
+    position: relative;
+    width: 100%;
+}
+
+.customDropdownMenu {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    background: var(--color-white);
+    border: 1px solid var(--color-gray-100);
+    border-radius: 16px;
+    box-shadow: var(--shadow-floating);
+    z-index: 120;
+    overflow-y: auto;
+    max-height: 280px;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.customDropdownOption {
+    width: 100%;
+    border: none;
+    background: transparent;
+    padding: 10px 12px;
+    border-radius: 10px;
+    text-align: left;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.customDropdownOption:hover {
+    background-color: var(--color-gray-50);
+}
+
+.optionActive {
+    background-color: rgba(122, 158, 174, 0.08) !important;
+}
+
+.optionActive .optionName {
+    color: var(--color-primary);
+}
+
+.optionName {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.optionMeta {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+/* Custom Calendar Popover Styles */
+.calendarWrapper {
+    position: relative;
+    width: 100%;
+}
+
+.calendarPopover {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    width: 320px;
+    background: var(--color-white);
+    border: 1px solid var(--color-gray-100);
+    border-radius: 20px;
+    box-shadow: var(--shadow-floating);
+    z-index: 130;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+@media (max-width: 480px) {
+    .calendarPopover {
+        width: 100%;
+        left: 0;
+        transform: none;
+        box-sizing: border-box;
+    }
+}
+
+.calendarHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.calendarMonthTitle {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.calendarNavBtn {
+    border: 1px solid var(--color-gray-100);
+    background: var(--color-white);
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--text-primary);
+    transition: all 0.2s ease;
+    padding: 0;
+}
+
+.calendarNavBtn:hover:not(:disabled) {
+    background: var(--color-gray-50);
+    border-color: var(--text-primary);
+}
+
+.calendarNavBtn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.weekdaysRow {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+}
+
+.weekdayLabel {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.daysGrid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    row-gap: 6px;
+    column-gap: 4px;
+}
+
+.calendarDay {
+    border: none;
+    background: transparent;
+    border-radius: 50%;
+    aspect-ratio: 1/1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    padding: 0;
+}
+
+.calendarDay:hover:not(.calendarDayDisabled):not(.calendarDayRangeStart):not(.calendarDayRangeEnd):not(.calendarDaySelected) {
+    background-color: var(--color-gray-50);
+}
+
+.calendarDayRangeStart {
+    background-color: var(--color-primary) !important;
+    color: var(--color-white) !important;
+    font-weight: 700;
+    border-top-left-radius: 50%;
+    border-bottom-left-radius: 50%;
+}
+
+.calendarDayRangeEnd {
+    background-color: var(--color-primary) !important;
+    color: var(--color-white) !important;
+    font-weight: 700;
+    border-top-right-radius: 50%;
+    border-bottom-right-radius: 50%;
+}
+
+.calendarDaySelected {
+    background-color: var(--color-primary) !important;
+    color: var(--color-white) !important;
+    font-weight: 700;
+    border-radius: 50%;
+}
+
+.calendarDayInRange {
+    background-color: rgba(122, 158, 174, 0.08) !important;
+    border-radius: 0;
+}
+
+.calendarDayDisabled {
+    color: var(--color-gray-100);
+    text-decoration: line-through;
+    cursor: not-allowed;
+    opacity: 0.4;
+}
+
+.calendarFooter {
+    display: flex;
+    justify-content: space-between;
+    border-top: 1px solid var(--color-gray-100);
+    padding-top: 14px;
+    margin-top: 4px;
+}
+
+.calendarClearBtn,
+.calendarTodayBtn {
+    border: none;
+    background: transparent;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: color 0.15s ease;
+}
+
+.calendarClearBtn {
+    color: var(--text-secondary);
+}
+
+.calendarClearBtn:hover {
+    color: var(--text-primary);
+    text-decoration: underline;
+}
+
+.calendarTodayBtn {
+    color: var(--color-primary);
+}
+
+.calendarTodayBtn:hover {
+    color: var(--text-primary);
+    text-decoration: underline;
+}

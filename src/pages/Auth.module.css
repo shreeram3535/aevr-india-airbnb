@@ -10,6 +10,7 @@
     padding: 60px 24px;
     background-color: #faf9f6; /* Warm neutral luxury off-white */
     position: relative;
+    margin-top: var(--header-height);
 }
 
 .backLink {

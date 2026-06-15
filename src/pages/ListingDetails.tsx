@@ -32,6 +32,7 @@ import {
     ChevronRight,
     Minus,
     Plus,
+    ChevronDown,
 } from 'lucide-react';
 import { SkeletonScreen } from '../components/SkeletonScreen';
 import styles from './ListingDetails.module.css';
@@ -202,6 +203,33 @@ const formatDateRange = (startDate: string, endDate: string) => {
     const end = formatter.format(new Date(`${endDate}T00:00:00Z`));
     return `${start} - ${end}`;
 };
+
+const formatDateDisplay = (dateStr: string) => {
+    if (!dateStr) return 'Add date';
+    const date = parseInputDate(dateStr);
+    if (Number.isNaN(date.getTime())) return 'Add date';
+    return date.toLocaleDateString('en-IN', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        timeZone: 'UTC'
+    });
+};
+
+const getDaysInMonth = (year: number, month: number) => {
+    const date = new Date(Date.UTC(year, month, 1));
+    const days = [];
+    const startDayOfWeek = date.getUTCDay();
+    for (let i = 0; i < startDayOfWeek; i++) {
+        days.push(null);
+    }
+    const totalDays = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+    for (let d = 1; d <= totalDays; d++) {
+        days.push(new Date(Date.UTC(year, month, d)));
+    }
+    return days;
+};
+
 
 const getHotelGstRate = (nightlyRate: number) => {
     if (nightlyRate <= 1000) {
@@ -390,6 +418,87 @@ export const ListingDetails = () => {
         () => roomTypes.find((roomType) => roomType.id === selectedRoomTypeId) ?? roomTypes[0] ?? null,
         [roomTypes, selectedRoomTypeId]
     );
+
+    const roomTypeDropdownRef = useRef<HTMLDivElement>(null);
+    const datePickerRef = useRef<HTMLDivElement>(null);
+    const [roomTypeDropdownOpen, setRoomTypeDropdownOpen] = useState(false);
+    const [activeDatePicker, setActiveDatePicker] = useState<'checkIn' | 'checkOut' | null>(null);
+
+    const [calendarYear, setCalendarYear] = useState<number>(() => {
+        const d = checkIn ? parseInputDate(checkIn) : new Date();
+        return d.getUTCFullYear();
+    });
+    const [calendarMonth, setCalendarMonth] = useState<number>(() => {
+        const d = checkIn ? parseInputDate(checkIn) : new Date();
+        return d.getUTCMonth();
+    });
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (roomTypeDropdownRef.current && !roomTypeDropdownRef.current.contains(event.target as Node)) {
+                setRoomTypeDropdownOpen(false);
+            }
+            if (datePickerRef.current && !datePickerRef.current.contains(event.target as Node)) {
+                setActiveDatePicker(null);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const handlePrevMonth = () => {
+        setCalendarMonth((prev) => {
+            if (prev === 0) {
+                setCalendarYear((y) => y - 1);
+                return 11;
+            }
+            return prev - 1;
+        });
+    };
+
+    const handleNextMonth = () => {
+        setCalendarMonth((prev) => {
+            if (prev === 11) {
+                setCalendarYear((y) => y + 1);
+                return 0;
+            }
+            return prev + 1;
+        });
+    };
+
+    const isDateDisabled = (dayDate: Date) => {
+        const dateStr = dateToInput(dayDate);
+        const todayStr = dateToInput(new Date());
+
+        // Cannot select past dates
+        if (dateStr < todayStr) return true;
+
+        // If selecting checkout, cannot select dates on or before checkIn
+        if (activeDatePicker === 'checkOut' && checkIn && dateStr <= checkIn) {
+            return true;
+        }
+
+        // Check availability blocks
+        return availabilityBlocks.some((block) =>
+            dateStr >= block.startDate && dateStr <= block.endDate
+        );
+    };
+
+    const handleSelectDay = (dayDate: Date) => {
+        const dateStr = dateToInput(dayDate);
+        if (activeDatePicker === 'checkIn') {
+            setCheckIn(dateStr);
+            setActiveDatePicker('checkOut');
+            if (checkOut && dateStr >= checkOut) {
+                setCheckOut(addDays(dateStr, 1));
+            }
+        } else if (activeDatePicker === 'checkOut') {
+            if (dateStr > checkIn) {
+                setCheckOut(dateStr);
+                setActiveDatePicker(null);
+            }
+        }
+    };
 
     useEffect(() => {
         if (roomTypes.length === 0) {
@@ -1086,43 +1195,171 @@ Please let me know the next steps for confirming the booking.`;
                             <div className={styles.bookingNote}>
                                 {bookingTrustNote}
                             </div>
+                            <div className={styles.calendarWrapper} ref={datePickerRef}>
+                                <div className={styles.dateGrid}>
+                                    <div className={styles.formField}>
+                                        <span>Check-in</span>
+                                        <button
+                                            type="button"
+                                            className={`${styles.dateTriggerBtn} ${activeDatePicker === 'checkIn' ? styles.dateTriggerActive : ''}`}
+                                            onClick={() => setActiveDatePicker(activeDatePicker === 'checkIn' ? null : 'checkIn')}
+                                        >
+                                            {checkIn ? formatDateDisplay(checkIn) : 'Add date'}
+                                        </button>
+                                    </div>
+                                    <div className={styles.formField}>
+                                        <span>Checkout</span>
+                                        <button
+                                            type="button"
+                                            className={`${styles.dateTriggerBtn} ${activeDatePicker === 'checkOut' ? styles.dateTriggerActive : ''}`}
+                                            onClick={() => setActiveDatePicker(activeDatePicker === 'checkOut' ? null : 'checkOut')}
+                                        >
+                                            {checkOut ? formatDateDisplay(checkOut) : 'Add date'}
+                                        </button>
+                                    </div>
+                                </div>
 
-                            <div className={styles.dateGrid}>
-                                <label className={styles.formField}>
-                                    <span>Check-in</span>
-                                    <input
-                                        type="date"
-                                        value={checkIn}
-                                        min={dateToInput(new Date())}
-                                        onChange={(e) => setCheckIn(e.target.value)}
-                                    />
-                                </label>
-                                <label className={styles.formField}>
-                                    <span>Checkout</span>
-                                    <input
-                                        type="date"
-                                        value={checkOut}
-                                        min={addDays(checkIn, 1)}
-                                        onChange={(e) => setCheckOut(e.target.value)}
-                                    />
-                                </label>
+                                {activeDatePicker && (
+                                    <div className={styles.calendarPopover}>
+                                        <div className={styles.calendarHeader}>
+                                            <button
+                                                type="button"
+                                                className={styles.calendarNavBtn}
+                                                onClick={handlePrevMonth}
+                                                disabled={
+                                                    calendarYear <= new Date().getFullYear() &&
+                                                    calendarMonth <= new Date().getMonth()
+                                                }
+                                                aria-label="Previous month"
+                                            >
+                                                <ChevronLeft size={16} />
+                                            </button>
+                                            <span className={styles.calendarMonthTitle}>
+                                                {new Date(calendarYear, calendarMonth).toLocaleDateString('en-IN', {
+                                                    month: 'long',
+                                                    year: 'numeric'
+                                                })}
+                                            </span>
+                                            <button
+                                                type="button"
+                                                className={styles.calendarNavBtn}
+                                                onClick={handleNextMonth}
+                                                aria-label="Next month"
+                                            >
+                                                <ChevronRight size={16} />
+                                            </button>
+                                        </div>
+
+                                        <div className={styles.weekdaysRow}>
+                                            {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((d) => (
+                                                <div key={d} className={styles.weekdayLabel}>{d}</div>
+                                            ))}
+                                        </div>
+
+                                        <div className={styles.daysGrid}>
+                                            {getDaysInMonth(calendarYear, calendarMonth).map((dayDate, idx) => {
+                                                if (!dayDate) {
+                                                    return <div key={`empty-${idx}`} />;
+                                                }
+                                                const dateStr = dateToInput(dayDate);
+                                                const isSelectedStart = checkIn === dateStr;
+                                                const isSelectedEnd = checkOut === dateStr;
+                                                const isSelected = isSelectedStart || isSelectedEnd;
+                                                const isInRange = checkIn && checkOut && dateStr > checkIn && dateStr < checkOut;
+                                                const isDisabled = isDateDisabled(dayDate);
+
+                                                return (
+                                                    <button
+                                                        key={dateStr}
+                                                        type="button"
+                                                        disabled={isDisabled}
+                                                        className={`${styles.calendarDay} ${
+                                                            isSelectedStart ? styles.calendarDayRangeStart : ''
+                                                        } ${
+                                                            isSelectedEnd ? styles.calendarDayRangeEnd : ''
+                                                        } ${
+                                                            isSelected && !isSelectedStart && !isSelectedEnd ? styles.calendarDaySelected : ''
+                                                        } ${
+                                                            isInRange ? styles.calendarDayInRange : ''
+                                                        } ${
+                                                            isDisabled ? styles.calendarDayDisabled : ''
+                                                        }`}
+                                                        onClick={() => handleSelectDay(dayDate)}
+                                                    >
+                                                        {dayDate.getUTCDate()}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+
+                                        <div className={styles.calendarFooter}>
+                                            <button
+                                                type="button"
+                                                className={styles.calendarClearBtn}
+                                                onClick={() => {
+                                                    setCheckIn('');
+                                                    setCheckOut('');
+                                                    setActiveDatePicker('checkIn');
+                                                }}
+                                            >
+                                                Clear
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className={styles.calendarTodayBtn}
+                                                onClick={() => {
+                                                    const today = new Date();
+                                                    setCalendarYear(today.getUTCFullYear());
+                                                    setCalendarMonth(today.getUTCMonth());
+                                                }}
+                                            >
+                                                Today
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
-                            <label className={styles.formField}>
+                            <div className={styles.formField}>
                                 <span>Room type</span>
-                                <select value={selectedRoomType?.id ?? ''} onChange={(e) => {
-                                    const roomType = roomTypes.find((item) => item.id === e.target.value);
-                                    if (!roomType) return;
-                                    setSelectedRoomTypeId(roomType.id);
-                                    setRoomCount((current) => Math.min(current, roomType.totalCount));
-                                }}>
-                                    {roomTypes.map((roomType) => (
-                                        <option key={roomType.id} value={roomType.id}>
-                                            {roomType.name} - {formatPrice(roomType.pricePerNight, listing.currency)} / night ({roomType.totalCount} available)
-                                        </option>
-                                    ))}
-                                </select>
-                            </label>
+                                <div className={styles.customSelectContainer} ref={roomTypeDropdownRef}>
+                                    <button
+                                        type="button"
+                                        className={styles.customSelectTrigger}
+                                        onClick={() => setRoomTypeDropdownOpen(prev => !prev)}
+                                    >
+                                        <span>
+                                            {selectedRoomType ? `${selectedRoomType.name} - ${formatPrice(selectedRoomType.pricePerNight, listing.currency)} / night` : 'Select room type'}
+                                        </span>
+                                        <ChevronDown size={14} className={`${styles.dropdownChevron} ${roomTypeDropdownOpen ? styles.chevronRotated : ''}`} />
+                                    </button>
+
+                                    {roomTypeDropdownOpen && (
+                                        <div className={styles.customDropdownMenu}>
+                                            {roomTypes.map((roomType) => {
+                                                const isActive = selectedRoomTypeId === roomType.id;
+                                                return (
+                                                    <button
+                                                        key={roomType.id}
+                                                        type="button"
+                                                        className={`${styles.customDropdownOption} ${isActive ? styles.optionActive : ''}`}
+                                                        onClick={() => {
+                                                            setSelectedRoomTypeId(roomType.id);
+                                                            setRoomCount((current) => Math.min(current, roomType.totalCount));
+                                                            setRoomTypeDropdownOpen(false);
+                                                        }}
+                                                    >
+                                                        <span className={styles.optionName}>{roomType.name}</span>
+                                                        <span className={styles.optionMeta}>
+                                                            {formatPrice(roomType.pricePerNight, listing.currency)} / night ({roomType.totalCount} available)
+                                                        </span>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
 
                             {selectedRoomType?.media && selectedRoomType.media.length > 0 && (
                                 <div className={styles.roomPhotoStrip}>
