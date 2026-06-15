@@ -288,6 +288,7 @@ export const ListingDetails = () => {
     const [submittingBooking, setSubmittingBooking] = useState(false);
     const [isVerifiedGuest, setIsVerifiedGuest] = useState(false);
     const [copied, setCopied] = useState(false);
+    const [descriptionExpanded, setDescriptionExpanded] = useState(false);
     const [showPhotosModal, setShowPhotosModal] = useState(false);
     const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
     const autoSubmitHandled = useRef(false);
@@ -885,64 +886,6 @@ Please let me know the next steps for confirming the booking.`;
                         </div>
                     </div>
 
-                    {/* ── Where you'll be ─────────────────────── */}
-                    {(() => {
-                        const dbCoords = hasValidCoords(listing.location.lat, listing.location.lng)
-                            ? { lat: listing.location.lat, lng: listing.location.lng }
-                            : null;
-                        const linkCoords = !dbCoords && listing.mapLink
-                            ? extractCoordsFromGoogleMapsUrl(listing.mapLink)
-                            : null;
-                        const coords = dbCoords ?? linkCoords;
-
-                        if (coords) {
-                            return (
-                                <div className={styles.whereSection}>
-                                    <h2>Where you'll be</h2>
-                                    <p className={styles.whereSubtitle}>
-                                        <MapPin size={14} />
-                                        {listing.location.city}, {listing.location.country}
-                                    </p>
-                                    <FuzzyMap
-                                        lat={coords.lat}
-                                        lng={coords.lng}
-                                        listingId={listing.id}
-                                        city={listing.location.city}
-                                    />
-                                    {listing.mapLink && (
-                                        <a
-                                            href={listing.mapLink}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            style={{ display: 'inline-flex', marginTop: '10px', color: 'var(--color-primary)', fontWeight: 600, fontSize: 14 }}
-                                        >
-                                            Open on Google Maps
-                                        </a>
-                                    )}
-                                </div>
-                            );
-                        }
-                        if (listing.mapLink) {
-                            return (
-                                <div className={styles.whereSection}>
-                                    <h2>Where you'll be</h2>
-                                    <p className={styles.whereSubtitle}>
-                                        <MapPin size={14} />
-                                        {listing.location.city}, {listing.location.country}
-                                    </p>
-                                    <a
-                                        href={listing.mapLink}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        style={{ display: 'inline-flex', marginTop: '10px', color: 'var(--color-primary)', fontWeight: 600 }}
-                                    >
-                                        Open on Google Maps
-                                    </a>
-                                </div>
-                            );
-                        }
-                        return null;
-                    })()}
 
                     <div className={styles.feature}>
                         <div className={styles.featureIcon}><Key size={24} /></div>
@@ -987,13 +930,33 @@ Please let me know the next steps for confirming the booking.`;
                     </div>
 
                     <div className={styles.description}>
-                        <p>{listing.description}</p>
+                        <div
+                            className={`${styles.descriptionBody} ${
+                                descriptionExpanded ? styles.descriptionBodyExpanded : ''
+                            }`}
+                        >
+                            <p className={styles.descriptionText}>{listing.description}</p>
                             {listing.host.bio && (
-                                <p style={{ marginTop: '16px', color: 'var(--text-secondary)' }}>
+                                <p className={styles.descriptionBio}>
                                     {listing.host.bio}
                                 </p>
                             )}
                         </div>
+                        <button
+                            type="button"
+                            className={styles.descriptionToggle}
+                            onClick={() => setDescriptionExpanded((v) => !v)}
+                        >
+                            <span>{descriptionExpanded ? 'Show less' : 'Show more'}</span>
+                            <ChevronDown
+                                size={16}
+                                style={{
+                                    transition: 'transform 0.25s',
+                                    transform: descriptionExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                                }}
+                            />
+                        </button>
+                    </div>
 
                     <div className={styles.contactSection}>
                         <div className={styles.contactHeader}>
@@ -1081,6 +1044,65 @@ Please let me know the next steps for confirming the booking.`;
                             <p>Designed for easy check-in and a smooth stay.</p>
                         </div>
                     </div>
+
+                    {/* ── Where you'll be ─────────────────────── */}
+                    {(() => {
+                        const dbCoords = hasValidCoords(listing.location.lat, listing.location.lng)
+                            ? { lat: listing.location.lat, lng: listing.location.lng }
+                            : null;
+                        const linkCoords = !dbCoords && listing.mapLink
+                            ? extractCoordsFromGoogleMapsUrl(listing.mapLink)
+                            : null;
+                        const coords = dbCoords ?? linkCoords;
+
+                        if (coords) {
+                            return (
+                                <div className={styles.whereSection}>
+                                    <h2>Where you'll be</h2>
+                                    <p className={styles.whereSubtitle}>
+                                        <MapPin size={14} />
+                                        {listing.location.city}, {listing.location.country}
+                                    </p>
+                                    <FuzzyMap
+                                        lat={coords.lat}
+                                        lng={coords.lng}
+                                        listingId={listing.id}
+                                        city={listing.location.city}
+                                    />
+                                    {listing.mapLink && (
+                                        <a
+                                            href={listing.mapLink}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            style={{ display: 'inline-flex', marginTop: '10px', color: 'var(--color-primary)', fontWeight: 600, fontSize: 14 }}
+                                        >
+                                            Open on Google Maps
+                                        </a>
+                                    )}
+                                </div>
+                            );
+                        }
+                        if (listing.mapLink) {
+                            return (
+                                <div className={styles.whereSection}>
+                                    <h2>Where you'll be</h2>
+                                    <p className={styles.whereSubtitle}>
+                                        <MapPin size={14} />
+                                        {listing.location.city}, {listing.location.country}
+                                    </p>
+                                    <a
+                                        href={listing.mapLink}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        style={{ display: 'inline-flex', marginTop: '10px', color: 'var(--color-primary)', fontWeight: 600 }}
+                                    >
+                                        Open on Google Maps
+                                    </a>
+                                </div>
+                            );
+                        }
+                        return null;
+                    })()}
                 </div>
 
                 <div className={styles.bookingCardWrapper}>
