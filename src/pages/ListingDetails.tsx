@@ -1090,7 +1090,7 @@ Please let me know the next steps for confirming the booking.`;
                     <div className={styles.bookingCard}>
                         <div className={styles.cardHeader}>
                             <div className={styles.cardPrice}>
-                                {formatPrice(nightlyRate, listing.currency)} <span>/ room / night</span>
+                                {formatPrice(nightlyRate, listing.currency)} <span>/ night</span>
                             </div>
                             <div className={styles.cardMeta}>
                                 <Star size={14} fill="currentColor" />
