@@ -471,10 +471,7 @@ export const ListingDetails = () => {
     const taxes = listing ? Math.round(subtotal * gstRate) : 0;
     const total = subtotal + taxes;
     const listingMedia = useMemo(() => listing?.media ?? [], [listing?.media]);
-    const galleryMedia = useMemo(() => {
-        const roomMedia = selectedRoomType?.media ?? [];
-        return roomMedia.length > 0 ? roomMedia : listingMedia;
-    }, [listingMedia, selectedRoomType?.media]);
+    const galleryMedia = listingMedia;
     // Removed static experiences
 
     const hostPhone = normalizePhoneNumber(listing?.host.phone);
@@ -484,7 +481,7 @@ export const ListingDetails = () => {
 
     useEffect(() => {
         setCurrentMediaIndex(0);
-    }, [galleryMedia]);
+    }, [listingMedia]);
 
     const toggleFavorite = () => {
         if (!listing) return;
