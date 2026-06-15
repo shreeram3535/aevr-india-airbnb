@@ -32,6 +32,23 @@ import {
     Minus,
     Plus,
     ChevronDown,
+    Tv,
+    Building2,
+    ArrowUpDown,
+    ParkingSquare,
+    Flame,
+    Leaf,
+    Bike,
+    UtensilsCrossed,
+    Wind,
+    Sun,
+    Droplets,
+    Shield,
+    Sofa,
+    WashingMachine,
+    Refrigerator,
+    Microwave,
+    ShowerHead,
 } from 'lucide-react';
 import { SkeletonScreen } from '../components/SkeletonScreen';
 import styles from './ListingDetails.module.css';
@@ -44,22 +61,54 @@ import { FuzzyMap } from '../components/FuzzyMap';
 import { hasValidCoords, extractCoordsFromGoogleMapsUrl } from '../services/mapUtils';
 
 const amenityIcons: Record<string, ElementType> = {
+    // Connectivity
     wifi: Wifi,
-    pool: Waves,
-    kitchen: Utensils,
+    // Climate
     ac: Snowflake,
-    heater: Sparkles,
+    heater: Flame,
+    'air conditioning': Snowflake,
+    // Parking & Transport
+    parking: ParkingSquare,
+    'cycle rental': Bike,
+    car: Car,
+    // Entertainment & Rooms
+    tv: Tv,
+    television: Tv,
+    balcony: Building2,
+    terrace: Building2,
+    // Fitness & Recreation
     gym: Dumbbell,
-    elevator: Sparkles,
+    pool: Waves,
     'private beach': Umbrella,
+    // Vertical Movement
+    elevator: ArrowUpDown,
+    lift: ArrowUpDown,
+    // Food & Beverage
+    kitchen: Utensils,
     breakfast: Coffee,
-    butler: ConciergeBell,
-    'nature trails': Trees,
-    'organic food': Sparkles,
-    'estate walk': Trees,
-    'lake view': Sparkles,
-    'cycle rental': Car,
     cafe: Coffee,
+    butler: ConciergeBell,
+    'organic food': Leaf,
+    restaurant: UtensilsCrossed,
+    // Nature & Outdoors
+    'nature trails': Trees,
+    'estate walk': Trees,
+    garden: Trees,
+    // Views
+    'lake view': Droplets,
+    'sea view': Waves,
+    'mountain view': Compass,
+    // Safety
+    security: Shield,
+    // Laundry & Appliances
+    laundry: WashingMachine,
+    washer: WashingMachine,
+    refrigerator: Refrigerator,
+    microwave: Microwave,
+    // Bathroom
+    bath: Bath,
+    shower: ShowerHead,
+    bathtub: Bath,
 };
 
 const getAmenityIcon = (label: string): ElementType => {
@@ -290,6 +339,7 @@ export const ListingDetails = () => {
     const [copied, setCopied] = useState(false);
     const [descriptionExpanded, setDescriptionExpanded] = useState(false);
     const [showPhotosModal, setShowPhotosModal] = useState(false);
+    const [showAmenitiesModal, setShowAmenitiesModal] = useState(false);
     const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
     const autoSubmitHandled = useRef(false);
     const mobileSliderRef = useRef<HTMLDivElement | null>(null);
@@ -980,23 +1030,55 @@ Please let me know the next steps for confirming the booking.`;
                     <div className={styles.amenities}>
                         <h2>What this place offers</h2>
                         <div className={styles.amenityList}>
-                            {listing.amenities.length > 0 ? listing.amenities.map((amenity) => {
+                            {(listing.amenities.length > 0 ? listing.amenities : ['Wifi', 'Free parking', 'Kitchen']).slice(0, 10).map((amenity) => {
                                 const AmenityIcon = getAmenityIcon(amenity);
                                 return (
                                     <div key={amenity} className={styles.amenityItem}>
-                                        <AmenityIcon size={20} />
-                                        {amenity}
+                                        <AmenityIcon size={24} />
+                                        <span>{amenity}</span>
                                     </div>
                                 );
-                            }) : (
-                                <>
-                                    <div className={styles.amenityItem}><Wifi size={20} /> Wifi</div>
-                                    <div className={styles.amenityItem}><Car size={20} /> Free parking on premises</div>
-                                    <div className={styles.amenityItem}><Utensils size={20} /> Kitchen</div>
-                                </>
-                            )}
+                            })}
                         </div>
+                        {listing.amenities.length > 10 && (
+                            <button
+                                className={styles.showAllAmenities}
+                                onClick={() => setShowAmenitiesModal(true)}
+                            >
+                                Show all {listing.amenities.length} amenities
+                            </button>
+                        )}
                     </div>
+
+                    {/* Amenities Modal */}
+                    {showAmenitiesModal && (
+                        <div className={styles.amenitiesModal} onClick={() => setShowAmenitiesModal(false)}>
+                            <div
+                                className={styles.amenitiesModalContent}
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                <button
+                                    className={styles.amenitiesModalClose}
+                                    onClick={() => setShowAmenitiesModal(false)}
+                                    aria-label="Close"
+                                >
+                                    <X size={20} />
+                                </button>
+                                <h2>What this place offers</h2>
+                                <div className={styles.amenitiesModalList}>
+                                    {listing.amenities.map((amenity) => {
+                                        const AmenityIcon = getAmenityIcon(amenity);
+                                        return (
+                                            <div key={amenity} className={styles.amenitiesModalItem}>
+                                                <AmenityIcon size={24} />
+                                                <span>{amenity}</span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {listing.localExperiences && listing.localExperiences.length > 0 && (
                         <section className={styles.localExperiences}>
