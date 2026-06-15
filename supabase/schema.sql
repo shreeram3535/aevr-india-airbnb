@@ -77,6 +77,8 @@ alter table public.listings add column if not exists map_link text;
 alter table public.listings add column if not exists room_types jsonb not null default '[]'::jsonb;
 alter table public.listings add column if not exists local_experiences jsonb not null default '[]'::jsonb;
 alter table public.listings add column if not exists host_name text;
+alter table public.listings add column if not exists lat numeric(9, 6) not null default 0;
+alter table public.listings add column if not exists lng numeric(9, 6) not null default 0;
 alter table public.profiles add column if not exists host_approval_status text not null default 'pending' check (host_approval_status in ('pending', 'approved', 'rejected'));
 alter table public.profiles add column if not exists host_reviewed_at timestamptz;
 alter table public.profiles add column if not exists host_reviewed_by uuid references public.profiles (id);
@@ -392,6 +394,19 @@ create policy "Public read active amenities"
 on public.amenities
 for select
 using (is_active = true);
+
+drop policy if exists "Authenticated users insert amenities" on public.amenities;
+create policy "Authenticated users insert amenities"
+on public.amenities
+for insert
+with check (auth.role() = 'authenticated');
+
+drop policy if exists "Authenticated users update amenities" on public.amenities;
+create policy "Authenticated users update amenities"
+on public.amenities
+for update
+using (auth.role() = 'authenticated')
+with check (auth.role() = 'authenticated');
 
 drop policy if exists "Public read active listings" on public.listings;
 create policy "Public read active listings"

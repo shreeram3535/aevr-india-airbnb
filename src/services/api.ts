@@ -1009,21 +1009,25 @@ const ensureAmenities = async (labels: string[]) => {
     });
 
     if (missing.length > 0) {
-        const { error } = await supabase
-            .from('amenities')
-            .upsert(
-                missing.map((label, index) => ({
-                    slug: slugifyAmenity(label),
-                    label: label.trim(),
-                    icon_name: 'Sparkles',
-                    sort_order: 100 + index,
-                    is_active: true,
-                })),
-                { onConflict: 'slug' }
-            );
+        try {
+            const { error } = await supabase
+                .from('amenities')
+                .upsert(
+                    missing.map((label, index) => ({
+                        slug: slugifyAmenity(label),
+                        label: label.trim(),
+                        icon_name: 'Sparkles',
+                        sort_order: 100 + index,
+                        is_active: true,
+                    })),
+                    { onConflict: 'slug' }
+                );
 
-        if (error) {
-            throw error;
+            if (error) {
+                console.warn('Unable to upsert missing amenities in database (likely due to RLS policies):', error.message || error);
+            }
+        } catch (err) {
+            console.warn('Error trying to upsert missing amenities in database:', err);
         }
     }
 
