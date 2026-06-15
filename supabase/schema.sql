@@ -57,6 +57,7 @@ create table if not exists public.listings (
     is_guest_favorite boolean not null default false,
     availability_summary text,
     room_types jsonb not null default '[]'::jsonb,
+    local_experiences jsonb not null default '[]'::jsonb,
     map_link text,
     city text not null,
     country text not null,
@@ -74,6 +75,7 @@ create table if not exists public.listings (
 -- Backfill columns for environments where listings existed before these fields were introduced.
 alter table public.listings add column if not exists map_link text;
 alter table public.listings add column if not exists room_types jsonb not null default '[]'::jsonb;
+alter table public.listings add column if not exists local_experiences jsonb not null default '[]'::jsonb;
 alter table public.listings add column if not exists host_name text;
 alter table public.profiles add column if not exists host_approval_status text not null default 'pending' check (host_approval_status in ('pending', 'approved', 'rejected'));
 alter table public.profiles add column if not exists host_reviewed_at timestamptz;

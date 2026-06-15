@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
     CalendarDays, Plus, Trash2, PlayCircle, CheckCircle2, ChevronRight,
     ChevronLeft, Upload, MapPin, Home, DollarSign, BedDouble, Image, Wifi,
-    Check, X,
+    Check, X, Compass,
 } from 'lucide-react';
 import styles from './HostNewProperty.module.css';
 import { api } from '../services/api';
@@ -12,7 +12,7 @@ import { hasSupabaseConfig } from '../services/supabase';
 import { uploadListingImages } from '../services/storage';
 import { HostApprovalStatusView } from '../components/HostApprovalStatus';
 import { SkeletonScreen } from '../components/SkeletonScreen';
-import type { AvailabilityBlock, AvailabilityBlockStatus, Category, Listing, ListingMediaItem, RoomType } from '../types';
+import type { AvailabilityBlock, AvailabilityBlockStatus, Category, Listing, ListingMediaItem, RoomType, Experience, ExperienceCategory } from '../types';
 import { createExternalVideoMedia } from '../services/media';
 import { extractCoordsFromGoogleMapsUrl } from '../services/mapUtils';
 
@@ -47,6 +47,16 @@ type RoomTypeFormState = {
     existingMedia: ListingMediaItem[];
     photoFiles: File[];
     videoLinks: string;
+};
+
+type ExperienceFormState = {
+    id: string;
+    title: string;
+    category: ExperienceCategory;
+    description: string;
+    iconOrImage: string;
+    distance: string;
+    travelTime: string;
 };
 
 /* ─── Amenity SVG icons (Airbnb-style vectors) ───────────────────────────── */
@@ -102,13 +112,14 @@ const AMENITY_CHIPS = [
 /* ─── Step definitions ───────────────────────────────────────────────────── */
 
 const STEPS = [
-    { id: 1, label: 'Basics',     icon: Home },
-    { id: 2, label: 'Location',   icon: MapPin },
-    { id: 3, label: 'Details',    icon: BedDouble },
-    { id: 4, label: 'Pricing',    icon: DollarSign },
-    { id: 5, label: 'Room Types', icon: BedDouble },
-    { id: 6, label: 'Media',      icon: Image },
-    { id: 7, label: 'Amenities',  icon: Wifi },
+    { id: 1, label: 'Basics',      icon: Home },
+    { id: 2, label: 'Location',    icon: MapPin },
+    { id: 3, label: 'Details',     icon: BedDouble },
+    { id: 4, label: 'Pricing',     icon: DollarSign },
+    { id: 5, label: 'Room Types',  icon: BedDouble },
+    { id: 6, label: 'Media',       icon: Image },
+    { id: 7, label: 'Experiences', icon: Compass },
+    { id: 8, label: 'Amenities',   icon: Wifi },
 ];
 
 /* ─── Helpers ────────────────────────────────────────────────────────────── */
@@ -182,6 +193,31 @@ const roomTypesToForm = (roomTypes?: RoomType[], fallbackPrice?: number): RoomTy
     );
 };
 
+const createExperienceRow = (overrides: Partial<ExperienceFormState> = {}): ExperienceFormState => ({
+    id: overrides.id ?? crypto.randomUUID(),
+    title: overrides.title ?? '',
+    category: overrides.category ?? 'Attraction',
+    description: overrides.description ?? '',
+    iconOrImage: overrides.iconOrImage ?? '',
+    distance: overrides.distance ?? '',
+    travelTime: overrides.travelTime ?? '',
+});
+
+const experiencesToForm = (experiences?: Experience[]): ExperienceFormState[] => {
+    if (!experiences || experiences.length === 0) {
+        return [];
+    }
+    return experiences.map((exp) => createExperienceRow({
+        id: exp.id,
+        title: exp.title,
+        category: exp.category,
+        description: exp.description,
+        iconOrImage: exp.iconOrImage ?? '',
+        distance: exp.distance ?? '',
+        travelTime: exp.travelTime ?? '',
+    }));
+};
+
 const parseVideoLinks = (value: string, startingSortOrder = 0) =>
     value
         .split(/\n|,/)
@@ -216,6 +252,7 @@ export const HostNewProperty = () => {
     const [categories, setCategories] = useState<Category[]>([]);
     const [form, setForm] = useState<FormState>(initialState);
     const [roomTypes, setRoomTypes] = useState<RoomTypeFormState[]>([createRoomTypeRow()]);
+    const [localExperiences, setLocalExperiences] = useState<ExperienceFormState[]>([]);
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const [previewUrls, setPreviewUrls] = useState<string[]>([]);
     const [existingMedia, setExistingMedia] = useState<ListingMediaItem[]>([]);
@@ -232,7 +269,7 @@ export const HostNewProperty = () => {
     const [customAmenity, setCustomAmenity] = useState('');
 
     /* ── Wizard step ── */
-    const totalSteps = isEditMode ? 7 : 7;
+    const totalSteps = isEditMode ? 8 : 8;
     const [currentStep, setCurrentStep] = useState(1);
     const [direction, setDirection] = useState<'forward' | 'back'>('forward');
     const [animating, setAnimating] = useState(false);
@@ -301,6 +338,7 @@ export const HostNewProperty = () => {
                 } else {
                     setForm(listingToForm(listing));
                     setRoomTypes(roomTypesToForm(listing.roomTypes, listing.price));
+                    setLocalExperiences(experiencesToForm(listing.localExperiences));
                     setExistingMedia(listing.media);
                     setVideoLinks(listing.media.filter((i) => i.kind === 'video').map((i) => i.url).join('\n'));
                     setAvailabilityBlocks(await api.fetchAvailabilityBlocks(listingId));
@@ -311,6 +349,7 @@ export const HostNewProperty = () => {
                     categorySlug: data.find((i) => i.slug && i.slug !== 'icons')?.slug ?? current.categorySlug,
                 }));
                 setRoomTypes([createRoomTypeRow()]);
+                setLocalExperiences([]);
                 setExistingMedia([]);
                 setVideoLinks('');
             }
@@ -385,6 +424,24 @@ export const HostNewProperty = () => {
             const remaining = current.filter((rt) => rt.id !== roomTypeId);
             return remaining.length > 0 ? remaining : [createRoomTypeRow()];
         });
+    };
+
+    const updateExperience = (experienceId: string, field: keyof ExperienceFormState) => (
+        event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    ) => {
+        setLocalExperiences((current) =>
+            current.map((experience) =>
+                experience.id === experienceId ? { ...experience, [field]: event.target.value } : experience
+            )
+        );
+    };
+
+    const addExperience = () => {
+        setLocalExperiences((current) => [...current, createExperienceRow()]);
+    };
+
+    const removeExperience = (experienceId: string) => {
+        setLocalExperiences((current) => current.filter((exp) => exp.id !== experienceId));
     };
 
     /* ── Calendar ── */
@@ -526,6 +583,20 @@ export const HostNewProperty = () => {
                 ...propertyVideoMedia,
             ].map((item, i) => ({ ...item, sortOrder: i }));
 
+            const normalizedExperiences = localExperiences.map((exp, index): Experience | null => {
+                const title = exp.title.trim();
+                if (!title) return null;
+                return {
+                    id: exp.id || `${index}-${title.toLowerCase().replace(/\s+/g, '-')}`,
+                    title,
+                    category: exp.category,
+                    description: exp.description.trim(),
+                    iconOrImage: exp.iconOrImage.trim() || undefined,
+                    distance: exp.distance.trim() || undefined,
+                    travelTime: exp.travelTime.trim() || undefined,
+                };
+            }).filter((item): item is Experience => item !== null);
+
             const payload = {
                 title: form.title,
                 description: form.description,
@@ -548,6 +619,7 @@ export const HostNewProperty = () => {
                 amenityLabels: form.amenityLabels.split(',').map((a) => a.trim()).filter(Boolean),
                 isGuestFavorite: false,
                 roomTypes: normalizedRoomTypes,
+                localExperiences: normalizedExperiences.length > 0 ? normalizedExperiences : undefined,
                 ...(propertyMedia.length > 0 ? { media: propertyMedia } : {}),
             };
 
@@ -1033,8 +1105,114 @@ export const HostNewProperty = () => {
                     </div>
                 );
 
-            /* ── Step 7: Amenities + Calendar ────────────────────────────── */
+            /* ── Step 7: Local Experiences ───────────────────────────────── */
             case 7:
+                return (
+                    <div className={styles.stepContent}>
+                        <div className={styles.stepHeading}>
+                            <div>
+                                <h2>Local Experiences</h2>
+                                <p>Help guests discover local attractions, food options, activities, and nature spots nearby.</p>
+                            </div>
+                            <button type="button" className={styles.addRoomTypeBtn} onClick={addExperience}>
+                                <Plus size={16} /> Add experience
+                            </button>
+                        </div>
+
+                        {localExperiences.length > 0 ? (
+                            <div className={styles.roomTypeList}>
+                                {localExperiences.map((experience, index) => (
+                                    <article key={experience.id} className={styles.roomTypeCard}>
+                                        <div className={styles.roomTypeCardHeader}>
+                                            <div className={styles.roomTypeCardTitle}>
+                                                <span className={styles.roomTypeBadge}>{index + 1}</span>
+                                                <input
+                                                    className={styles.roomTypeNameInput}
+                                                    value={experience.title}
+                                                    onChange={updateExperience(experience.id, 'title')}
+                                                    placeholder="Attraction or activity name (e.g. Sunset Cruise)"
+                                                    required
+                                                />
+                                            </div>
+                                            <button type="button" className={styles.roomTypeRemove} onClick={() => removeExperience(experience.id)}>
+                                                <Trash2 size={14} /> Remove
+                                            </button>
+                                        </div>
+
+                                        <div className={styles.rtCounterRow}>
+                                            <label className={styles.field} style={{ flex: 1 }}>
+                                                <span>Category</span>
+                                                <select
+                                                    value={experience.category}
+                                                    onChange={updateExperience(experience.id, 'category')}
+                                                >
+                                                    <option value="Attraction">Attraction</option>
+                                                    <option value="Activity">Activity</option>
+                                                    <option value="Food & Dining">Food & Dining</option>
+                                                    <option value="Nature">Nature</option>
+                                                    <option value="Adventure">Adventure</option>
+                                                    <option value="Shopping">Shopping</option>
+                                                    <option value="Culture & Heritage">Culture & Heritage</option>
+                                                    <option value="Wellness">Wellness</option>
+                                                    <option value="Nightlife">Nightlife</option>
+                                                    <option value="Other">Other</option>
+                                                </select>
+                                            </label>
+
+                                            <label className={styles.field} style={{ flex: 1 }}>
+                                                <span>Icon or Emoji (Optional)</span>
+                                                <input
+                                                    value={experience.iconOrImage}
+                                                    onChange={updateExperience(experience.id, 'iconOrImage')}
+                                                    placeholder="e.g. 🚤, 🏛️, 🍝"
+                                                />
+                                            </label>
+                                        </div>
+
+                                        <div className={styles.grid}>
+                                            <label className={styles.field}>
+                                                <span>Distance (Optional)</span>
+                                                <input
+                                                    value={experience.distance}
+                                                    onChange={updateExperience(experience.id, 'distance')}
+                                                    placeholder="e.g. 1.5 km away"
+                                                />
+                                            </label>
+
+                                            <label className={styles.field}>
+                                                <span>Travel time (Optional)</span>
+                                                <input
+                                                    value={experience.travelTime}
+                                                    onChange={updateExperience(experience.id, 'travelTime')}
+                                                    placeholder="e.g. 10 mins walk / 5 mins drive"
+                                                />
+                                            </label>
+                                        </div>
+
+                                        <label className={styles.field}>
+                                            <span>Description</span>
+                                            <textarea
+                                                value={experience.description}
+                                                onChange={updateExperience(experience.id, 'description')}
+                                                placeholder="Tell guests what makes this experience special, when to visit, or any tips..."
+                                                rows={3}
+                                                required
+                                            />
+                                        </label>
+                                    </article>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className={styles.rtDropZoneEmpty} onClick={addExperience} style={{ cursor: 'pointer' }}>
+                                <Compass size={24} />
+                                <span>No local experiences added yet. Click here to add one.</span>
+                            </div>
+                        )}
+                    </div>
+                );
+
+            /* ── Step 8: Amenities + Calendar ────────────────────────────── */
+            case 8:
                 return (
                     <div className={styles.stepContent}>
                         <div className={styles.stepHeading}>
@@ -1194,7 +1372,7 @@ export const HostNewProperty = () => {
                                     type="button"
                                     className={`${styles.sidebarStep} ${isActive ? styles.sidebarStepActive : ''} ${isDone ? styles.sidebarStepDone : ''}`}
                                     onClick={() => goToStep(step.id)}
-                                    disabled={step.id === 7 && !isEditMode && step.id > currentStep}
+                                    disabled={step.id === 8 && !isEditMode && step.id > currentStep}
                                 >
                                     <span className={styles.sidebarStepNum}>
                                         {isDone ? <CheckCircle2 size={16} strokeWidth={1.5} /> : <Icon size={16} strokeWidth={1.5} />}

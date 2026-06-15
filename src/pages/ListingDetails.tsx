@@ -23,7 +23,6 @@ import {
     Trees,
     ShieldCheck,
     Compass,
-    Camera,
     X,
     ExternalLink,
     PlayCircle,
@@ -66,88 +65,6 @@ const amenityIcons: Record<string, ElementType> = {
 const getAmenityIcon = (label: string): ElementType => {
     const key = label.trim().toLowerCase();
     return amenityIcons[key] ?? MapPin;
-};
-
-type LocalExperience = {
-    title: string;
-    description: string;
-    meta: string;
-    Icon: ElementType;
-};
-
-const getLocalExperiences = (listing: Listing): LocalExperience[] => {
-    const city = listing.location.city || 'the area';
-    const category = listing.category.toLowerCase();
-    const amenities = listing.amenities.map((amenity) => amenity.toLowerCase());
-    const experiences: LocalExperience[] = [];
-
-    if (category.includes('pool') || amenities.includes('pool')) {
-        experiences.push({
-            title: 'Poolside wind-down',
-            description: `Spend an easy afternoon around ${city}'s resort-style pools, cabanas, and sunset decks.`,
-            meta: 'Local favorite',
-            Icon: Waves,
-        });
-    }
-
-    if (category.includes('beach') || amenities.includes('private beach')) {
-        experiences.push({
-            title: 'Beachfront trail',
-            description: `Explore shore walks, seafood stops, and quiet beach corners close to your stay in ${city}.`,
-            meta: 'Nearby',
-            Icon: Umbrella,
-        });
-    }
-
-    if (category.includes('farm') || amenities.includes('organic food') || amenities.includes('nature trails')) {
-        experiences.push({
-            title: 'Farm-to-table visit',
-            description: `Meet local growers, taste seasonal produce, and slow down with countryside experiences near ${city}.`,
-            meta: 'Host-style pick',
-            Icon: Trees,
-        });
-    }
-
-    if (category.includes('cabin') || category.includes('view') || amenities.includes('lake view')) {
-        experiences.push({
-            title: 'Scenic lookout loop',
-            description: `Find viewpoints, lake edges, and photo stops that make the most of ${city}'s landscape.`,
-            meta: 'Photo spot',
-            Icon: Camera,
-        });
-    }
-
-    if (category.includes('luxe')) {
-        experiences.push({
-            title: 'Private dining night',
-            description: `Book a chef-led dinner, tasting menu, or refined local table for a special evening in ${city}.`,
-            meta: 'Premium pick',
-            Icon: ConciergeBell,
-        });
-    }
-
-    experiences.push(
-        {
-            title: `${city} essentials walk`,
-            description: 'Get oriented with nearby cafes, markets, local lanes, and easy first-day stops.',
-            meta: 'Nearby',
-            Icon: Compass,
-        },
-        {
-            title: 'Local cafe stop',
-            description: `Start the morning with neighborhood coffee, breakfast, and a relaxed route through ${city}.`,
-            meta: 'Easy morning',
-            Icon: Coffee,
-        },
-        {
-            title: 'Cultural highlights',
-            description: 'Ask your host about galleries, temples, old-town routes, seasonal events, and hidden local favorites.',
-            meta: 'Local insight',
-            Icon: Sparkles,
-        }
-    );
-
-    return experiences.slice(0, 4);
 };
 
 const formatPrice = (amount: number, currency?: string) =>
@@ -558,7 +475,8 @@ export const ListingDetails = () => {
         const roomMedia = selectedRoomType?.media ?? [];
         return roomMedia.length > 0 ? roomMedia : listingMedia;
     }, [listingMedia, selectedRoomType?.media]);
-    const localExperiences = useMemo(() => listing ? getLocalExperiences(listing) : [], [listing]);
+    // Removed static experiences
+
     const hostPhone = normalizePhoneNumber(listing?.host.phone);
     const displayPhone = formatPhoneDisplay(listing?.host.phone);
     const callHref = hostPhone ? `tel:${hostPhone}` : undefined;
@@ -1120,26 +1038,36 @@ Please let me know the next steps for confirming the booking.`;
                         </div>
                     </div>
 
-                    <section className={styles.localExperiences}>
-                        <div className={styles.sectionIntro}>
-                            <h2>Local experiences nearby</h2>
-                            <p>Curated ideas around {listing.location.city} to help guests plan a richer stay.</p>
-                        </div>
-                        <div className={styles.experienceGrid}>
-                            {localExperiences.map(({ title, description, meta, Icon }) => (
-                                <article key={title} className={styles.experienceCard}>
-                                    <div className={styles.experienceIcon}>
-                                        <Icon size={20} />
-                                    </div>
-                                    <div>
-                                        <span>{meta}</span>
-                                        <h3>{title}</h3>
-                                        <p>{description}</p>
-                                    </div>
-                                </article>
-                            ))}
-                        </div>
-                    </section>
+                    {listing.localExperiences && listing.localExperiences.length > 0 && (
+                        <section className={styles.localExperiences}>
+                            <div className={styles.sectionIntro}>
+                                <h2>Local experiences nearby</h2>
+                                <p>Curated ideas around {listing.location.city} to help guests plan a richer stay.</p>
+                            </div>
+                            <div className={styles.experienceGrid}>
+                                {listing.localExperiences.map(({ id, title, category, description, iconOrImage, distance, travelTime }) => (
+                                    <article key={id} className={styles.experienceCard}>
+                                        <div className={styles.experienceIcon}>
+                                            {iconOrImage ? (
+                                                iconOrImage.startsWith('http') ? (
+                                                    <img src={iconOrImage} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px' }} />
+                                                ) : (
+                                                    <span style={{ fontSize: '1.25rem' }}>{iconOrImage}</span>
+                                                )
+                                            ) : (
+                                                <Compass size={20} />
+                                            )}
+                                        </div>
+                                        <div>
+                                            <span>{category}{distance ? ` • ${distance}` : ''}{travelTime ? ` • ${travelTime}` : ''}</span>
+                                            <h3>{title}</h3>
+                                            <p>{description}</p>
+                                        </div>
+                                    </article>
+                                ))}
+                            </div>
+                        </section>
+                    )}
 
                     <div className={styles.feature}>
                         <div className={styles.featureIcon}><BedDouble size={24} /></div>
