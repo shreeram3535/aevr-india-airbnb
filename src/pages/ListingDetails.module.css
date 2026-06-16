@@ -251,7 +251,73 @@
 .description {
     padding: 24px 0;
     border-bottom: 1px solid var(--color-gray-100);
-    line-height: 1.6;
+}
+
+/* Clamp the text to ~5 lines when collapsed */
+.descriptionBody {
+    position: relative;
+    max-height: 140px;
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+}
+
+/* Gradient fade at the bottom when collapsed */
+.descriptionBody::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 64px;
+    background: linear-gradient(to bottom, transparent, var(--color-white, #ffffff));
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.descriptionBodyExpanded {
+    max-height: 2000px; /* large enough for any description */
+}
+
+.descriptionBodyExpanded::after {
+    opacity: 0;
+}
+
+.descriptionText {
+    font-size: var(--font-size-md);
+    line-height: 1.75;
+    color: var(--text-primary);
+    white-space: pre-line;
+    margin: 0;
+}
+
+.descriptionBio {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--color-gray-100);
+    font-size: var(--font-size-sm);
+    line-height: 1.7;
+    color: var(--text-secondary);
+}
+
+.descriptionToggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 16px;
+    font-size: var(--font-size-md);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    transition: opacity 0.15s;
+}
+
+.descriptionToggle:hover {
+    opacity: 0.7;
 }
 
 .contactSection {
@@ -326,37 +392,136 @@
 
 .amenities {
     padding: 24px 0;
+    border-bottom: 1px solid var(--color-gray-100);
 }
 
 .amenities h2 {
     font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-semibold);
     margin-bottom: 24px;
 }
 
 .amenityList {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 16px;
+    gap: 0;
 }
 
 .amenityItem {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 16px;
+    padding: 12px 0;
     font-size: var(--font-size-md);
     color: var(--text-primary);
-    font-weight: var(--font-weight-medium);
+    font-weight: var(--font-weight-regular);
+    border-bottom: none;
 }
 
 .amenityItem svg {
     flex: 0 0 auto;
-    width: 34px;
-    height: 34px;
-    padding: 7px;
-    border-radius: 50%;
+    width: 24px;
+    height: 24px;
     color: var(--color-primary);
-    background: rgba(0, 132, 137, 0.12);
-    stroke-width: 2.2;
+    stroke-width: 1.75;
+}
+
+.showAllAmenities {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 16px;
+    padding: 10px 20px;
+    border: 1px solid var(--text-primary);
+    border-radius: 10px;
+    background: transparent;
+    font-size: var(--font-size-md);
+    font-weight: var(--font-weight-semibold);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.showAllAmenities:hover {
+    background-color: var(--color-gray-50);
+}
+
+/* Modal overlay for all amenities */
+.amenitiesModal {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.55);
+    padding: 24px;
+}
+
+.amenitiesModalContent {
+    background: #fff;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 600px;
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: 32px;
+    position: relative;
+}
+
+.amenitiesModalContent h2 {
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-semibold);
+    margin-bottom: 28px;
+}
+
+.amenitiesModalClose {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--text-primary);
+    transition: background-color 0.15s;
+}
+
+.amenitiesModalClose:hover {
+    background-color: var(--color-gray-50);
+}
+
+.amenitiesModalList {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.amenitiesModalItem {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--color-gray-100);
+    font-size: var(--font-size-md);
+    color: var(--text-primary);
+}
+
+.amenitiesModalItem:last-child {
+    border-bottom: none;
+}
+
+.amenitiesModalItem svg {
+    flex: 0 0 auto;
+    width: 24px;
+    height: 24px;
+    color: var(--color-primary);
+    stroke-width: 1.75;
 }
 
 .localExperiences {
@@ -1153,22 +1318,40 @@
 
 /* ── Where you'll be (FuzzyMap section) ─── */
 .whereSection {
-    padding: 24px 0;
+    padding: 32px 0;
     border-bottom: 1px solid var(--color-gray-100);
 }
 
 .whereSection h2 {
     font-size: var(--font-size-xl);
-    margin-bottom: 8px;
+    font-weight: var(--font-weight-semibold);
+    margin-bottom: 6px;
 }
 
 .whereSubtitle {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
     font-size: var(--font-size-sm);
     color: var(--text-secondary);
     margin-bottom: 4px;
+    font-weight: var(--font-weight-medium);
+}
+
+/* Airbnb-style note below the map: plain text, like "Exact location will be provided after booking." */
+.whereExactNote {
+    margin-top: 14px;
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.whereMapLink {
+    color: var(--text-primary);
+    font-weight: var(--font-weight-semibold);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    margin-left: 4px;
 }
 
 /* Custom Dropdown Trigger & Date Trigger Styling */

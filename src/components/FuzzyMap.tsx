@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { MapPin } from 'lucide-react';
+import { MapPin, Search, Maximize2 } from 'lucide-react';
 import styles from './FuzzyMap.module.css';
 import { fuzzCoordinates } from '../services/mapUtils';
 
@@ -28,15 +28,12 @@ const loadLeaflet = (): Promise<void> => {
     if (leafletLoading) return leafletLoading;
 
     leafletLoading = new Promise((resolve, reject) => {
-        // Inject CSS
         if (!document.querySelector(`link[href="${LEAFLET_CSS}"]`)) {
             const link = document.createElement('link');
             link.rel = 'stylesheet';
             link.href = LEAFLET_CSS;
             document.head.appendChild(link);
         }
-
-        // Inject JS
         if (!document.querySelector(`script[src="${LEAFLET_JS}"]`)) {
             const script = document.createElement('script');
             script.src = LEAFLET_JS;
@@ -57,22 +54,21 @@ export const FuzzyMap = ({ lat, lng, listingId, city }: FuzzyMapProps) => {
     const mapInstanceRef = useRef<any>(null);
     const [leafletReady, setLeafletReady] = useState(false);
     const [loadError, setLoadError] = useState(false);
+    const [isFullscreen, setIsFullscreen] = useState(false);
+    const wrapperRef = useRef<HTMLDivElement>(null);
 
-    // Load Leaflet from CDN once
     useEffect(() => {
         loadLeaflet()
             .then(() => setLeafletReady(true))
             .catch(() => setLoadError(true));
     }, []);
 
-    // Mount the map once Leaflet is ready
     useEffect(() => {
         if (!leafletReady || !mapContainerRef.current || mapInstanceRef.current) return;
 
         const L = window.L;
         const { lat: fLat, lng: fLng } = fuzzCoordinates(lat, lng, listingId);
 
-        // Init map — disable most controls for a clean embedded look
         const map = L.map(mapContainerRef.current, {
             center: [fLat, fLng],
             zoom: 14,
@@ -80,47 +76,37 @@ export const FuzzyMap = ({ lat, lng, listingId, city }: FuzzyMapProps) => {
             scrollWheelZoom: false,
             doubleClickZoom: true,
             dragging: true,
-            attributionControl: false,
+            attributionControl: true,
         });
 
+        map.attributionControl.setPrefix('');
         mapInstanceRef.current = map;
 
-        // OpenStreetMap tiles (free, no API key)
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
+        // CartoDB Voyager — closest free tiles to Google Maps style
+        // Warm roads, green parks, clean labels, no messy OSM red dots
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            maxZoom: 20,
+            subdomains: 'abcd',
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
         }).addTo(map);
 
-        // Privacy circle — semi-transparent, Airbnb-style
-        L.circle([fLat, fLng], {
-            radius: 350,
-            color: '#FF385C',
-            fillColor: '#FF385C',
-            fillOpacity: 0.12,
-            weight: 2,
-            opacity: 0.5,
-        }).addTo(map);
-
-        // Premium drop-shaped pin marker
+        // Airbnb-style: black circle with house icon, NO teardrop pin
         const markerHtml = `
-            <div class="fuzzy-map-pin">
-                <div class="fuzzy-map-pin-pulse"></div>
-                <div class="fuzzy-map-pin-body">
-                    <svg viewBox="0 0 20 20" fill="white" xmlns="http://www.w3.org/2000/svg" class="fuzzy-map-pin-icon">
-                        <path d="M10 2L3 8v9a1 1 0 001 1h4v-5h4v5h4a1 1 0 001-1V8L10 2z"/>
-                    </svg>
-                </div>
-                <div class="fuzzy-map-pin-tip"></div>
+            <div class="airbnb-map-marker">
+                <svg viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg" class="airbnb-map-marker-icon">
+                    <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+                </svg>
             </div>
         `;
         const icon = L.divIcon({
             html: markerHtml,
             className: '',
-            iconSize: [44, 52],
-            iconAnchor: [22, 50],
+            iconSize: [40, 40],
+            iconAnchor: [20, 20],
         });
         L.marker([fLat, fLng], { icon }).addTo(map);
 
-        // Minimal zoom control (top-right)
+        // Zoom on the right side, like Airbnb
         L.control.zoom({ position: 'topright' }).addTo(map);
 
         return () => {
@@ -129,6 +115,17 @@ export const FuzzyMap = ({ lat, lng, listingId, city }: FuzzyMapProps) => {
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [leafletReady]);
+
+    // Invalidate map size when fullscreen toggles
+    useEffect(() => {
+        if (mapInstanceRef.current) {
+            setTimeout(() => mapInstanceRef.current?.invalidateSize(), 300);
+        }
+    }, [isFullscreen]);
+
+    const handleFullscreen = () => {
+        setIsFullscreen((prev) => !prev);
+    };
 
     if (loadError) {
         return (
@@ -140,22 +137,51 @@ export const FuzzyMap = ({ lat, lng, listingId, city }: FuzzyMapProps) => {
     }
 
     return (
-        <div className={styles.wrapper}>
+        <div
+            ref={wrapperRef}
+            className={`${styles.wrapper} ${isFullscreen ? styles.wrapperFullscreen : ''}`}
+        >
+            {/* Top-left search button — Airbnb UI element */}
+            {leafletReady && (
+                <button
+                    className={styles.searchBtn}
+                    aria-label="Search this area"
+                    type="button"
+                    onClick={() => {
+                        const map = mapInstanceRef.current;
+                        if (map) map.setView(map.getCenter(), map.getZoom());
+                    }}
+                >
+                    <Search size={16} strokeWidth={2.5} />
+                </button>
+            )}
+
+            {/* Top-right fullscreen button — Airbnb UI element */}
+            {leafletReady && (
+                <button
+                    className={styles.fullscreenBtn}
+                    aria-label={isFullscreen ? 'Exit fullscreen' : 'View larger map'}
+                    type="button"
+                    onClick={handleFullscreen}
+                >
+                    <Maximize2 size={16} strokeWidth={2.5} />
+                </button>
+            )}
+
             {!leafletReady && (
                 <div className={styles.skeleton}>
-                    <div className={styles.skeletonPulse} />
+                    <div className={styles.skeletonShimmer} />
                 </div>
             )}
+
             <div
                 ref={mapContainerRef}
                 className={styles.mapContainer}
                 style={{ opacity: leafletReady ? 1 : 0 }}
                 aria-label={`Approximate map location near ${city}`}
             />
-            <div className={styles.privacyBadge}>
-                <MapPin size={13} />
-                <span>Exact location shared after booking</span>
-            </div>
+
+            {/* Privacy note — exactly like Airbnb: plain text below the map */}
         </div>
     );
 };
