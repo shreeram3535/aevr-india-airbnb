@@ -1318,22 +1318,40 @@
 
 /* ── Where you'll be (FuzzyMap section) ─── */
 .whereSection {
-    padding: 24px 0;
+    padding: 32px 0;
     border-bottom: 1px solid var(--color-gray-100);
 }
 
 .whereSection h2 {
     font-size: var(--font-size-xl);
-    margin-bottom: 8px;
+    font-weight: var(--font-weight-semibold);
+    margin-bottom: 6px;
 }
 
 .whereSubtitle {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
     font-size: var(--font-size-sm);
     color: var(--text-secondary);
     margin-bottom: 4px;
+    font-weight: var(--font-weight-medium);
+}
+
+/* Airbnb-style note below the map: plain text, like "Exact location will be provided after booking." */
+.whereExactNote {
+    margin-top: 14px;
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.whereMapLink {
+    color: var(--text-primary);
+    font-weight: var(--font-weight-semibold);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    margin-left: 4px;
 }
 
 /* Custom Dropdown Trigger & Date Trigger Styling */

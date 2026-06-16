@@ -1142,7 +1142,6 @@ Please let me know the next steps for confirming the booking.`;
                                 <div className={styles.whereSection}>
                                     <h2>Where you'll be</h2>
                                     <p className={styles.whereSubtitle}>
-                                        <MapPin size={14} />
                                         {listing.location.city}, {listing.location.country}
                                     </p>
                                     <FuzzyMap
@@ -1151,35 +1150,10 @@ Please let me know the next steps for confirming the booking.`;
                                         listingId={listing.id}
                                         city={listing.location.city}
                                     />
-                                    {listing.mapLink && (
-                                        <a
-                                            href={listing.mapLink}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            style={{ display: 'inline-flex', marginTop: '10px', color: 'var(--color-primary)', fontWeight: 600, fontSize: 14 }}
-                                        >
-                                            Open on Google Maps
-                                        </a>
-                                    )}
-                                </div>
-                            );
-                        }
-                        if (listing.mapLink) {
-                            return (
-                                <div className={styles.whereSection}>
-                                    <h2>Where you'll be</h2>
-                                    <p className={styles.whereSubtitle}>
-                                        <MapPin size={14} />
-                                        {listing.location.city}, {listing.location.country}
+                                    {/* Privacy note — no link, exact location shared only after booking */}
+                                    <p className={styles.whereExactNote}>
+                                        Exact location will be provided after booking.
                                     </p>
-                                    <a
-                                        href={listing.mapLink}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        style={{ display: 'inline-flex', marginTop: '10px', color: 'var(--color-primary)', fontWeight: 600 }}
-                                    >
-                                        Open on Google Maps
-                                    </a>
                                 </div>
                             );
                         }

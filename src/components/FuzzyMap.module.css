@@ -1,155 +1,215 @@
-/* FuzzyMap.module.css */
+/* FuzzyMap.module.css — Matches Airbnb exactly */
 
+/* ── Outer wrapper ─────────────────────────── */
 .wrapper {
     position: relative;
-    border-radius: 16px;
+    border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.10);
-    margin-top: 12px;
+    margin-top: 16px;
+    border: 1px solid #dddddd;
+    transition: all 0.3s ease;
 }
 
+.wrapperFullscreen {
+    position: fixed;
+    inset: 0;
+    border-radius: 0;
+    border: none;
+    z-index: 9999;
+    margin-top: 0;
+}
+
+/* ── Map container ─────────────────────────── */
 .mapContainer {
     width: 100%;
-    height: 340px;
-    transition: opacity 0.35s ease;
-    background: #f0eeeb;
+    height: 480px;
+    transition: opacity 0.4s ease;
+    background: #ede8df;   /* CartoDB Voyager warm beige */
+    cursor: grab;
 }
 
-/* Skeleton loader shown while Leaflet fetches */
+.mapContainer:active {
+    cursor: grabbing;
+}
+
+.wrapperFullscreen .mapContainer {
+    height: 100vh;
+}
+
+/* ── Skeleton ──────────────────────────────── */
 .skeleton {
     position: absolute;
     inset: 0;
     z-index: 10;
-    background: #f0eeeb;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    background: #ede8df;
+    overflow: hidden;
 }
 
-.skeletonPulse {
-    width: 60%;
-    height: 12px;
-    border-radius: 6px;
-    background: linear-gradient(90deg, #e0ddd8 25%, #ccc9c2 50%, #e0ddd8 75%);
-    background-size: 200% 100%;
-    animation: pulse 1.5s infinite;
+.skeletonShimmer {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        105deg,
+        transparent 30%,
+        rgba(255, 255, 255, 0.55) 50%,
+        transparent 70%
+    );
+    background-size: 300% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
 }
 
-@keyframes pulse {
+@keyframes shimmer {
     0%   { background-position: 200% 0; }
     100% { background-position: -200% 0; }
 }
 
-/* Premium drop-pin marker */
-:global(.fuzzy-map-pin) {
-    position: relative;
-    width: 44px;
-    height: 52px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    animation: pinDrop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-}
-
-/* Ripple pulse ring */
-:global(.fuzzy-map-pin-pulse) {
-    position: absolute;
-    bottom: -4px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 20px;
-    height: 10px;
-    border-radius: 50%;
-    background: rgba(255, 56, 92, 0.25);
-    animation: pinPulse 2s ease-out infinite;
-}
-
-/* Pin body (teardrop shape) */
-:global(.fuzzy-map-pin-body) {
+/* ── Airbnb black circle marker ─────────────── */
+:global(.airbnb-map-marker) {
     width: 40px;
     height: 40px;
-    border-radius: 50% 50% 50% 0;
-    transform: rotate(-45deg);
-    background: linear-gradient(135deg, #FF385C 0%, #e31c5f 100%);
+    border-radius: 50%;
+    background: #222222;
+    border: 2.5px solid #ffffff;
     box-shadow:
-        0 4px 14px rgba(255, 56, 92, 0.5),
-        0 1px 3px rgba(0,0,0,0.2),
-        inset 0 1px 0 rgba(255,255,255,0.25);
+        0 2px 4px rgba(0, 0, 0, 0.25),
+        0 6px 16px rgba(0, 0, 0, 0.18);
     display: flex;
     align-items: center;
     justify-content: center;
+    animation: markerPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+:global(.airbnb-map-marker-icon) {
+    width: 20px;
+    height: 20px;
     flex-shrink: 0;
 }
 
-/* House icon inside pin (counter-rotate to keep it upright) */
-:global(.fuzzy-map-pin-icon) {
-    width: 18px;
-    height: 18px;
-    transform: rotate(45deg);
-    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.25));
+@keyframes markerPop {
+    0%   { transform: scale(0.4) translateY(10px); opacity: 0; }
+    100% { transform: scale(1) translateY(0);      opacity: 1; }
 }
 
-/* Pointed tip below the pin body */
-:global(.fuzzy-map-pin-tip) {
-    width: 0;
-    height: 0;
-    border-left: 5px solid transparent;
-    border-right: 5px solid transparent;
-    border-top: 8px solid #e31c5f;
-    margin-top: -2px;
-    filter: drop-shadow(0 3px 4px rgba(255,56,92,0.35));
-}
-
-@keyframes pinDrop {
-    0%   { transform: translateY(-18px) scale(0.6); opacity: 0; }
-    60%  { transform: translateY(4px) scale(1.05); opacity: 1; }
-    80%  { transform: translateY(-3px) scale(0.98); }
-    100% { transform: translateY(0) scale(1); opacity: 1; }
-}
-
-@keyframes pinPulse {
-    0%   { transform: translateX(-50%) scale(0.6); opacity: 0.8; }
-    70%  { transform: translateX(-50%) scale(2.2); opacity: 0; }
-    100% { transform: translateX(-50%) scale(0.6); opacity: 0; }
-}
-
-/* Privacy badge */
-.privacyBadge {
+/* ── Search button (top-left) — Airbnb ─────── */
+.searchBtn {
     position: absolute;
-    bottom: 12px;
+    top: 12px;
     left: 12px;
+    z-index: 500;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: none;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.20), 0 2px 8px rgba(0,0,0,0.12);
     display: flex;
     align-items: center;
-    gap: 5px;
-    background: rgba(255, 255, 255, 0.92);
-    backdrop-filter: blur(8px);
-    border-radius: 20px;
-    padding: 5px 11px;
-    font-size: 12px;
-    font-weight: 500;
-    color: #222;
-    box-shadow: 0 1px 6px rgba(0, 0, 0, 0.12);
-    z-index: 500;
-    pointer-events: none;
+    justify-content: center;
+    cursor: pointer;
+    color: #222222;
+    transition: box-shadow 0.15s ease;
 }
 
-/* Error fallback */
+.searchBtn:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25), 0 4px 16px rgba(0,0,0,0.15);
+}
+
+/* ── Fullscreen button (top-right corner) ───── */
+.fullscreenBtn {
+    position: absolute;
+    top: 12px;
+    right: 52px; /* left of the zoom controls */
+    z-index: 500;
+    width: 36px;
+    height: 36px;
+    border-radius: 4px;
+    background: #ffffff;
+    border: none;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.20), 0 2px 8px rgba(0,0,0,0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #222222;
+    transition: box-shadow 0.15s ease;
+}
+
+.fullscreenBtn:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.25), 0 4px 16px rgba(0,0,0,0.15);
+}
+
+/* ── Leaflet zoom controls (right side, like Airbnb) */
+:global(.leaflet-top.leaflet-right) {
+    top: 12px;
+    right: 12px;
+}
+
+:global(.leaflet-control-zoom) {
+    border: none !important;
+    box-shadow:
+        0 1px 4px rgba(0,0,0,0.20),
+        0 2px 8px rgba(0,0,0,0.12) !important;
+    border-radius: 4px !important;
+    overflow: hidden;
+    margin: 0 !important;
+}
+
+:global(.leaflet-control-zoom-in),
+:global(.leaflet-control-zoom-out) {
+    width: 36px !important;
+    height: 36px !important;
+    line-height: 36px !important;
+    font-size: 20px !important;
+    font-weight: 300 !important;
+    color: #222222 !important;
+    background: #ffffff !important;
+    border: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-decoration: none !important;
+}
+
+:global(.leaflet-control-zoom-in:hover),
+:global(.leaflet-control-zoom-out:hover) {
+    background: #f7f7f7 !important;
+    color: #000000 !important;
+}
+
+:global(.leaflet-control-zoom-in) {
+    border-bottom: 1px solid #ebebeb !important;
+}
+
+/* Attribution — tiny like Airbnb's */
+:global(.leaflet-control-attribution) {
+    font-size: 10px !important;
+    color: #717171 !important;
+    background: rgba(255,255,255,0.8) !important;
+    padding: 2px 6px !important;
+}
+
+:global(.leaflet-control-attribution a) {
+    color: #717171 !important;
+}
+
+/* ── Error fallback ─────────────────────────── */
 .errorState {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    height: 220px;
-    border-radius: 16px;
-    background: #f9f8f7;
+    height: 320px;
+    border-radius: 12px;
+    background: #f7f7f7;
     color: #717171;
     font-size: 14px;
-    margin-top: 12px;
+    margin-top: 16px;
+    border: 1px solid #ebebeb;
 }
 
 .errorState a {
-    color: var(--color-primary, #FF385C);
+    color: var(--color-primary, #008489);
     text-decoration: underline;
     cursor: pointer;
 }
