@@ -27,7 +27,19 @@ insert into public.amenities (slug, label, icon_name, sort_order) values
     ('elevator', 'Elevator', 'ArrowUpDown', 6),
     ('private-beach', 'Private Beach', 'Umbrella', 7),
     ('breakfast', 'Breakfast', 'Coffee', 8),
-    ('butler', 'Butler', 'ConciergeBell', 9)
+    ('butler', 'Butler', 'ConciergeBell', 9),
+    ('parking', 'Parking', 'Car', 10),
+    ('hot-tub', 'Hot tub', 'Bath', 11),
+    ('bbq', 'BBQ', 'Flame', 12),
+    ('tv', 'TV', 'Tv', 13),
+    ('washer', 'Washer', 'Container', 14),
+    ('dryer', 'Dryer', 'Wind', 15),
+    ('pet-friendly', 'Pet friendly', 'Dog', 16),
+    ('workspace', 'Workspace', 'Briefcase', 17),
+    ('balcony', 'Balcony', 'Building', 18),
+    ('garden', 'Garden', 'Flower2', 19),
+    ('beach-access', 'Beach access', 'Sun', 20),
+    ('fireplace', 'Fireplace', 'FlameKindling', 21)
 on conflict (slug) do update
 set
     label = excluded.label,
