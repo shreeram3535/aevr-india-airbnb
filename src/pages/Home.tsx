@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useState, useRef, type CSSProperties } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
     Clock3,
@@ -24,13 +24,15 @@ import {
     Search,
     Building2,
     Compass,
-    Leaf,
-    Music,
-    Users,
-    Heart,
     MapPin,
     User,
-    ChevronDown
+    ChevronDown,
+    Play,
+    Pause,
+    Volume2,
+    VolumeX,
+    Upload,
+    Link2
 } from 'lucide-react';
 import styles from '../App.module.css'; // Reusing the grid styles from App module
 
@@ -88,6 +90,313 @@ const parseSortParam = (value: string | null): ListingSortOption => {
     }
 
     return 'recommended';
+};
+
+interface PresetVideo {
+    name: string;
+    url: string;
+    thumb: string;
+    duration: string;
+}
+
+const PRESET_VIDEOS: PresetVideo[] = [
+    {
+        name: "Scenic Coastal Escape",
+        url: "/sample_tour_1.mp4",
+        thumb: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=240&auto=format&fit=crop",
+        duration: "0:15"
+    },
+    {
+        name: "Beautiful Ocean Joyride",
+        url: "/sample_tour_2.mp4",
+        thumb: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?q=80&w=240&auto=format&fit=crop",
+        duration: "0:15"
+    },
+    {
+        name: "Scenic Forest Trail (WebM)",
+        url: "/sample_tour_3.webm",
+        thumb: "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?q=80&w=240&auto=format&fit=crop",
+        duration: "0:15"
+    }
+];
+
+const VideoDashboardCard = () => {
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [videoList, setVideoList] = useState<PresetVideo[]>(PRESET_VIDEOS);
+    const [videoSrc, setVideoSrc] = useState<string>(PRESET_VIDEOS[0].url);
+    const [activePreset, setActivePreset] = useState<number | null>(0);
+    const [isPlaying, setIsPlaying] = useState<boolean>(false);
+    const [isMuted, setIsMuted] = useState<boolean>(true);
+    const [customUrl, setCustomUrl] = useState<string>('');
+    const [videoError, setVideoError] = useState<string | null>(null);
+    const [currentTime, setCurrentTime] = useState<number>(0);
+    const [duration, setDuration] = useState<number>(0);
+    const [userRole, setUserRole] = useState<'guest' | 'host' | 'admin' | null>(null);
+
+    useEffect(() => {
+        const checkRole = async () => {
+            try {
+                const role = await api.getCurrentUserRole();
+                setUserRole(role);
+            } catch (err) {
+                console.error("Error fetching user role", err);
+            }
+        };
+        checkRole();
+    }, []);
+
+    useEffect(() => {
+        setVideoError(null);
+        setCurrentTime(0);
+        setDuration(0);
+
+        if (videoRef.current) {
+            videoRef.current.load();
+            if (isPlaying) {
+                videoRef.current.play()
+                    .then(() => setIsPlaying(true))
+                    .catch((err) => {
+                        console.log("Play failed", err);
+                        setIsPlaying(false);
+                    });
+            }
+        }
+    }, [videoSrc]);
+
+    const handlePlayPause = () => {
+        if (!videoRef.current) return;
+        if (isPlaying) {
+            videoRef.current.pause();
+            setIsPlaying(false);
+        } else {
+            videoRef.current.play()
+                .then(() => setIsPlaying(true))
+                .catch(() => setVideoError("Could not play video source."));
+        }
+    };
+
+    const handleMuteUnmute = () => {
+        if (!videoRef.current) return;
+        videoRef.current.muted = !isMuted;
+        setIsMuted(!isMuted);
+    };
+
+    const handleTimeUpdate = () => {
+        if (!videoRef.current) return;
+        setCurrentTime(videoRef.current.currentTime);
+    };
+
+    const handleLoadedMetadata = () => {
+        if (!videoRef.current) return;
+        setDuration(videoRef.current.duration);
+    };
+
+    const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
+        if (!videoRef.current || duration === 0) return;
+        const rect = e.currentTarget.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const width = rect.width;
+        const percentage = clickX / width;
+        const newTime = percentage * duration;
+        videoRef.current.currentTime = newTime;
+        setCurrentTime(newTime);
+    };
+
+    const handlePresetClick = (index: number) => {
+        setActivePreset(index);
+        setVideoSrc(videoList[index].url);
+        setVideoError(null);
+    };
+
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            try {
+                const objectUrl = URL.createObjectURL(file);
+                const displayTitle = file.name.length > 22 ? file.name.substring(0, 19) + "..." : file.name;
+                const newVideo: PresetVideo = {
+                    name: displayTitle,
+                    url: objectUrl,
+                    thumb: "https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?q=80&w=240&auto=format&fit=crop",
+                    duration: "Local File"
+                };
+
+                setVideoList(prev => {
+                    const nextList = [...prev, newVideo];
+                    setActivePreset(nextList.length - 1);
+                    return nextList;
+                });
+                setVideoSrc(objectUrl);
+                setVideoError(null);
+            } catch (err) {
+                setVideoError("Failed to load chosen video file.");
+            }
+        }
+    };
+
+    const handleUrlSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        const trimmedUrl = customUrl.trim();
+        if (trimmedUrl) {
+            try {
+                let displayTitle = "Web Link";
+                try {
+                    const urlObj = new URL(trimmedUrl);
+                    const pathParts = urlObj.pathname.split('/');
+                    const filename = pathParts[pathParts.length - 1];
+                    if (filename && filename.includes('.')) {
+                        displayTitle = filename;
+                    } else {
+                        displayTitle = urlObj.hostname;
+                    }
+                } catch {
+                    // Fallback
+                }
+
+                const displayTitleFinal = displayTitle.length > 22 ? displayTitle.substring(0, 19) + "..." : displayTitle;
+                const newVideo: PresetVideo = {
+                    name: displayTitleFinal,
+                    url: trimmedUrl,
+                    thumb: "https://images.unsplash.com/photo-1485846234645-a62644f84728?q=80&w=240&auto=format&fit=crop",
+                    duration: "Link"
+                };
+
+                setVideoList(prev => {
+                    const nextList = [...prev, newVideo];
+                    setActivePreset(nextList.length - 1);
+                    return nextList;
+                });
+                setVideoSrc(trimmedUrl);
+                setVideoError(null);
+                setCustomUrl('');
+            } catch (err) {
+                setVideoError("Failed to load the video URL.");
+            }
+        }
+    };
+
+    const formatTime = (time: number) => {
+        if (isNaN(time) || !isFinite(time)) return "0:00";
+        const mins = Math.floor(time / 60);
+        const secs = Math.floor(time % 60);
+        return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+    };
+
+    const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0;
+
+    return (
+        <div className={styles.videoDashboardCard}>
+            <div className={styles.videoPlayerContainer}>
+                <video
+                    ref={videoRef}
+                    className={styles.customVideo}
+                    src={videoSrc}
+                    loop
+                    muted={isMuted}
+                    playsInline
+                    onTimeUpdate={handleTimeUpdate}
+                    onLoadedMetadata={handleLoadedMetadata}
+                    onError={() => setVideoError("Error loading video source. Make sure it is a valid format (e.g. MP4).")}
+                    onClick={handlePlayPause}
+                />
+                
+                {!isPlaying && !videoError && (
+                    <button type="button" className={styles.videoPlayOverlayBtn} onClick={handlePlayPause} aria-label="Play video">
+                        <Play size={28} fill="currentColor" />
+                    </button>
+                )}
+
+                <div className={styles.videoControlsOverlay}>
+                    <div className={styles.videoProgressContainer}>
+                        <div className={styles.videoProgressBar} onClick={handleProgressClick}>
+                            <div className={styles.videoProgressFill} style={{ width: `${progressPercentage}%` }} />
+                        </div>
+                        <span className={styles.videoProgressTime}>
+                            {formatTime(currentTime)} / {formatTime(duration)}
+                        </span>
+                    </div>
+
+                    <div className={styles.videoControlsRow}>
+                        <div className={styles.videoControlsGroup}>
+                            <button type="button" className={styles.videoControlBtn} onClick={handlePlayPause} aria-label={isPlaying ? "Pause" : "Play"}>
+                                {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
+                            </button>
+                            <button type="button" className={styles.videoControlBtn} onClick={handleMuteUnmute} aria-label={isMuted ? "Unmute" : "Mute"}>
+                                {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className={styles.videoSourcePanel}>
+                <div className={styles.videoPanelHeader}>
+                    <h2 className={styles.videoPanelTitle}>Aevr Villa Tour</h2>
+                    <p className={styles.videoPanelSubtitle}>Experience curated retreats through our travel guide gallery, or upload your own video to test.</p>
+                </div>
+
+                <div className={styles.presetSectionTitle}>Select Tour Video</div>
+                <div className={styles.presetGrid}>
+                    {videoList.map((preset, index) => (
+                        <button
+                            key={index}
+                            type="button"
+                            className={`${styles.presetItem} ${activePreset === index ? styles.presetItemActive : ''}`}
+                            onClick={() => handlePresetClick(index)}
+                        >
+                            <div className={styles.presetThumbWrapper}>
+                                <img src={preset.thumb} className={styles.presetThumb} alt={preset.name} />
+                            </div>
+                            <div className={styles.presetInfo}>
+                                <span className={styles.presetName}>{preset.name}</span>
+                                <span className={styles.presetDuration}>{preset.duration}</span>
+                            </div>
+                        </button>
+                    ))}
+                </div>
+
+                {userRole === 'admin' && (
+                    <div className={styles.sourceActions}>
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="video/*"
+                            style={{ display: 'none' }}
+                            onChange={handleFileUpload}
+                        />
+                        <button
+                            type="button"
+                            className={styles.fileInputLabel}
+                            onClick={() => fileInputRef.current?.click()}
+                        >
+                            <Upload size={16} />
+                            Choose Local Video
+                        </button>
+
+                        <form className={styles.urlInputContainer} onSubmit={handleUrlSubmit}>
+                            <input
+                                type="url"
+                                className={styles.urlInputField}
+                                placeholder="Or paste video link (mp4)..."
+                                value={customUrl}
+                                onChange={(e) => setCustomUrl(e.target.value)}
+                            />
+                            <button type="submit" className={styles.urlSubmitBtn}>
+                                <Link2 size={14} />
+                            </button>
+                        </form>
+                    </div>
+                )}
+
+                {videoError && (
+                    <div className={styles.videoErrorAlert} role="alert">
+                        {videoError}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
 };
 
 export const Home = () => {
@@ -529,18 +838,6 @@ export const Home = () => {
                     </section>
                 )}
 
-                {luxurySection ? (
-                    <section className={`${styles.modeDescriptionCard} ${styles.modeDescriptionCardLuxe}`}>
-                        <span className={styles.modeDescBadge}>Aevr Luxe</span>
-                        <h2 className={`${styles.modeDescTitle} ${styles.modeDescTitleLuxe}`}>Discover premium villas & luxury stays</h2>
-                        <p className={styles.modeDescText}>Step into a world of iconic estates and unforgettable retreats, curated for guests who seek the rare and refined.</p>
-                    </section>
-                ) : (
-                    <section className={styles.modeDescriptionCard}>
-                        <h2 className={styles.modeDescTitle}>Explore Our Curated Villas</h2>
-                        <p className={styles.modeDescText}>Discover beautiful homes and authentic experiences handpicked for discerning travelers.</p>
-                    </section>
-                )}
 
             {showFilters && (
                 <div className={styles.modalBackdrop} onClick={() => setShowFilters(false)}>
@@ -831,50 +1128,7 @@ export const Home = () => {
 
             <section className={styles.bottomDashboardSection}>
                 <div className={styles.bottomDashboardContainer}>
-                    {/* Card 1: Explore by mood */}
-                    <div className={styles.dashboardCard}>
-                        <h2 className={styles.dashboardCardTitle}>Explore by mood</h2>
-                        <div className={styles.moodGrid}>
-                            <button type="button" className={styles.moodItem} onClick={() => updateParams({ category: 'amazing-views' })}>
-                                <div className={styles.moodIconWrapper}>
-                                    <Mountain size={20} />
-                                </div>
-                                <span className={styles.moodLabel}>Mountains</span>
-                            </button>
-                            <button type="button" className={styles.moodItem} onClick={() => updateParams({ category: 'beachfront' })}>
-                                <div className={styles.moodIconWrapper}>
-                                    <Umbrella size={20} />
-                                </div>
-                                <span className={styles.moodLabel}>Beach</span>
-                            </button>
-                            <button type="button" className={styles.moodItem} onClick={() => updateParams({ category: 'farms' })}>
-                                <div className={styles.moodIconWrapper}>
-                                    <Leaf size={20} />
-                                </div>
-                                <span className={styles.moodLabel}>Nature</span>
-                            </button>
-                            <button type="button" className={styles.moodItem} onClick={() => updateParams({ category: 'omg' })}>
-                                <div className={styles.moodIconWrapper}>
-                                    <Music size={20} />
-                                </div>
-                                <span className={styles.moodLabel}>Party</span>
-                            </button>
-                            <button type="button" className={styles.moodItem} onClick={() => updateParams({ category: 'luxe' })}>
-                                <div className={styles.moodIconWrapper}>
-                                    <Heart size={20} />
-                                </div>
-                                <span className={styles.moodLabel}>Couple</span>
-                            </button>
-                            <button type="button" className={styles.moodItem} onClick={() => updateParams({ guests: 4 })}>
-                                <div className={styles.moodIconWrapper}>
-                                    <Users size={20} />
-                                </div>
-                                <span className={styles.moodLabel}>Family</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Card 2: Why choose AEVR? */}
+                    {/* Card 1: Why choose AEVR? */}
                     <div className={styles.dashboardCard}>
                         <h2 className={styles.dashboardCardTitle}>Why choose AEVR?</h2>
                         <div className={styles.compactFeaturesGrid}>
@@ -909,23 +1163,8 @@ export const Home = () => {
                         </div>
                     </div>
 
-                    {/* Card 3: CTA Card */}
-                    <div className={`${styles.dashboardCard} ${styles.ctaDashboardCard}`}>
-                        <div className={styles.ctaCardBgImage} style={{ backgroundImage: `url('/coastal_calm_hero.png')` }} />
-                        <div className={styles.ctaCardOverlay} />
-                        <div className={styles.ctaCardContent}>
-                            <h2 className={styles.ctaCardTitle}>Your dream stay is a search away</h2>
-                            <button 
-                                type="button" 
-                                className={styles.ctaCardButton}
-                                onClick={() => {
-                                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                                }}
-                            >
-                                Explore Stays
-                            </button>
-                        </div>
-                    </div>
+                    {/* Card 2: Interactive Video Player Card */}
+                    <VideoDashboardCard />
                 </div>
             </section>
 
