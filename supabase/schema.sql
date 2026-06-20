@@ -963,3 +963,62 @@ using (
           and p.role = 'admin'
     )
 );
+
+-- Create tour videos table
+create table if not exists public.tour_videos (
+    id uuid primary key default gen_random_uuid(),
+    name text not null,
+    url text not null,
+    thumb text not null,
+    duration text not null,
+    sort_order integer not null default 0,
+    created_at timestamptz not null default timezone('utc', now()),
+    updated_at timestamptz not null default timezone('utc', now())
+);
+
+-- Hook up the set_updated_at trigger
+drop trigger if exists tour_videos_updated_at on public.tour_videos;
+create trigger tour_videos_updated_at
+before update on public.tour_videos
+for each row execute procedure public.set_updated_at();
+
+-- Enable RLS
+alter table public.tour_videos enable row level security;
+
+-- Allow public read access
+drop policy if exists "Public read active tour videos" on public.tour_videos;
+create policy "Public read active tour videos"
+on public.tour_videos
+for select
+using (true);
+
+-- Allow admins to manage (all operations)
+drop policy if exists "Admins manage tour videos" on public.tour_videos;
+create policy "Admins manage tour videos"
+on public.tour_videos
+for all
+using (
+    exists (
+        select 1
+        from public.profiles p
+        where p.id = auth.uid()
+          and p.role = 'admin'
+    )
+)
+with check (
+    exists (
+        select 1
+        from public.profiles p
+        where p.id = auth.uid()
+          and p.role = 'admin'
+    )
+);
+
+-- Seed initial preset videos
+insert into public.tour_videos (name, url, thumb, duration, sort_order)
+values 
+  ('Scenic Coastal Escape', '/sample_tour_1.mp4', 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=240&auto=format&fit=crop', '0:15', 0),
+  ('Beautiful Ocean Joyride', '/sample_tour_2.mp4', 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?q=80&w=240&auto=format&fit=crop', '0:15', 1),
+  ('Scenic Forest Trail (WebM)', '/sample_tour_3.webm', 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?q=80&w=240&auto=format&fit=crop', '0:15', 2)
+on conflict do nothing;
+

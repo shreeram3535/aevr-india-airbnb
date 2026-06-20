@@ -43,7 +43,7 @@ import styles from '../App.module.css'; // Reusing the grid styles from App modu
 import { ListingCard } from '../components/ListingCard';
 import { SkeletonScreen } from '../components/SkeletonScreen';
 import { api } from '../services/api';
-import type { FlashSaleDrop, Listing, ListingFilters, ListingSortOption } from '../types';
+import type { FlashSaleDrop, Listing, ListingFilters, ListingSortOption, PresetVideo } from '../types';
 
 const SORT_OPTIONS: Array<{ value: ListingSortOption; label: string }> = [
     { value: 'recommended', label: 'Recommended' },
@@ -96,14 +96,6 @@ const parseSortParam = (value: string | null): ListingSortOption => {
     return 'recommended';
 };
 
-interface PresetVideo {
-    id?: string;
-    name: string;
-    url: string;
-    thumb: string;
-    duration: string;
-    isLocal?: boolean;
-}
 
 const PRESET_VIDEOS: PresetVideo[] = [
     {
@@ -231,11 +223,8 @@ const getStoredVideoList = (): PresetVideo[] => {
 const VideoDashboardCard = () => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const [videoList, setVideoList] = useState<PresetVideo[]>(getStoredVideoList);
-    const [videoSrc, setVideoSrc] = useState<string>(() => {
-        const list = getStoredVideoList();
-        return list.length > 0 ? list[0].url : '';
-    });
+    const [videoList, setVideoList] = useState<PresetVideo[]>(PRESET_VIDEOS);
+    const [videoSrc, setVideoSrc] = useState<string>(PRESET_VIDEOS[0].url);
     const [activePreset, setActivePreset] = useState<number | null>(0);
     const [isPlaying, setIsPlaying] = useState<boolean>(false);
     const [isMuted, setIsMuted] = useState<boolean>(true);
@@ -243,18 +232,34 @@ const VideoDashboardCard = () => {
     const [currentTime, setCurrentTime] = useState<number>(0);
     const [duration, setDuration] = useState<number>(0);
     const [userRole, setUserRole] = useState<'guest' | 'host' | 'admin' | null>(null);
-    const [isInitialized, setIsInitialized] = useState<boolean>(false);
+    const [isUsingSupabase, setIsUsingSupabase] = useState<boolean>(false);
+    const [isUploading, setIsUploading] = useState<boolean>(false);
 
-    // Sync list to localStorage
+    // Sync fallback list to localStorage (only if not using Supabase)
     useEffect(() => {
-        if (isInitialized) {
+        if (!isUsingSupabase && videoList.length > 0) {
             localStorage.setItem('aevr_tour_videos', JSON.stringify(videoList));
         }
-    }, [videoList, isInitialized]);
+    }, [videoList, isUsingSupabase]);
 
-    // Load custom/preset videos from IndexedDB and check role on mount
+    // Load custom/preset videos on mount
     useEffect(() => {
-        const loadPersistedVideos = async () => {
+        const loadVideos = async () => {
+            try {
+                // 1. Try to fetch from Supabase
+                const dbVideos = await api.fetchTourVideos();
+                if (dbVideos && dbVideos.length > 0) {
+                    setVideoList(dbVideos);
+                    setVideoSrc(dbVideos[0].url);
+                    setIsUsingSupabase(true);
+                    return;
+                }
+            } catch (err) {
+                console.warn("Failed to load tour videos from Supabase, falling back to local storage:", err);
+            }
+
+            // 2. Fallback to IndexedDB / localStorage
+            setIsUsingSupabase(false);
             const listToLoad = getStoredVideoList();
             const loadedList = await Promise.all(
                 listToLoad.map(async (video) => {
@@ -283,7 +288,6 @@ const VideoDashboardCard = () => {
                 setVideoList(PRESET_VIDEOS);
                 setVideoSrc(PRESET_VIDEOS[0].url);
             }
-            setIsInitialized(true);
         };
 
         const checkRole = async () => {
@@ -295,7 +299,7 @@ const VideoDashboardCard = () => {
             }
         };
 
-        loadPersistedVideos();
+        loadVideos();
         checkRole();
     }, []);
 
@@ -362,13 +366,21 @@ const VideoDashboardCard = () => {
         setVideoError(null);
     };
 
-    const handleRemoveVideo = (index: number, e: React.MouseEvent) => {
+    const handleRemoveVideo = async (index: number, e: React.MouseEvent) => {
         e.stopPropagation();
         const targetVideo = videoList[index];
-        if (targetVideo.isLocal && targetVideo.id) {
-            deleteVideoFile(targetVideo.id).catch(err => {
-                console.error("Failed to delete local video file from IndexedDB", err);
-            });
+        if (!targetVideo) return;
+
+        try {
+            if (isUsingSupabase && targetVideo.id) {
+                await api.deleteTourVideo(targetVideo.id, targetVideo.url);
+            } else if (targetVideo.isLocal && targetVideo.id) {
+                await deleteVideoFile(targetVideo.id);
+            }
+        } catch (err) {
+            console.error("Failed to delete video:", err);
+            setVideoError("Failed to delete video from database/storage.");
+            return;
         }
 
         setVideoList(prev => {
@@ -390,8 +402,23 @@ const VideoDashboardCard = () => {
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (file) {
-            try {
+        if (!file) return;
+
+        setIsUploading(true);
+        setVideoError(null);
+
+        try {
+            if (isUsingSupabase) {
+                // Upload to Supabase Storage & Database
+                const newVideo = await api.uploadTourVideo(file);
+                setVideoList(prev => {
+                    const nextList = [...prev, newVideo];
+                    setActivePreset(nextList.length - 1);
+                    return nextList;
+                });
+                setVideoSrc(newVideo.url);
+            } else {
+                // Local IndexedDB fallback
                 const objectUrl = URL.createObjectURL(file);
                 const displayTitle = file.name.length > 22 ? file.name.substring(0, 19) + "..." : file.name;
                 const id = 'video_' + Date.now();
@@ -413,9 +440,14 @@ const VideoDashboardCard = () => {
                     return nextList;
                 });
                 setVideoSrc(objectUrl);
-                setVideoError(null);
-            } catch (err) {
-                setVideoError("Failed to load chosen video file.");
+            }
+        } catch (err) {
+            console.error("Video upload failed:", err);
+            setVideoError(err instanceof Error ? err.message : "Failed to load chosen video file.");
+        } finally {
+            setIsUploading(false);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
             }
         }
     };
@@ -513,12 +545,14 @@ const VideoDashboardCard = () => {
                             type="button"
                             className={styles.uploadCardButton}
                             onClick={() => fileInputRef.current?.click()}
+                            disabled={isUploading}
                         >
-                            Upload Video
+                            {isUploading ? 'Uploading...' : 'Upload Video'}
                         </button>
                     </div>
                 )}
             </div>
+
 
             <div className={styles.videoSourcePanel}>
                 <div className={styles.videoPanelHeader}>
