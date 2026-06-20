@@ -1356,9 +1356,9 @@ export const Home = () => {
                             <h2 className={styles.sectionHeading}>{luxurySection ? 'Aevr Luxe stays' : 'Featured stays'}</h2>
                         </div>
                         <div className={styles.grid}>
-                            {listings.map((listing) => (
-                                <ListingCard key={listing.id} listing={listing} />
-                            ))}
+                             {listings.map((listing, index) => (
+                                 <ListingCard key={listing.id} listing={listing} cardIndex={index} />
+                             ))}
                         </div>
                     </>
                 ) : (

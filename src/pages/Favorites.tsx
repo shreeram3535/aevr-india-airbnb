@@ -41,8 +41,8 @@ export const Favorites = () => {
                 <SkeletonScreen variant="listing-grid" count={4} />
             ) : listings.length > 0 ? (
                 <div className={styles.grid}>
-                    {listings.map((listing) => (
-                        <ListingCard key={listing.id} listing={listing} />
+                    {listings.map((listing, index) => (
+                        <ListingCard key={listing.id} listing={listing} cardIndex={index} />
                     ))}
                 </div>
             ) : (
