@@ -122,7 +122,6 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing }) => {
         e.stopPropagation();
         e.preventDefault();
         favoritesService.toggleFavorite(listing.id);
-        setIsFavorited((current) => !current);
     };
 
     const priceLabel = new Intl.NumberFormat('en-IN', {
