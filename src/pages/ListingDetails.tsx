@@ -1219,7 +1219,9 @@ Please let me know the next steps for confirming the booking.`;
                                 </div>
 
                                 {activeDatePicker && (
-                                    <div className={styles.calendarPopover}>
+                                    <>
+                                        <div className={styles.calendarBackdrop} onClick={() => setActiveDatePicker(null)} />
+                                        <div className={styles.calendarPopover}>
                                         <div className={styles.calendarHeader}>
                                             <button
                                                 type="button"
@@ -1314,9 +1316,17 @@ Please let me know the next steps for confirming the booking.`;
                                             >
                                                 Today
                                             </button>
+                                            <button
+                                                type="button"
+                                                className={styles.calendarCloseBtn}
+                                                onClick={() => setActiveDatePicker(null)}
+                                            >
+                                                Close
+                                            </button>
                                         </div>
                                     </div>
-                                )}
+                                </>
+                            )}
                             </div>
 
                             <div className={styles.formField}>
