@@ -817,6 +817,9 @@ Please let me know the next steps for confirming the booking.`;
                                     src={item.url}
                                     alt={`${listing.title} view ${idx + 1}`}
                                     className={styles.desktopSlideMedia}
+                                    loading={idx === 0 ? 'eager' : 'lazy'}
+                                    fetchPriority={idx === 0 ? 'high' : 'auto'}
+                                    decoding="async"
                                     onError={renderImageFallback}
                                 />
                             )}

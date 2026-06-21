@@ -154,6 +154,9 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing, cardIndex }) 
                         src={coverImage}
                         alt={listing.title}
                         className={styles.image}
+                        loading={cardIndex !== undefined && cardIndex < 4 ? 'eager' : 'lazy'}
+                        fetchPriority={cardIndex !== undefined && cardIndex < 2 ? 'high' : 'auto'}
+                        decoding="async"
                         onLoad={() => setImageLoaded(true)}
                         onError={(event) => {
                             if (event.currentTarget.src !== getFallbackImage()) {

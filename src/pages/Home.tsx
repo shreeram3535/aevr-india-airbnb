@@ -801,27 +801,33 @@ export const Home = () => {
                     baths,
                     guestFavoriteOnly,
                 };
-                const data = await api.fetchListings(filters);
-                setListings(data);
 
-                try {
-                    const drop = await api.fetchActiveFlashDrop(new Date());
-                    setActiveDrop(drop);
-                } catch (flashSaleError) {
-                    setActiveDrop(null);
+                // Fetch listings and flash-sale drop in PARALLEL to halve wait time
+                const [listingsResult, flashSaleResult] = await Promise.allSettled([
+                    api.fetchListings(filters),
+                    api.fetchActiveFlashDrop(new Date()),
+                ]);
 
+                if (listingsResult.status === 'fulfilled') {
+                    setListings(listingsResult.value);
+                } else {
+                    const message = listingsResult.reason instanceof Error
+                        ? listingsResult.reason.message
+                        : 'Could not load listings from Supabase.';
+                    setListings([]);
+                    setListingError(message);
                     if (import.meta.env.DEV) {
-                        console.error(flashSaleError);
+                        console.error(listingsResult.reason);
                     }
                 }
-            } catch (error) {
-                const message = error instanceof Error ? error.message : 'Could not load listings from Supabase.';
-                setListings([]);
-                setActiveDrop(null);
-                setListingError(message);
 
-                if (import.meta.env.DEV) {
-                    console.error(error);
+                if (flashSaleResult.status === 'fulfilled') {
+                    setActiveDrop(flashSaleResult.value);
+                } else {
+                    setActiveDrop(null);
+                    if (import.meta.env.DEV) {
+                        console.error(flashSaleResult.reason);
+                    }
                 }
             } finally {
                 setLoading(false);
