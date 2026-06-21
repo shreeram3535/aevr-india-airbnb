@@ -160,11 +160,12 @@ export const AdminFlashSales = () => {
             }
 
             const [allListings, drop] = await Promise.all([
-                api.fetchListings({ sort: 'recommended' }),
+                api.fetchAdminListings(),
                 api.fetchAdminDropState(),
             ]);
 
-            setListings(allListings);
+            const activeListings = allListings.filter((l) => l.isActive);
+            setListings(activeListings);
             setCurrentDrop(drop);
             if (drop) {
                 setListingId(drop.listingId);
