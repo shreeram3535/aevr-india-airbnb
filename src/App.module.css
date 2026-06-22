@@ -2764,6 +2764,7 @@
     margin-bottom: 0;
     max-height: 220px;
     overflow-y: auto;
+    overflow-x: hidden;
     padding-right: 4px;
 }
 
@@ -2851,6 +2852,7 @@
     flex-direction: column;
     text-align: left;
     gap: 4px;
+    min-width: 0;
 }
 
 .presetName {
@@ -2858,6 +2860,9 @@
     font-weight: 600;
     color: var(--text-primary);
     line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .presetDurationRow {
