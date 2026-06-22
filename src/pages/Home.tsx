@@ -972,6 +972,7 @@ export const Home = () => {
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     setHeroBedrooms(opt.value);
+                                                    updateParams({ bedrooms: opt.value || null });
                                                     setRoomsOpen(false);
                                                 }}
                                             >
@@ -1016,6 +1017,7 @@ export const Home = () => {
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     setHeroGuests(opt.value);
+                                                    updateParams({ guests: opt.value || null });
                                                     setGuestsOpen(false);
                                                 }}
                                             >
