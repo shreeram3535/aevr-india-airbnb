@@ -4,6 +4,9 @@
     padding-right: var(--container-padding);
     padding-bottom: 48px;
     min-height: 100vh;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
 }
 
 .grid {
@@ -387,7 +390,7 @@
     }
 
     .grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
         gap: 24px;
     }
 
@@ -604,6 +607,8 @@
     gap: 16px;
     margin-bottom: 22px;
     flex-wrap: wrap;
+    width: 100%;
+    min-width: 0;
 }
 
 @keyframes luxeSectionReveal {
@@ -629,6 +634,7 @@
     width: fit-content;
     box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.04);
     box-sizing: border-box;
+    max-width: 100%;
 }
 
 .sliderIndicator {
@@ -663,7 +669,7 @@
     border: none;
     cursor: pointer;
     transition: color 0.3s ease, transform 0.2s ease;
-    min-width: 130px;
+    min-width: 0;
     text-align: center;
     border-radius: 26px;
     display: inline-flex;
@@ -1266,9 +1272,6 @@
     position: relative;
     width: 100%;
     min-height: 600px;
-    background-image: url('/coastal_calm_hero.png');
-    background-size: cover;
-    background-position: center;
     color: var(--color-black);
     padding-top: calc(var(--header-height) + 80px);
     padding-bottom: 0;
@@ -1280,6 +1283,21 @@
     border-bottom: none;
     margin-bottom: 0px;
     box-sizing: border-box;
+    overflow: hidden;
+}
+
+.heroBgImage {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    opacity: 0;
+    transition: opacity 1.2s ease-in-out;
+    z-index: 0;
+}
+
+.heroBgImageActive {
+    opacity: 1;
 }
 
 .heroOverlay {
@@ -1577,6 +1595,9 @@
     padding-right: var(--container-padding);
     padding-bottom: 48px;
     min-height: 100vh;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
 }
 
 @media (max-width: 744px) {
@@ -1584,6 +1605,7 @@
         padding-top: calc(var(--header-height) + 32px);
         padding-bottom: 0;
         min-height: 500px;
+        overflow: hidden;
     }
 
     .heroSearchForm {
@@ -1693,7 +1715,7 @@
     background-color: var(--color-white);
     border-radius: 24px;
     width: 100%;
-    max-width: 620px;
+    max-width: 780px;
     max-height: 85vh;
     display: flex;
     flex-direction: column;
@@ -1711,6 +1733,19 @@
     to {
         transform: translateY(0) scale(1);
         opacity: 1;
+    }
+}
+
+@media (max-width: 768px) {
+    .modalBackdrop {
+        padding: 0;
+    }
+    
+    .modalContent {
+        max-height: 100vh;
+        height: 100%;
+        border-radius: 0;
+        border: none;
     }
 }
 
@@ -2130,14 +2165,14 @@
     max-width: 100%;
     margin: 0 auto;
     display: grid;
-    grid-template-columns: 1.1fr 1.4fr 1.1fr;
+    grid-template-columns: 1fr 2fr;
     gap: 32px;
 }
 
 .dashboardCard {
     background-color: var(--color-white);
     border-radius: 28px;
-    padding: 40px 32px;
+    padding: 28px 24px;
     border: 1px solid rgba(122, 158, 174, 0.12);
     box-shadow: 0 10px 40px rgba(122, 158, 174, 0.04);
     position: relative;
@@ -2145,6 +2180,7 @@
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
+    min-height: 380px;
 }
 
 .dashboardCardTitle {
@@ -2235,7 +2271,7 @@
 .compactFeaturesGrid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 20px 16px;
+    gap: 20px 28px;
     flex: 1;
     align-content: center;
 }
@@ -2246,7 +2282,7 @@
     align-items: flex-start;
     gap: 12px;
     text-align: left;
-    padding: 16px 14px;
+    padding: 12px 10px;
     border-radius: var(--radius-xl);
     border: 1px solid transparent;
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
@@ -2407,6 +2443,7 @@
     position: relative;
     border-radius: var(--radius-xl);
     transition: background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    align-self: stretch;
 }
 
 .interactiveField:hover {
@@ -2494,4 +2531,508 @@
     color: var(--color-primary-hover) !important;
     font-weight: var(--font-weight-semibold);
 }
+
+/* Custom Interactive Video Player Dashboard Card */
+.videoDashboardCard {
+    background-color: var(--color-white);
+    border-radius: 28px;
+    padding: 0;
+    border: 1px solid rgba(122, 158, 174, 0.12);
+    box-shadow: 0 10px 40px rgba(122, 158, 174, 0.04);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: row;
+    gap: 32px;
+    align-items: stretch;
+    box-sizing: border-box;
+    min-height: 380px;
+}
+
+.videoLeftColumn {
+    flex: 3.2;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    align-self: stretch;
+    box-sizing: border-box;
+}
+
+.videoPlayerContainer {
+    position: relative;
+    width: 100%;
+    border-radius: 28px 0 0 28px;
+    overflow: hidden;
+    background-color: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 16 / 9;
+}
+
+@media (min-width: 901px) {
+    .videoPlayerFullHeight {
+        aspect-ratio: auto !important;
+        flex: 1 !important;
+        align-self: stretch !important;
+        height: 100% !important;
+    }
+}
+
+.customVideo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.videoPlayOverlayBtn {
+    position: absolute;
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #111827;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+    z-index: 5;
+}
+
+.videoPlayOverlayBtn:hover {
+    transform: scale(1.1);
+    background: #ffffff;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4);
+}
+
+.videoControlsOverlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.4) 60%, transparent 100%);
+    padding: 24px 20px 16px 20px;
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 10;
+    pointer-events: none;
+}
+
+.videoPlayerContainer:hover .videoControlsOverlay,
+.videoPlayerContainer:focus-within .videoControlsOverlay {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.videoControlsRow {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    pointer-events: auto;
+}
+
+.videoControlBtn {
+    background: transparent;
+    border: none;
+    color: #ffffff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    transition: all 0.2s ease;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.videoControlBtn:hover {
+    color: var(--color-primary, #7A9EAE);
+    transform: scale(1.15);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.videoProgressTime {
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 600;
+    min-width: 70px;
+    text-align: left;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.9;
+    flex-shrink: 0;
+}
+
+.videoProgressBar {
+    flex: 1;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    position: relative;
+    transition: height 0.15s ease;
+    display: flex;
+    align-items: center;
+}
+
+.videoProgressBar:hover {
+    height: 6px;
+}
+
+.videoProgressFill {
+    height: 100%;
+    background: #606c55;
+    border-radius: var(--radius-full);
+    position: relative;
+    width: 0%;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.videoProgressThumb {
+    width: 10px;
+    height: 10px;
+    background: #ffffff;
+    border-radius: 50%;
+    position: absolute;
+    right: -5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    transform: scale(0);
+    transition: transform 0.1s ease;
+}
+
+.videoProgressBar:hover .videoProgressThumb {
+    transform: scale(1);
+}
+
+.videoSourcePanel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    min-width: 250px;
+    box-sizing: border-box;
+    padding: 24px 24px 24px 0;
+}
+
+.leafIcon {
+    color: #606c55;
+    margin-bottom: 8px;
+}
+
+.videoPanelHeader {
+    margin-bottom: 12px;
+    text-align: left;
+}
+
+.videoPanelTitle {
+    font-size: 24px;
+    font-weight: 500;
+    margin: 0 0 4px 0;
+    font-family: var(--font-serif);
+    color: var(--text-primary);
+}
+
+.videoPanelSubtitle {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.45;
+    margin: 0;
+}
+
+.presetSectionTitle {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    letter-spacing: 0.08em;
+    margin: 4px 0 8px 0;
+    text-align: left;
+}
+
+.presetGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 0;
+    max-height: 220px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 4px;
+}
+
+.presetGrid::-webkit-scrollbar {
+    width: 6px;
+}
+
+.presetGrid::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.presetGrid::-webkit-scrollbar-thumb {
+    background-color: var(--color-gray-100);
+    border-radius: var(--radius-full);
+}
+
+.presetItem {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    border-radius: 16px;
+    border: 1.5px solid var(--color-gray-100);
+    background: var(--color-white);
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    box-sizing: border-box;
+    width: 100%;
+}
+
+.presetItem:hover {
+    border-color: #58634f;
+    background: #f4f3ee;
+    transform: translateX(4px);
+}
+
+.presetItemActive {
+    border-color: #58634f;
+    background: #f4f3ee;
+    box-shadow: 0 4px 12px rgba(88, 99, 79, 0.08);
+}
+
+.presetThumbWrapper {
+    width: 64px;
+    height: 44px;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #000;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.presetThumb {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.8;
+    transition: opacity 0.2s ease;
+}
+
+.presetItemActive .presetThumb,
+.presetItem:hover .presetThumb {
+    opacity: 1;
+}
+
+.presetPlayOverlay {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #111111;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    z-index: 2;
+}
+
+.presetInfo {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+    gap: 4px;
+    min-width: 0;
+}
+
+.presetName {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.presetDurationRow {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--text-secondary);
+}
+
+.durationIcon {
+    color: var(--text-secondary);
+    display: inline-flex;
+    align-items: center;
+}
+
+.presetDuration {
+    font-size: 11px;
+    line-height: 1;
+}
+
+.activeCheckCircle {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #48523f;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.presetRightActions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.presetRemoveBtn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.presetRemoveBtn:hover {
+    background-color: #fee2e2;
+    color: #ef4444;
+}
+
+.uploadCard {
+    border: 1.5px dashed rgba(122, 158, 174, 0.3);
+    border-radius: 20px;
+    padding: 16px 20px;
+    background: #f7f7f5;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin: 0 24px 24px 24px;
+    box-sizing: border-box;
+}
+
+.uploadCardHeader {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.uploadIconWrapper {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #48523f;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    flex-shrink: 0;
+}
+
+.uploadCardText {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    text-align: left;
+}
+
+.uploadCardTitle {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.uploadCardSubtitle {
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+.uploadCardButton {
+    background-color: #48523f;
+    color: #ffffff;
+    border: none;
+    border-radius: var(--radius-full);
+    padding: 10px 24px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+.uploadCardButton:hover {
+    background-color: #3b4334;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(72, 82, 63, 0.25);
+}
+
+.videoErrorAlert {
+    margin-top: 8px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    background-color: #fff1f2;
+    border: 1px solid #ffe4e6;
+    color: #e11d48;
+    font-size: 11px;
+    font-weight: 500;
+    text-align: left;
+}
+
+@media (max-width: 900px) {
+    .dashboardCard {
+        height: auto;
+    }
+    .videoDashboardCard {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0;
+        height: auto;
+    }
+    .videoLeftColumn {
+        flex: none;
+        width: 100%;
+    }
+    .videoPlayerContainer {
+        border-radius: 28px 28px 0 0;
+        flex: none;
+        width: 100%;
+    }
+    .uploadCard {
+        margin: 16px 24px 24px 24px;
+    }
+    .videoSourcePanel {
+        padding: 24px;
+        flex: none;
+        width: 100%;
+    }
+}
+
 

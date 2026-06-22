@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useState, useRef, type CSSProperties } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
     Clock3,
@@ -24,20 +24,26 @@ import {
     Search,
     Building2,
     Compass,
-    Leaf,
-    Music,
-    Users,
-    Heart,
     MapPin,
     User,
-    ChevronDown
+    ChevronDown,
+    Play,
+    Pause,
+    Volume2,
+    VolumeX,
+    Leaf,
+    Check,
+    Maximize2,
+    MoreHorizontal,
+    UploadCloud,
+    Trash2
 } from 'lucide-react';
 import styles from '../App.module.css'; // Reusing the grid styles from App module
 
 import { ListingCard } from '../components/ListingCard';
 import { SkeletonScreen } from '../components/SkeletonScreen';
 import { api } from '../services/api';
-import type { FlashSaleDrop, Listing, ListingFilters, ListingSortOption } from '../types';
+import type { FlashSaleDrop, Listing, ListingFilters, ListingSortOption, PresetVideo } from '../types';
 
 const SORT_OPTIONS: Array<{ value: ListingSortOption; label: string }> = [
     { value: 'recommended', label: 'Recommended' },
@@ -90,6 +96,537 @@ const parseSortParam = (value: string | null): ListingSortOption => {
     return 'recommended';
 };
 
+
+const PRESET_VIDEOS: PresetVideo[] = [
+    {
+        name: "Scenic Coastal Escape",
+        url: "/sample_tour_1.mp4",
+        thumb: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=240&auto=format&fit=crop",
+        duration: "0:15"
+    },
+    {
+        name: "Beautiful Ocean Joyride",
+        url: "/sample_tour_2.mp4",
+        thumb: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?q=80&w=240&auto=format&fit=crop",
+        duration: "0:15"
+    },
+    {
+        name: "Scenic Forest Trail (WebM)",
+        url: "/sample_tour_3.webm",
+        thumb: "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?q=80&w=240&auto=format&fit=crop",
+        duration: "0:15"
+    }
+];
+
+const DB_NAME = 'aevr_video_db';
+const STORE_NAME = 'videos';
+const DB_VERSION = 3;
+
+const openDB = (): Promise<IDBDatabase> => {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        request.onupgradeneeded = () => {
+            const db = request.result;
+            if (!db.objectStoreNames.contains(STORE_NAME)) {
+                db.createObjectStore(STORE_NAME);
+            }
+        };
+        request.onsuccess = () => {
+            const db = request.result;
+            if (!db.objectStoreNames.contains(STORE_NAME)) {
+                console.warn(`Database opened, but store ${STORE_NAME} is missing. Re-opening with higher version.`);
+                db.close();
+                const req2 = indexedDB.open(DB_NAME, DB_VERSION + 1);
+                req2.onupgradeneeded = () => {
+                    const db2 = req2.result;
+                    db2.createObjectStore(STORE_NAME);
+                };
+                req2.onsuccess = () => resolve(req2.result);
+                req2.onerror = () => reject(req2.error);
+            } else {
+                resolve(db);
+            }
+        };
+        request.onerror = () => reject(request.error);
+    });
+};
+
+const saveVideoFile = async (key: string, file: File): Promise<void> => {
+    try {
+        const db = await openDB();
+        return new Promise((resolve, reject) => {
+            try {
+                const transaction = db.transaction(STORE_NAME, 'readwrite');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.put(file, key);
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject(request.error);
+            } catch (err) {
+                reject(err);
+            }
+        });
+    } catch (e) {
+        throw e;
+    }
+};
+
+const getVideoFile = async (key: string): Promise<File | null> => {
+    try {
+        const db = await openDB();
+        return new Promise((resolve, reject) => {
+            try {
+                const transaction = db.transaction(STORE_NAME, 'readonly');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.get(key);
+                request.onsuccess = () => resolve(request.result || null);
+                request.onerror = () => reject(request.error);
+            } catch (err) {
+                reject(err);
+            }
+        });
+    } catch (e) {
+        throw e;
+    }
+};
+
+const deleteVideoFile = async (key: string): Promise<void> => {
+    try {
+        const db = await openDB();
+        return new Promise((resolve, reject) => {
+            try {
+                const transaction = db.transaction(STORE_NAME, 'readwrite');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.delete(key);
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject(request.error);
+            } catch (err) {
+                reject(err);
+            }
+        });
+    } catch (e) {
+        throw e;
+    }
+};
+
+const getStoredVideoList = (): PresetVideo[] => {
+    const saved = localStorage.getItem('aevr_tour_videos');
+    if (saved) {
+        try {
+            return JSON.parse(saved);
+        } catch (e) {
+            console.error("Error parsing saved videos from localStorage", e);
+        }
+    }
+    return PRESET_VIDEOS;
+};
+
+const VideoDashboardCard = () => {
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [videoList, setVideoList] = useState<PresetVideo[]>(PRESET_VIDEOS);
+    const [videoSrc, setVideoSrc] = useState<string>(PRESET_VIDEOS[0].url);
+    const [activePreset, setActivePreset] = useState<number | null>(0);
+    const [isPlaying, setIsPlaying] = useState<boolean>(false);
+    const [isMuted, setIsMuted] = useState<boolean>(true);
+    const [videoError, setVideoError] = useState<string | null>(null);
+    const [currentTime, setCurrentTime] = useState<number>(0);
+    const [duration, setDuration] = useState<number>(0);
+    const [userRole, setUserRole] = useState<'guest' | 'host' | 'admin' | null>(null);
+    const [isUsingSupabase, setIsUsingSupabase] = useState<boolean>(false);
+    const [isUploading, setIsUploading] = useState<boolean>(false);
+
+    // Sync fallback list to localStorage (only if not using Supabase)
+    useEffect(() => {
+        if (!isUsingSupabase && videoList.length > 0) {
+            localStorage.setItem('aevr_tour_videos', JSON.stringify(videoList));
+        }
+    }, [videoList, isUsingSupabase]);
+
+    // Load custom/preset videos on mount
+    useEffect(() => {
+        const loadVideos = async () => {
+            try {
+                // 1. Try to fetch from Supabase
+                const dbVideos = await api.fetchTourVideos();
+                if (dbVideos && dbVideos.length > 0) {
+                    setVideoList(dbVideos);
+                    setVideoSrc(dbVideos[0].url);
+                    setIsUsingSupabase(true);
+                    return;
+                }
+            } catch (err) {
+                console.warn("Failed to load tour videos from Supabase, falling back to local storage:", err);
+            }
+
+            // 2. Fallback to IndexedDB / localStorage
+            setIsUsingSupabase(false);
+            const listToLoad = getStoredVideoList();
+            const loadedList = await Promise.all(
+                listToLoad.map(async (video) => {
+                    if (video.isLocal && video.id) {
+                        try {
+                            const file = await getVideoFile(video.id);
+                            if (file) {
+                                const objectUrl = URL.createObjectURL(file);
+                                return { ...video, url: objectUrl };
+                            }
+                        } catch (err) {
+                            console.error("Failed to load IndexedDB video file", err);
+                        }
+                        return null;
+                    }
+                    return video;
+                })
+            );
+            
+            const cleanList = loadedList.filter((v): v is PresetVideo => v !== null);
+            
+            if (cleanList.length > 0) {
+                setVideoList(cleanList);
+                setVideoSrc(cleanList[0].url);
+            } else {
+                setVideoList(PRESET_VIDEOS);
+                setVideoSrc(PRESET_VIDEOS[0].url);
+            }
+        };
+
+        const checkRole = async () => {
+            try {
+                const role = await api.getCurrentUserRole();
+                setUserRole(role);
+            } catch (err) {
+                console.error("Error fetching user role", err);
+            }
+        };
+
+        loadVideos();
+        checkRole();
+    }, []);
+
+    useEffect(() => {
+        setVideoError(null);
+        setCurrentTime(0);
+        setDuration(0);
+
+        if (videoRef.current) {
+            videoRef.current.load();
+            if (isPlaying) {
+                videoRef.current.play()
+                    .then(() => setIsPlaying(true))
+                    .catch((err) => {
+                        console.log("Play failed", err);
+                        setIsPlaying(false);
+                    });
+            }
+        }
+    }, [videoSrc]);
+
+    const handlePlayPause = () => {
+        if (!videoRef.current) return;
+        if (isPlaying) {
+            videoRef.current.pause();
+            setIsPlaying(false);
+        } else {
+            videoRef.current.play()
+                .then(() => setIsPlaying(true))
+                .catch(() => setVideoError("Could not play video source."));
+        }
+    };
+
+    const handleMuteUnmute = () => {
+        if (!videoRef.current) return;
+        videoRef.current.muted = !isMuted;
+        setIsMuted(!isMuted);
+    };
+
+    const handleTimeUpdate = () => {
+        if (!videoRef.current) return;
+        setCurrentTime(videoRef.current.currentTime);
+    };
+
+    const handleLoadedMetadata = () => {
+        if (!videoRef.current) return;
+        setDuration(videoRef.current.duration);
+    };
+
+    const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
+        if (!videoRef.current || duration === 0) return;
+        const rect = e.currentTarget.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const width = rect.width;
+        const percentage = clickX / width;
+        const newTime = percentage * duration;
+        videoRef.current.currentTime = newTime;
+        setCurrentTime(newTime);
+    };
+
+    const handlePresetClick = (index: number) => {
+        setActivePreset(index);
+        setVideoSrc(videoList[index].url);
+        setVideoError(null);
+    };
+
+    const handleRemoveVideo = async (index: number, e: React.MouseEvent) => {
+        e.stopPropagation();
+        const targetVideo = videoList[index];
+        if (!targetVideo) return;
+
+        try {
+            if (isUsingSupabase && targetVideo.id) {
+                await api.deleteTourVideo(targetVideo.id, targetVideo.url);
+            } else if (targetVideo.isLocal && targetVideo.id) {
+                await deleteVideoFile(targetVideo.id);
+            }
+        } catch (err) {
+            console.error("Failed to delete video:", err);
+            setVideoError("Failed to delete video from database/storage.");
+            return;
+        }
+
+        setVideoList(prev => {
+            const nextList = prev.filter((_, i) => i !== index);
+            if (activePreset === index) {
+                if (nextList.length > 0) {
+                    setActivePreset(0);
+                    setVideoSrc(nextList[0].url);
+                } else {
+                    setActivePreset(null);
+                    setVideoSrc('');
+                }
+            } else if (activePreset !== null && activePreset > index) {
+                setActivePreset(activePreset - 1);
+            }
+            return nextList;
+        });
+    };
+
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setIsUploading(true);
+        setVideoError(null);
+
+        try {
+            if (isUsingSupabase) {
+                // Upload to Supabase Storage & Database
+                const newVideo = await api.uploadTourVideo(file);
+                setVideoList(prev => {
+                    const nextList = [...prev, newVideo];
+                    setActivePreset(nextList.length - 1);
+                    return nextList;
+                });
+                setVideoSrc(newVideo.url);
+            } else {
+                // Local IndexedDB fallback
+                const objectUrl = URL.createObjectURL(file);
+                const displayTitle = file.name.length > 22 ? file.name.substring(0, 19) + "..." : file.name;
+                const id = 'video_' + Date.now();
+                
+                await saveVideoFile(id, file);
+
+                const newVideo: PresetVideo = {
+                    id,
+                    name: displayTitle,
+                    url: objectUrl,
+                    thumb: "https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?q=80&w=240&auto=format&fit=crop",
+                    duration: "Local File",
+                    isLocal: true
+                };
+
+                setVideoList(prev => {
+                    const nextList = [...prev, newVideo];
+                    setActivePreset(nextList.length - 1);
+                    return nextList;
+                });
+                setVideoSrc(objectUrl);
+            }
+        } catch (err) {
+            console.error("Video upload failed:", err);
+            setVideoError(err instanceof Error ? err.message : "Failed to load chosen video file.");
+        } finally {
+            setIsUploading(false);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+        }
+    };
+
+    const handleFullScreen = () => {
+        if (!videoRef.current) return;
+        if (videoRef.current.requestFullscreen) {
+            videoRef.current.requestFullscreen();
+        } else if ((videoRef.current as any).webkitRequestFullscreen) {
+            (videoRef.current as any).webkitRequestFullscreen();
+        } else if ((videoRef.current as any).msRequestFullscreen) {
+            (videoRef.current as any).msRequestFullscreen();
+        }
+    };
+
+    const formatTime = (time: number) => {
+        if (isNaN(time) || !isFinite(time)) return "0:00";
+        const mins = Math.floor(time / 60);
+        const secs = Math.floor(time % 60);
+        return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+    };
+
+    const progressPercentage = duration > 0 ? (currentTime / duration) * 100 : 0;
+
+    return (
+        <div className={styles.videoDashboardCard}>
+            <div className={styles.videoLeftColumn}>
+                <div className={`${styles.videoPlayerContainer} ${userRole !== 'admin' ? styles.videoPlayerFullHeight : ''}`}>
+                    <video
+                        ref={videoRef}
+                        className={styles.customVideo}
+                        src={videoSrc}
+                        loop
+                        muted={isMuted}
+                        playsInline
+                        onTimeUpdate={handleTimeUpdate}
+                        onLoadedMetadata={handleLoadedMetadata}
+                        onError={() => setVideoError("Error loading video source. Make sure it is a valid format (e.g. MP4).")}
+                        onClick={handlePlayPause}
+                    />
+                    
+                    {!isPlaying && !videoError && (
+                        <button type="button" className={styles.videoPlayOverlayBtn} onClick={handlePlayPause} aria-label="Play video">
+                            <Play size={28} fill="currentColor" />
+                        </button>
+                    )}
+
+                    <div className={styles.videoControlsOverlay}>
+                        <div className={styles.videoControlsRow}>
+                            <button type="button" className={styles.videoControlBtn} onClick={handlePlayPause} aria-label={isPlaying ? "Pause" : "Play"}>
+                                {isPlaying ? <Pause size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" />}
+                            </button>
+                            <button type="button" className={styles.videoControlBtn} onClick={handleMuteUnmute} aria-label={isMuted ? "Unmute" : "Mute"}>
+                                {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+                            </button>
+                            <span className={styles.videoProgressTime}>
+                                {formatTime(currentTime)} / {formatTime(duration)}
+                            </span>
+                            
+                            <div className={styles.videoProgressBar} onClick={handleProgressClick}>
+                                <div className={styles.videoProgressFill} style={{ width: `${progressPercentage}%` }}>
+                                    <div className={styles.videoProgressThumb} />
+                                </div>
+                            </div>
+
+                            <button type="button" className={styles.videoControlBtn} onClick={handleFullScreen} aria-label="Fullscreen">
+                                <Maximize2 size={16} />
+                            </button>
+                            <button type="button" className={styles.videoControlBtn} aria-label="More options">
+                                <MoreHorizontal size={16} />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {userRole === 'admin' && (
+                    <div className={styles.uploadCard}>
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="video/*"
+                            style={{ display: 'none' }}
+                            onChange={handleFileUpload}
+                        />
+                        <div className={styles.uploadCardHeader}>
+                            <div className={styles.uploadIconWrapper}>
+                                <UploadCloud size={20} />
+                            </div>
+                            <div className={styles.uploadCardText}>
+                                <span className={styles.uploadCardTitle}>Upload your own tour video</span>
+                                <span className={styles.uploadCardSubtitle}>MP4, WebM up to 200MB</span>
+                            </div>
+                        </div>
+                        <button
+                            type="button"
+                            className={styles.uploadCardButton}
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={isUploading}
+                        >
+                            {isUploading ? 'Uploading...' : 'Upload Video'}
+                        </button>
+                    </div>
+                )}
+            </div>
+
+
+            <div className={styles.videoSourcePanel}>
+                <div className={styles.videoPanelHeader}>
+                    <Leaf className={styles.leafIcon} size={20} />
+                    <h2 className={styles.videoPanelTitle}>Aevr Villa Tour</h2>
+                    <p className={styles.videoPanelSubtitle}>Experience curated retreats through our travel guide gallery, or upload your own video to test.</p>
+                </div>
+
+                <div className={styles.presetSectionTitle}>Select Tour Video</div>
+                <div className={styles.presetGrid}>
+                    {videoList.map((preset, index) => (
+                        <div
+                            key={index}
+                            role="button"
+                            tabIndex={0}
+                            className={`${styles.presetItem} ${activePreset === index ? styles.presetItemActive : ''}`}
+                            onClick={() => handlePresetClick(index)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    handlePresetClick(index);
+                                }
+                            }}
+                        >
+                            <div className={styles.presetThumbWrapper}>
+                                <img src={preset.thumb} className={styles.presetThumb} alt={preset.name} />
+                                <div className={styles.presetPlayOverlay}>
+                                    <Play size={10} fill="currentColor" />
+                                </div>
+                            </div>
+                            <div className={styles.presetInfo}>
+                                <span className={styles.presetName}>{preset.name}</span>
+                                <div className={styles.presetDurationRow}>
+                                    <Clock3 size={11} className={styles.durationIcon} />
+                                    <span className={styles.presetDuration}>{preset.duration}</span>
+                                </div>
+                            </div>
+                            <div className={styles.presetRightActions}>
+                                {activePreset === index && (
+                                    <div className={styles.activeCheckCircle}>
+                                        <Check size={12} strokeWidth={3} />
+                                    </div>
+                                )}
+                                {userRole === 'admin' && (
+                                    <button
+                                        type="button"
+                                        className={styles.presetRemoveBtn}
+                                        onClick={(e) => handleRemoveVideo(index, e)}
+                                        aria-label={`Remove video ${preset.name}`}
+                                    >
+                                        <Trash2 size={14} />
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                {videoError && (
+                    <div className={styles.videoErrorAlert} role="alert">
+                        {videoError}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+const HERO_IMAGES = [
+    '/coastal_calm_hero.png',
+    '/beige_palace_hero.png',
+    '/heritage_palace_hero.png'
+];
+
 export const Home = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const categoryParam = searchParams.get('category');
@@ -127,6 +664,7 @@ export const Home = () => {
 
     const [listings, setListings] = useState<Listing[]>([]);
     const [activeDrop, setActiveDrop] = useState<FlashSaleDrop | null>(null);
+    const [activeDrops, setActiveDrops] = useState<FlashSaleDrop[]>([]);
     const [nowTs, setNowTs] = useState(Date.now());
     const [loading, setLoading] = useState(true);
     const [listingError, setListingError] = useState<string | null>(null);
@@ -137,6 +675,14 @@ export const Home = () => {
 
     const [roomsOpen, setRoomsOpen] = useState(false);
     const [guestsOpen, setGuestsOpen] = useState(false);
+    const [currentHeroImageIndex, setCurrentHeroImageIndex] = useState(0);
+
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setCurrentHeroImageIndex((prev) => (prev + 1) % HERO_IMAGES.length);
+        }, 3000);
+        return () => clearInterval(timer);
+    }, []);
 
     useEffect(() => {
         const handleCloseAll = () => {
@@ -256,27 +802,36 @@ export const Home = () => {
                     baths,
                     guestFavoriteOnly,
                 };
-                const data = await api.fetchListings(filters);
-                setListings(data);
 
-                try {
-                    const drop = await api.fetchActiveFlashDrop(new Date());
-                    setActiveDrop(drop);
-                } catch (flashSaleError) {
-                    setActiveDrop(null);
+                // Fetch listings and flash-sale drop in PARALLEL to halve wait time
+                const [listingsResult, flashSaleResult] = await Promise.allSettled([
+                    api.fetchListings(filters),
+                    api.fetchActiveFlashDrops(new Date()),
+                ]);
 
+                if (listingsResult.status === 'fulfilled') {
+                    setListings(listingsResult.value);
+                } else {
+                    const message = listingsResult.reason instanceof Error
+                        ? listingsResult.reason.message
+                        : 'Could not load listings from Supabase.';
+                    setListings([]);
+                    setListingError(message);
                     if (import.meta.env.DEV) {
-                        console.error(flashSaleError);
+                        console.error(listingsResult.reason);
                     }
                 }
-            } catch (error) {
-                const message = error instanceof Error ? error.message : 'Could not load listings from Supabase.';
-                setListings([]);
-                setActiveDrop(null);
-                setListingError(message);
 
-                if (import.meta.env.DEV) {
-                    console.error(error);
+                if (flashSaleResult.status === 'fulfilled') {
+                    const drops = flashSaleResult.value;
+                    setActiveDrops(drops);
+                    setActiveDrop(drops.length > 0 ? drops[0] : null);
+                } else {
+                    setActiveDrops([]);
+                    setActiveDrop(null);
+                    if (import.meta.env.DEV) {
+                        console.error(flashSaleResult.reason);
+                    }
                 }
             } finally {
                 setLoading(false);
@@ -345,6 +900,13 @@ export const Home = () => {
     return (
         <>
             <div className={styles.heroSection}>
+                {HERO_IMAGES.map((imgUrl, idx) => (
+                    <div
+                        key={imgUrl}
+                        className={`${styles.heroBgImage} ${idx === currentHeroImageIndex ? styles.heroBgImageActive : ''}`}
+                        style={{ backgroundImage: `url(${imgUrl})` }}
+                    />
+                ))}
                 <div className={styles.heroOverlay} />
                 <div className={styles.heroContent}>
                     <h1 className={styles.heroTitle}>
@@ -352,10 +914,10 @@ export const Home = () => {
                     </h1>
                     
                     <p className={styles.heroSubtitle}>
-                        <span className={styles.coastalBlueText}>Bespoke Villas.</span> Timeless Memories.
+                        <span className={styles.coastalBlueText}>Handpicked Luxury.</span> Fully Verified Stays.
                     </p>
                     <p className={styles.heroDescription}>
-                        Explore curated private estates, heritage havelis, and luxury retreats.
+                        Experience India's most extraordinary private villas and heritage estates, professionally managed with a 100% comfort guarantee for your perfect escape.
                     </p>
 
                     <div className={styles.heroSearchContainer}>
@@ -531,18 +1093,6 @@ export const Home = () => {
                     </section>
                 )}
 
-                {luxurySection ? (
-                    <section className={`${styles.modeDescriptionCard} ${styles.modeDescriptionCardLuxe}`}>
-                        <span className={styles.modeDescBadge}>Aevr Luxe</span>
-                        <h2 className={`${styles.modeDescTitle} ${styles.modeDescTitleLuxe}`}>Discover premium villas & luxury stays</h2>
-                        <p className={styles.modeDescText}>Step into a world of iconic estates and unforgettable retreats, curated for guests who seek the rare and refined.</p>
-                    </section>
-                ) : (
-                    <section className={styles.modeDescriptionCard}>
-                        <h2 className={styles.modeDescTitle}>Explore Our Curated Villas</h2>
-                        <p className={styles.modeDescText}>Discover beautiful homes and authentic experiences handpicked for discerning travelers.</p>
-                    </section>
-                )}
 
             {showFilters && (
                 <div className={styles.modalBackdrop} onClick={() => setShowFilters(false)}>
@@ -818,8 +1368,8 @@ export const Home = () => {
                             <h2 className={styles.sectionHeading}>{luxurySection ? 'Aevr Luxe stays' : 'Featured stays'}</h2>
                         </div>
                         <div className={styles.grid}>
-                            {listings.map((listing) => (
-                                <ListingCard key={listing.id} listing={listing} />
+                            {listings.map((listing, index) => (
+                                <ListingCard key={listing.id} listing={listing} activeFlashSale={activeDrops} cardIndex={index} />
                             ))}
                         </div>
                     </>
@@ -833,50 +1383,7 @@ export const Home = () => {
 
             <section className={styles.bottomDashboardSection}>
                 <div className={styles.bottomDashboardContainer}>
-                    {/* Card 1: Explore by mood */}
-                    <div className={styles.dashboardCard}>
-                        <h2 className={styles.dashboardCardTitle}>Explore by mood</h2>
-                        <div className={styles.moodGrid}>
-                            <button type="button" className={styles.moodItem} onClick={() => updateParams({ category: 'amazing-views' })}>
-                                <div className={styles.moodIconWrapper}>
-                                    <Mountain size={20} />
-                                </div>
-                                <span className={styles.moodLabel}>Mountains</span>
-                            </button>
-                            <button type="button" className={styles.moodItem} onClick={() => updateParams({ category: 'beachfront' })}>
-                                <div className={styles.moodIconWrapper}>
-                                    <Umbrella size={20} />
-                                </div>
-                                <span className={styles.moodLabel}>Beach</span>
-                            </button>
-                            <button type="button" className={styles.moodItem} onClick={() => updateParams({ category: 'farms' })}>
-                                <div className={styles.moodIconWrapper}>
-                                    <Leaf size={20} />
-                                </div>
-                                <span className={styles.moodLabel}>Nature</span>
-                            </button>
-                            <button type="button" className={styles.moodItem} onClick={() => updateParams({ category: 'omg' })}>
-                                <div className={styles.moodIconWrapper}>
-                                    <Music size={20} />
-                                </div>
-                                <span className={styles.moodLabel}>Party</span>
-                            </button>
-                            <button type="button" className={styles.moodItem} onClick={() => updateParams({ category: 'luxe' })}>
-                                <div className={styles.moodIconWrapper}>
-                                    <Heart size={20} />
-                                </div>
-                                <span className={styles.moodLabel}>Couple</span>
-                            </button>
-                            <button type="button" className={styles.moodItem} onClick={() => updateParams({ guests: 4 })}>
-                                <div className={styles.moodIconWrapper}>
-                                    <Users size={20} />
-                                </div>
-                                <span className={styles.moodLabel}>Family</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Card 2: Why choose AEVR? */}
+                    {/* Card 1: Why choose AEVR? */}
                     <div className={styles.dashboardCard}>
                         <h2 className={styles.dashboardCardTitle}>Why choose AEVR?</h2>
                         <div className={styles.compactFeaturesGrid}>
@@ -905,29 +1412,14 @@ export const Home = () => {
                                 <ShieldCheck className={styles.featureIcon} size={20} />
                                 <div className={styles.featureTextGroup}>
                                     <h3 className={styles.featureTitle}>Safe & Secure</h3>
-                                    <p className={styles.featureDescription}>Trusted by 1000+ families</p>
+                                    <p className={styles.featureDescription}>Trusted by 1000+ families for secure stays</p>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Card 3: CTA Card */}
-                    <div className={`${styles.dashboardCard} ${styles.ctaDashboardCard}`}>
-                        <div className={styles.ctaCardBgImage} style={{ backgroundImage: `url('/coastal_calm_hero.png')` }} />
-                        <div className={styles.ctaCardOverlay} />
-                        <div className={styles.ctaCardContent}>
-                            <h2 className={styles.ctaCardTitle}>Your dream stay is a search away</h2>
-                            <button 
-                                type="button" 
-                                className={styles.ctaCardButton}
-                                onClick={() => {
-                                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                                }}
-                            >
-                                Explore Stays
-                            </button>
-                        </div>
-                    </div>
+                    {/* Card 2: Interactive Video Player Card */}
+                    <VideoDashboardCard />
                 </div>
             </section>
 

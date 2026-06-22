@@ -17,9 +17,6 @@ import {
     Minus,
     Plus,
     ChevronDown,
-    Compass,
-    Bath,
-    ShieldCheck,
 } from 'lucide-react';
 import AmenityIcon from '../components/AmenityIcon';
 import { SkeletonScreen } from '../components/SkeletonScreen';
@@ -27,7 +24,7 @@ import styles from './ListingDetails.module.css';
 import { api } from '../services/api';
 import { authService } from '../services/auth';
 import { favoritesService } from '../services/favorites';
-import type { AvailabilityBlock, Listing, RoomType } from '../types';
+import type { AvailabilityBlock, Listing, RoomType, FlashSaleDrop } from '../types';
 import { getFallbackImage } from '../services/media';
 import { FuzzyMap } from '../components/FuzzyMap';
 import { hasValidCoords, extractCoordsFromGoogleMapsUrl } from '../services/mapUtils';
@@ -262,6 +259,9 @@ export const ListingDetails = () => {
     const mobileSliderRef = useRef<HTMLDivElement | null>(null);
     const desktopSliderRef = useRef<HTMLDivElement | null>(null);
 
+    const [activeDrop, setActiveDrop] = useState<FlashSaleDrop | null>(null);
+    const [timeLeftStr, setTimeLeftStr] = useState('');
+
     const [checkIn, setCheckIn] = useState(() => {
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
@@ -283,20 +283,114 @@ export const ListingDetails = () => {
 
         const load = async () => {
             setLoading(true);
-            const [data, blocks, currentUser] = await Promise.all([
+            const [data, blocks, currentUser, activeFlashDrop] = await Promise.all([
                 api.fetchListingById(id),
                 api.fetchAvailabilityBlocks(id),
                 api.getCurrentUserSummary(),
+                api.fetchActiveFlashDropForListing(id),
             ]);
             setListing(data);
             setAvailabilityBlocks(blocks);
             setIsVerifiedGuest(currentUser?.role === 'guest' && currentUser.isVerifiedGuest);
             setIsFavorited(favoritesService.isFavorite(id));
+            if (activeFlashDrop && activeFlashDrop.listingId === id) {
+                setActiveDrop(activeFlashDrop);
+            } else {
+                setActiveDrop(null);
+            }
             setLoading(false);
         };
 
         load();
     }, [id]);
+
+    const isOnSale = Boolean(activeDrop && activeDrop.listingId === id);
+
+    const getStayNights = (checkInStr: string, checkOutStr: string) => {
+        const nights: string[] = [];
+        if (!checkInStr || !checkOutStr) return nights;
+        const current = new Date(checkInStr);
+        const end = new Date(checkOutStr);
+        while (current < end) {
+            const y = current.getFullYear();
+            const m = String(current.getMonth() + 1).padStart(2, '0');
+            const d = String(current.getDate()).padStart(2, '0');
+            nights.push(`${y}-${m}-${d}`);
+            current.setDate(current.getDate() + 1);
+        }
+        return nights;
+    };
+
+    const getDiscountedPrice = (originalPrice: number) => {
+        if (!isOnSale || !activeDrop || !listing) return originalPrice;
+        if (originalPrice === listing.price) return activeDrop.salePrice;
+        return Math.max(1, originalPrice * (1 - activeDrop.discountPercent / 100));
+    };
+
+    const getNightsDistribution = (checkInStr: string, checkOutStr: string) => {
+        if (!checkInStr || !checkOutStr) return { discountedNights: 0, regularNights: 0, salePrice: 0, basePrice: 0, total: 0 };
+        const nights = getStayNights(checkInStr, checkOutStr);
+        let discountedNights = 0;
+        let regularNights = 0;
+
+        const basePrice = selectedRoomType?.pricePerNight ?? listing?.price ?? 0;
+        const salePrice = getDiscountedPrice(basePrice);
+
+        const saleStart = activeDrop ? activeDrop.startAt.slice(0, 10) : '';
+        const saleEnd = activeDrop ? activeDrop.endAt.slice(0, 10) : '';
+
+        nights.forEach((night) => {
+            const isNightOnSale = isOnSale && night >= saleStart && night < saleEnd;
+            if (isNightOnSale) {
+                discountedNights++;
+            } else {
+                regularNights++;
+            }
+        });
+
+        const total = (discountedNights * salePrice + regularNights * basePrice) * roomCount;
+
+        return {
+            discountedNights,
+            regularNights,
+            salePrice,
+            basePrice,
+            total,
+        };
+    };
+
+    useEffect(() => {
+        if (!isOnSale || !activeDrop) return;
+
+        const updateTimer = () => {
+            const now = Date.now();
+            const end = new Date(activeDrop.endAt).getTime();
+            const diff = end - now;
+
+            if (diff <= 0) {
+                setTimeLeftStr('Flash sale ended');
+                return;
+            }
+
+            const days = Math.floor(diff / (24 * 60 * 60 * 1000));
+            const hours = Math.floor((diff % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+            const minutes = Math.floor((diff % (60 * 60 * 1000)) / (60 * 1000));
+
+            let str = '';
+            if (days > 0) {
+                str += `${days} day${days > 1 ? 's' : ''} `;
+            }
+            if (hours > 0 || days > 0) {
+                str += `${hours} hour${hours > 1 ? 's' : ''} `;
+            }
+            str += `${minutes} min${minutes > 1 ? 's' : ''}`;
+            setTimeLeftStr(str);
+        };
+
+        updateTimer();
+        const interval = setInterval(updateTimer, 60000);
+        return () => clearInterval(interval);
+    }, [isOnSale, activeDrop]);
 
     const roomTypes = useMemo(() => fallbackRoomTypes(listing), [listing]);
     const selectedRoomType = useMemo(
@@ -433,10 +527,20 @@ export const ListingDetails = () => {
     }, [showPhotosModal]);
 
     const nights = useMemo(() => nightsBetween(checkIn, checkOut), [checkIn, checkOut]);
-    const nightlyRate = selectedRoomType?.pricePerNight ?? listing?.price ?? 0;
-    const subtotal = listing ? nightlyRate * nights * roomCount : 0;
-    const gstRate = listing ? getHotelGstRate(nightlyRate) : 0;
-    const taxes = listing ? Math.round(subtotal * gstRate) : 0;
+
+    const { discountedNights, regularNights, salePrice, basePrice, total: subtotal } = useMemo(() => {
+        return getNightsDistribution(checkIn, checkOut);
+    }, [checkIn, checkOut, selectedRoomType, listing, roomCount, isOnSale, activeDrop]);
+
+    const nightlyRate = isOnSale && activeDrop && discountedNights > 0 ? salePrice : (selectedRoomType?.pricePerNight ?? listing?.price ?? 0);
+
+    const taxes = useMemo(() => {
+        if (!listing) return 0;
+        const discountedGst = salePrice * getHotelGstRate(salePrice) * discountedNights;
+        const regularGst = basePrice * getHotelGstRate(basePrice) * regularNights;
+        return Math.round((discountedGst + regularGst) * roomCount);
+    }, [checkIn, checkOut, selectedRoomType, listing, roomCount, isOnSale, activeDrop, discountedNights, regularNights, salePrice, basePrice]);
+
     const total = subtotal + taxes;
     const listingMedia = useMemo(() => listing?.media ?? [], [listing?.media]);
     const galleryMedia = listingMedia;
@@ -669,6 +773,15 @@ Please let me know the next steps for confirming the booking.`;
 
     return (
         <div className={styles.container}>
+            {isOnSale && activeDrop && (
+                <div className={styles.flashSaleBanner}>
+                    <span className={styles.flashSaleIcon}>⚡</span>
+                    <div className={styles.flashSaleTextGroup}>
+                        <strong className={styles.flashSaleTitleText}>FLASH SALE — {Math.round(activeDrop.discountPercent)}% OFF</strong>
+                        <span className={styles.flashSaleTimeText}>This special price ends in {timeLeftStr}</span>
+                    </div>
+                </div>
+            )}
             <div className={styles.heading}>
                 <h1 className={styles.title}>{listing.title}</h1>
                 <div className={styles.subHeading}>
@@ -738,6 +851,9 @@ Please let me know the next steps for confirming the booking.`;
                                     src={item.url}
                                     alt={`${listing.title} view ${idx + 1}`}
                                     className={styles.desktopSlideMedia}
+                                    loading={idx === 0 ? 'eager' : 'lazy'}
+                                    fetchPriority={idx === 0 ? 'high' : 'auto'}
+                                    decoding="async"
                                     onError={renderImageFallback}
                                 />
                             )}
@@ -1026,7 +1142,17 @@ Please let me know the next steps for confirming the booking.`;
                         <div className={styles.featureIcon}><BedDouble size={24} /></div>
                         <div className={styles.featureText}>
                             <h3>Booking details</h3>
-                            <p>{formatPrice(listing.price, listing.currency)} per night, before fees and taxes.</p>
+                            <p>
+                                {isOnSale && activeDrop ? (
+                                    <>
+                                        <span className={styles.originalPriceDetails}>{formatPrice(listing.price, listing.currency)}</span>
+                                        <span className={styles.salePriceDetails}>{formatPrice(activeDrop.salePrice, listing.currency)}</span>
+                                    </>
+                                ) : (
+                                    formatPrice(listing.price, listing.currency)
+                                )}{' '}
+                                per night, before fees and taxes.
+                            </p>
                         </div>
                     </div>
 
@@ -1076,7 +1202,17 @@ Please let me know the next steps for confirming the booking.`;
                     <div className={styles.bookingCard}>
                         <div className={styles.cardHeader}>
                             <div className={styles.cardPrice}>
-                                {formatPrice(nightlyRate, listing.currency)} <span>/ night</span>
+                                {isOnSale && activeDrop && discountedNights > 0 ? (
+                                    <div className={styles.priceContainer}>
+                                        <span className={styles.originalPriceCard}>{formatPrice(selectedRoomType?.pricePerNight ?? listing.price, listing.currency)}</span>
+                                        <span className={styles.salePriceCard}>{formatPrice(nightlyRate, listing.currency)}</span>
+                                        <span className={styles.period}>/ night</span>
+                                    </div>
+                                ) : (
+                                    <>
+                                        {formatPrice(nightlyRate, listing.currency)} <span>/ night</span>
+                                    </>
+                                )}
                             </div>
                             <div className={styles.cardMeta}>
                                 <Star size={14} fill="currentColor" />
@@ -1134,7 +1270,9 @@ Please let me know the next steps for confirming the booking.`;
                                 </div>
 
                                 {activeDatePicker && (
-                                    <div className={styles.calendarPopover}>
+                                    <>
+                                        <div className={styles.calendarBackdrop} onClick={() => setActiveDatePicker(null)} />
+                                        <div className={styles.calendarPopover}>
                                         <div className={styles.calendarHeader}>
                                             <button
                                                 type="button"
@@ -1229,9 +1367,17 @@ Please let me know the next steps for confirming the booking.`;
                                             >
                                                 Today
                                             </button>
+                                            <button
+                                                type="button"
+                                                className={styles.calendarCloseBtn}
+                                                onClick={() => setActiveDatePicker(null)}
+                                            >
+                                                Close
+                                            </button>
                                         </div>
                                     </div>
-                                )}
+                                </>
+                            )}
                             </div>
 
                             <div className={styles.formField}>
@@ -1394,14 +1540,35 @@ Please let me know the next steps for confirming the booking.`;
                         )}
 
                         <div className={styles.priceBreakdown}>
+                            {isOnSale && activeDrop && discountedNights > 0 ? (
+                                <>
+                                    {discountedNights > 0 && (
+                                        <div className={styles.breakdownRow}>
+                                            <span>
+                                                {roomCount} {selectedRoomType?.name ?? 'room'} x {formatPrice(salePrice, listing.currency)} x {discountedNights} night{discountedNights > 1 ? 's' : ''} (Flash Sale)
+                                            </span>
+                                            <span>{formatPrice(salePrice * discountedNights * roomCount, listing.currency)}</span>
+                                        </div>
+                                    )}
+                                    {regularNights > 0 && (
+                                        <div className={styles.breakdownRow}>
+                                            <span>
+                                                {roomCount} {selectedRoomType?.name ?? 'room'} x {formatPrice(basePrice, listing.currency)} x {regularNights} night{regularNights > 1 ? 's' : ''} (Regular Rate)
+                                            </span>
+                                            <span>{formatPrice(basePrice * regularNights * roomCount, listing.currency)}</span>
+                                        </div>
+                                    )}
+                                </>
+                            ) : (
+                                <div className={styles.breakdownRow}>
+                                    <span>
+                                        {roomCount} {selectedRoomType?.name ?? 'room'} x {formatPrice(nightlyRate, listing.currency)} x {nights || 0} nights
+                                    </span>
+                                    <span>{formatPrice(subtotal, listing.currency)}</span>
+                                </div>
+                            )}
                             <div className={styles.breakdownRow}>
-                                <span>
-                                    {roomCount} {selectedRoomType?.name ?? 'room'} x {formatPrice(nightlyRate, listing.currency)} x {nights || 0} nights
-                                </span>
-                                <span>{formatPrice(subtotal, listing.currency)}</span>
-                            </div>
-                            <div className={styles.breakdownRow}>
-                                <span>GST {gstRate > 0 ? `(${Math.round(gstRate * 100)}%)` : '(Exempt)'}</span>
+                                <span>GST (Taxes & Fees)</span>
                                 <span>{formatPrice(taxes, listing.currency)}</span>
                             </div>
                             <div className={`${styles.breakdownRow} ${styles.totalRow}`}>

@@ -2,6 +2,7 @@
     max-width: 1280px;
     margin: 0 auto;
     padding: calc(var(--header-height) + 24px) var(--container-padding) 40px;
+    box-sizing: border-box;
 }
 
 /* Header Section */
@@ -128,6 +129,7 @@
     z-index: 10;
     transition: background-color 0.2s, transform 0.2s;
     color: var(--text-primary);
+    box-sizing: border-box;
 }
 
 .galleryNavBtn:hover {
@@ -141,6 +143,16 @@
 
 .galleryNavBtnRight {
     right: 24px;
+}
+
+@media (max-width: 950px) {
+    .galleryNavBtnLeft {
+        left: 16px;
+    }
+
+    .galleryNavBtnRight {
+        right: 16px;
+    }
 }
 
 .mediaFrame {
@@ -889,7 +901,19 @@
 
 @media (max-width: 744px) {
     .container {
-        padding: calc(var(--header-height) + 24px) 0 40px;
+        padding: calc(var(--header-height) + 24px) 16px 40px;
+    }
+
+    .heading {
+        padding-inline: 16px;
+    }
+
+    .title {
+        max-width: calc(100% - 32px);
+        width: 100%;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+        padding-inline: 16px;
     }
 
     .desktopGallery {
@@ -899,6 +923,9 @@
     .mobileGallery {
         display: block;
         margin-bottom: 24px;
+        width: 100%;
+        padding-inline: 16px;
+        box-sizing: border-box;
     }
 
     .mobileSlider {
@@ -910,6 +937,8 @@
         scroll-snap-type: x mandatory;
         scroll-behavior: smooth;
         scrollbar-width: none;
+        width: 100%;
+        box-sizing: border-box;
     }
 
     .mobileSlider::-webkit-scrollbar {
@@ -936,6 +965,7 @@
         display: block;
         object-fit: cover;
         background: #000;
+        box-sizing: border-box;
     }
 
     .mobileVideoCard {
@@ -956,6 +986,27 @@
         justify-content: space-between;
         gap: 12px;
         padding: 14px 16px 0;
+        flex-wrap: wrap;
+        width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+        padding-inline: 16px;
+    }
+
+    .mobileDots {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        flex: 1 1 0%;
+        min-width: 0;
+        overflow-x: auto;
+        padding: 0 4px;
+    }
+
+    .mobileDot,
+    .mobileDotActive {
+        flex: 0 0 auto;
     }
 
     .mobileNavButton {
@@ -1463,6 +1514,10 @@
     width: 100%;
 }
 
+.calendarBackdrop {
+    display: none;
+}
+
 .calendarPopover {
     position: absolute;
     top: calc(100% + 8px);
@@ -1480,12 +1535,38 @@
     gap: 16px;
 }
 
-@media (max-width: 480px) {
+@media (max-width: 768px) {
+    .calendarBackdrop {
+        display: block;
+        position: fixed;
+        inset: 0;
+        background-color: rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        z-index: 1999;
+        animation: fadeIn 0.2s ease;
+    }
+    
     .calendarPopover {
-        width: 100%;
+        position: fixed;
+        bottom: 0;
         left: 0;
+        right: 0;
+        top: auto;
         transform: none;
+        width: 100%;
+        max-width: none;
+        border-radius: 24px 24px 0 0;
+        z-index: 2000;
+        animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         box-sizing: border-box;
+        padding: 24px 20px 32px 20px;
+        box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.15);
+        border: none;
+        border-top: 1px solid var(--color-gray-100);
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
     }
 }
 
@@ -1634,4 +1715,119 @@
 .calendarTodayBtn:hover {
     color: var(--text-primary);
     text-decoration: underline;
+}
+
+.calendarCloseBtn {
+    border: none;
+    background: transparent;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: color 0.15s ease;
+    color: var(--color-accent);
+}
+
+.calendarCloseBtn:hover {
+    color: var(--text-primary);
+    text-decoration: underline;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+}
+
+/* Flash Sale Styles */
+.flashSaleBanner {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: linear-gradient(135deg, #ff385c 0%, #bd1e59 100%);
+    color: var(--color-white);
+    padding: 16px 24px;
+    border-radius: var(--radius-xl);
+    margin-bottom: 24px;
+    box-shadow: 0 8px 30px rgba(255, 56, 92, 0.25);
+    animation: fadeIn 0.5s ease-out;
+}
+
+.flashSaleIcon {
+    font-size: 24px;
+    display: inline-block;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.5));
+    }
+    50% {
+        transform: scale(1.2);
+        filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.9));
+    }
+    100% {
+        transform: scale(1);
+        filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.5));
+    }
+}
+
+.flashSaleTextGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.flashSaleTitleText {
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.flashSaleTimeText {
+    font-size: 14px;
+    opacity: 0.9;
+    font-weight: var(--font-weight-medium);
+}
+
+.originalPriceDetails {
+    text-decoration: line-through;
+    color: var(--text-secondary);
+    margin-right: 8px;
+}
+
+.salePriceDetails {
+    color: #ff385c;
+    font-weight: var(--font-weight-bold);
+}
+
+.priceContainer {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.originalPriceCard {
+    text-decoration: line-through;
+    color: var(--text-secondary) !important;
+    font-size: var(--font-size-md) !important;
+    font-weight: var(--font-weight-medium) !important;
+}
+
+.salePriceCard {
+    color: #ff385c !important;
+    font-size: var(--font-size-xl) !important;
+    font-weight: var(--font-weight-semibold) !important;
+}
+
+.period {
+    font-size: var(--font-size-sm) !important;
+    font-weight: var(--font-weight-regular) !important;
+    color: var(--text-secondary) !important;
 }

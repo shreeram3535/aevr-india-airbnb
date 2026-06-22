@@ -190,7 +190,8 @@ export const Header: React.FC = () => {
                             className={styles.loginBtn}
                             onClick={() => navigate('/auth')}
                         >
-                            Login / Sign up
+                            <span className={styles.loginBtnTextFull}>Login / Sign up</span>
+                            <span className={styles.loginBtnTextMobile}>Login</span>
                         </button>
                     ) : (
                         <button 

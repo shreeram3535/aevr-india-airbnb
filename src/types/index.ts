@@ -246,3 +246,13 @@ export interface CreateListingInput {
 
 export type ListingsResponse = Listing[];
 export type CategoriesResponse = Category[];
+
+export interface PresetVideo {
+    id?: string;
+    name: string;
+    url: string;
+    thumb: string;
+    duration: string;
+    isLocal?: boolean;
+}
+
