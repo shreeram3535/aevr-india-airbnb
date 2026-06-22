@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styles from './ListingCard.module.css';
-import type { Listing } from '../types';
+import type { Listing, FlashSaleDrop } from '../types';
 import { Heart, ChevronLeft, ChevronRight, Star, BedDouble, Users, Waves, Mountain, Compass, Sparkles, Eye } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { favoritesService } from '../services/favorites';
@@ -85,9 +85,10 @@ const getSpecialAmenity = (listing: Listing) => {
 interface ListingCardProps {
     listing: Listing;
     cardIndex?: number;
+    activeFlashSale?: FlashSaleDrop | FlashSaleDrop[] | null;
 }
 
-export const ListingCard: React.FC<ListingCardProps> = ({ listing, cardIndex }) => {
+export const ListingCard: React.FC<ListingCardProps> = ({ listing, cardIndex, activeFlashSale }) => {
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [isFavorited, setIsFavorited] = useState(() => favoritesService.isFavorite(listing.id));
     const [imageLoaded, setImageLoaded] = useState(false);
@@ -130,11 +131,28 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing, cardIndex }) 
         favoritesService.toggleFavorite(listing.id);
     };
 
+    const getActiveDrop = () => {
+        if (!activeFlashSale) return null;
+        if (Array.isArray(activeFlashSale)) {
+            return activeFlashSale.find((d) => d.listingId === listing.id) ?? null;
+        }
+        return activeFlashSale.listingId === listing.id ? activeFlashSale : null;
+    };
+    const activeDrop = getActiveDrop();
+    const isOnSale = Boolean(activeDrop);
+    const currentPrice = isOnSale && activeDrop ? activeDrop.salePrice : listing.price;
+
     const priceLabel = new Intl.NumberFormat('en-IN', {
         style: 'currency',
         currency: listing.currency ?? 'INR',
         maximumFractionDigits: 0,
-    }).format(listing.price);
+    }).format(currentPrice);
+
+    const originalPriceLabel = isOnSale ? new Intl.NumberFormat('en-IN', {
+        style: 'currency',
+        currency: listing.currency ?? 'INR',
+        maximumFractionDigits: 0,
+    }).format(listing.price) : null;
 
     const beds = listing.beds ?? Math.max(1, Math.ceil((listing.guestCountMax ?? 4) / 2));
     const guests = listing.guestCountMax ?? (beds * 2);
@@ -195,8 +213,10 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing, cardIndex }) 
                         <span>Quick View</span>
                     </div>
 
-                    {/* Guest Favorite Badge */}
-                    {(listing.isGuestFavorite || listing.title.toLowerCase().includes('ekaant')) && (
+                    {/* Guest Favorite / Flash Sale Badge */}
+                    {isOnSale ? (
+                        <div className={`${styles.guestFavorite} ${styles.flashSaleBadge}`}>⚡ Flash Sale</div>
+                    ) : (listing.isGuestFavorite || listing.title.toLowerCase().includes('ekaant')) && (
                         <div className={`${styles.guestFavorite} ${isLuxe ? styles.guestFavoriteLuxe : ''}`}>
                             {isLuxe ? (
                                 <>
@@ -276,8 +296,16 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing, cardIndex }) 
                     
                     <div className={styles.rowFour}>
                         <div className={styles.priceAndPeriod}>
+                            {isOnSale && originalPriceLabel && (
+                                <span className={styles.originalPrice}>{originalPriceLabel}</span>
+                            )}
                             <span className={styles.price}>{priceLabel}</span>
                             <span className={styles.period}> / night</span>
+                            {isOnSale && activeDrop && (
+                                <span className={styles.saleBadge}>
+                                    {Math.round(activeDrop.discountPercent)}% OFF
+                                </span>
+                            )}
                         </div>
                     </div>
                 </div>

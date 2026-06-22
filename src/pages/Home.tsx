@@ -664,6 +664,7 @@ export const Home = () => {
 
     const [listings, setListings] = useState<Listing[]>([]);
     const [activeDrop, setActiveDrop] = useState<FlashSaleDrop | null>(null);
+    const [activeDrops, setActiveDrops] = useState<FlashSaleDrop[]>([]);
     const [nowTs, setNowTs] = useState(Date.now());
     const [loading, setLoading] = useState(true);
     const [listingError, setListingError] = useState<string | null>(null);
@@ -805,7 +806,7 @@ export const Home = () => {
                 // Fetch listings and flash-sale drop in PARALLEL to halve wait time
                 const [listingsResult, flashSaleResult] = await Promise.allSettled([
                     api.fetchListings(filters),
-                    api.fetchActiveFlashDrop(new Date()),
+                    api.fetchActiveFlashDrops(new Date()),
                 ]);
 
                 if (listingsResult.status === 'fulfilled') {
@@ -822,8 +823,11 @@ export const Home = () => {
                 }
 
                 if (flashSaleResult.status === 'fulfilled') {
-                    setActiveDrop(flashSaleResult.value);
+                    const drops = flashSaleResult.value;
+                    setActiveDrops(drops);
+                    setActiveDrop(drops.length > 0 ? drops[0] : null);
                 } else {
+                    setActiveDrops([]);
                     setActiveDrop(null);
                     if (import.meta.env.DEV) {
                         console.error(flashSaleResult.reason);
@@ -1362,9 +1366,9 @@ export const Home = () => {
                             <h2 className={styles.sectionHeading}>{luxurySection ? 'Aevr Luxe stays' : 'Featured stays'}</h2>
                         </div>
                         <div className={styles.grid}>
-                             {listings.map((listing, index) => (
-                                 <ListingCard key={listing.id} listing={listing} cardIndex={index} />
-                             ))}
+                            {listings.map((listing, index) => (
+                                <ListingCard key={listing.id} listing={listing} activeFlashSale={activeDrops} cardIndex={index} />
+                            ))}
                         </div>
                     </>
                 ) : (
