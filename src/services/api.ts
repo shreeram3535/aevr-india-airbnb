@@ -20,6 +20,7 @@ import type {
     ListingMediaItem,
     Experience,
     ExperienceCategory,
+    PresetVideo,
 } from '../types';
 import { supabase } from './supabase';
 import { coerceMediaItem, coerceMediaList, getImageUrlsFromMedia } from './media';
@@ -1959,6 +1960,136 @@ export const api = {
 
         if (error) {
             throw error;
+        }
+    },
+
+    fetchTourVideos: async (): Promise<PresetVideo[]> => {
+        if (!supabase) {
+            return [];
+        }
+        try {
+            const { data, error } = await supabase
+                .from('tour_videos')
+                .select('*')
+                .order('sort_order', { ascending: true });
+            
+            if (error) {
+                console.warn("Failed to fetch tour videos from database. Table might not exist yet.", error);
+                return [];
+            }
+            if (!data) {
+                return [];
+            }
+            return data.map((item: any) => ({
+                id: item.id,
+                name: item.name,
+                url: item.url,
+                thumb: item.thumb,
+                duration: item.duration,
+            }));
+        } catch (err) {
+            console.warn("Error in fetchTourVideos:", err);
+            return [];
+        }
+    },
+
+    uploadTourVideo: async (file: File): Promise<PresetVideo> => {
+        if (!supabase) {
+            throw new Error('Supabase is not configured');
+        }
+
+        const { data: authData, error: authError } = await supabase.auth.getUser();
+        if (authError || !authData.user) {
+            throw new Error('You must be signed in to upload videos');
+        }
+
+        // Upload to listing-images bucket
+        const fileExt = file.name.split('.').pop() || 'mp4';
+        const fileName = `tour-${Date.now()}-${Math.random().toString(36).slice(2)}.${fileExt}`;
+        const filePath = `admin-tours/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+            .from('listing-images')
+            .upload(filePath, file, {
+                cacheControl: '3600',
+                upsert: false,
+                contentType: file.type || undefined,
+            });
+
+        if (uploadError) {
+            throw uploadError;
+        }
+
+        const { data: publicUrlData } = supabase.storage.from('listing-images').getPublicUrl(filePath);
+        const publicUrl = publicUrlData.publicUrl;
+
+        // Get max sort order to append
+        let nextSortOrder = 0;
+        try {
+            const { data: currentVideos } = await supabase
+                .from('tour_videos')
+                .select('sort_order')
+                .order('sort_order', { ascending: false })
+                .limit(1);
+            if (currentVideos && currentVideos.length > 0) {
+                nextSortOrder = (currentVideos[0].sort_order || 0) + 1;
+            }
+        } catch (e) {
+            // ignore
+        }
+
+        const displayTitle = file.name.length > 22 ? file.name.substring(0, 19) + "..." : file.name;
+        const thumbUrl = "https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?q=80&w=240&auto=format&fit=crop";
+
+        const { data, error } = await supabase
+            .from('tour_videos')
+            .insert({
+                name: displayTitle,
+                url: publicUrl,
+                thumb: thumbUrl,
+                duration: '0:15',
+                sort_order: nextSortOrder,
+            })
+            .select('*')
+            .single();
+
+        if (error || !data) {
+            throw error ?? new Error('Failed to save tour video to database');
+        }
+
+        return {
+            id: data.id,
+            name: data.name,
+            url: data.url,
+            thumb: data.thumb,
+            duration: data.duration,
+        };
+    },
+
+    deleteTourVideo: async (id: string, url: string): Promise<void> => {
+        if (!supabase) {
+            throw new Error('Supabase is not configured');
+        }
+
+        // Delete row from database
+        const { error } = await supabase
+            .from('tour_videos')
+            .delete()
+            .eq('id', id);
+
+        if (error) {
+            throw error;
+        }
+
+        // Try to delete file from storage
+        try {
+            const publicPrefix = supabase.storage.from('listing-images').getPublicUrl('').data.publicUrl;
+            if (url.startsWith(publicPrefix)) {
+                const relativePath = url.replace(publicPrefix, '');
+                await supabase.storage.from('listing-images').remove([relativePath]);
+            }
+        } catch (err) {
+            console.warn("Failed to delete video file from Supabase storage:", err);
         }
     },
 };

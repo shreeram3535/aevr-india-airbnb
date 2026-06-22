@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styles from './ListingCard.module.css';
 import type { Listing, FlashSaleDrop } from '../types';
-import { Heart, ChevronLeft, ChevronRight, Star, BedDouble, Users, Waves, Mountain, Compass } from 'lucide-react';
+import { Heart, ChevronLeft, ChevronRight, Star, BedDouble, Users, Waves, Mountain, Compass, Sparkles, Eye } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { favoritesService } from '../services/favorites';
 import { getFallbackImage } from '../services/media';
@@ -84,12 +84,14 @@ const getSpecialAmenity = (listing: Listing) => {
 
 interface ListingCardProps {
     listing: Listing;
+    cardIndex?: number;
     activeFlashSale?: FlashSaleDrop | FlashSaleDrop[] | null;
 }
 
-export const ListingCard: React.FC<ListingCardProps> = ({ listing, activeFlashSale }) => {
+export const ListingCard: React.FC<ListingCardProps> = ({ listing, cardIndex, activeFlashSale }) => {
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [isFavorited, setIsFavorited] = useState(() => favoritesService.isFavorite(listing.id));
+    const [imageLoaded, setImageLoaded] = useState(false);
     const imageCount = listing.images.length;
     const hasImages = imageCount > 0;
     const fallbackMedia = listing.media.find((item) => item.kind === 'video' && item.thumbnailUrl)?.thumbnailUrl;
@@ -104,6 +106,10 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing, activeFlashSa
         window.addEventListener('favorites-updated', handleUpdate);
         return () => window.removeEventListener('favorites-updated', handleUpdate);
     }, [listing.id]);
+
+    useEffect(() => {
+        setImageLoaded(false);
+    }, [coverImage]);
 
     const nextImage = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -123,7 +129,6 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing, activeFlashSa
         e.stopPropagation();
         e.preventDefault();
         favoritesService.toggleFavorite(listing.id);
-        setIsFavorited((current) => !current);
     };
 
     const getActiveDrop = () => {
@@ -153,18 +158,29 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing, activeFlashSa
     const guests = listing.guestCountMax ?? (beds * 2);
     const { label: specialAmenityLabel, Icon: SpecialAmenityIcon } = getSpecialAmenity(listing);
 
+    const isLuxe = getHostedByLabel(listing).includes('Luxe');
+
     return (
-        <div className={styles.card}>
+        <div 
+            className={styles.card}
+            style={{ '--card-index': cardIndex } as React.CSSProperties}
+        >
             <Link to={`/rooms/${listing.id}`} style={{ display: 'contents', color: 'inherit' }}>
                 <div className={styles.imageContainer}>
+                    <div className={`${styles.shimmer} ${imageLoaded ? styles.shimmerHidden : ''}`} />
                     <img
                         src={coverImage}
                         alt={listing.title}
                         className={styles.image}
+                        loading={cardIndex !== undefined && cardIndex < 4 ? 'eager' : 'lazy'}
+                        fetchPriority={cardIndex !== undefined && cardIndex < 2 ? 'high' : 'auto'}
+                        decoding="async"
+                        onLoad={() => setImageLoaded(true)}
                         onError={(event) => {
                             if (event.currentTarget.src !== getFallbackImage()) {
                                 event.currentTarget.src = getFallbackImage();
                             }
+                            setImageLoaded(true);
                         }}
                     />
 
@@ -191,11 +207,26 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing, activeFlashSa
                         </>
                     )}
 
+                    {/* Quick View Overlay */}
+                    <div className={styles.quickViewOverlay}>
+                        <Eye size={14} className={styles.quickViewIcon} />
+                        <span>Quick View</span>
+                    </div>
+
                     {/* Guest Favorite / Flash Sale Badge */}
                     {isOnSale ? (
                         <div className={`${styles.guestFavorite} ${styles.flashSaleBadge}`}>⚡ Flash Sale</div>
                     ) : (listing.isGuestFavorite || listing.title.toLowerCase().includes('ekaant')) && (
-                        <div className={styles.guestFavorite}>AEVR Choice</div>
+                        <div className={`${styles.guestFavorite} ${isLuxe ? styles.guestFavoriteLuxe : ''}`}>
+                            {isLuxe ? (
+                                <>
+                                    <Sparkles size={11} className={styles.luxeBadgeIcon} />
+                                    <span>AEVR Luxe Choice</span>
+                                </>
+                            ) : (
+                                'AEVR Choice'
+                            )}
+                        </div>
                     )}
 
                     {/* Carousel Dots Indicators */}

@@ -31,15 +31,19 @@ import {
     Pause,
     Volume2,
     VolumeX,
-    Upload,
-    Link2
+    Leaf,
+    Check,
+    Maximize2,
+    MoreHorizontal,
+    UploadCloud,
+    Trash2
 } from 'lucide-react';
 import styles from '../App.module.css'; // Reusing the grid styles from App module
 
 import { ListingCard } from '../components/ListingCard';
 import { SkeletonScreen } from '../components/SkeletonScreen';
 import { api } from '../services/api';
-import type { FlashSaleDrop, Listing, ListingFilters, ListingSortOption } from '../types';
+import type { FlashSaleDrop, Listing, ListingFilters, ListingSortOption, PresetVideo } from '../types';
 
 const SORT_OPTIONS: Array<{ value: ListingSortOption; label: string }> = [
     { value: 'recommended', label: 'Recommended' },
@@ -92,12 +96,6 @@ const parseSortParam = (value: string | null): ListingSortOption => {
     return 'recommended';
 };
 
-interface PresetVideo {
-    name: string;
-    url: string;
-    thumb: string;
-    duration: string;
-}
 
 const PRESET_VIDEOS: PresetVideo[] = [
     {
@@ -120,6 +118,108 @@ const PRESET_VIDEOS: PresetVideo[] = [
     }
 ];
 
+const DB_NAME = 'aevr_video_db';
+const STORE_NAME = 'videos';
+const DB_VERSION = 3;
+
+const openDB = (): Promise<IDBDatabase> => {
+    return new Promise((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        request.onupgradeneeded = () => {
+            const db = request.result;
+            if (!db.objectStoreNames.contains(STORE_NAME)) {
+                db.createObjectStore(STORE_NAME);
+            }
+        };
+        request.onsuccess = () => {
+            const db = request.result;
+            if (!db.objectStoreNames.contains(STORE_NAME)) {
+                console.warn(`Database opened, but store ${STORE_NAME} is missing. Re-opening with higher version.`);
+                db.close();
+                const req2 = indexedDB.open(DB_NAME, DB_VERSION + 1);
+                req2.onupgradeneeded = () => {
+                    const db2 = req2.result;
+                    db2.createObjectStore(STORE_NAME);
+                };
+                req2.onsuccess = () => resolve(req2.result);
+                req2.onerror = () => reject(req2.error);
+            } else {
+                resolve(db);
+            }
+        };
+        request.onerror = () => reject(request.error);
+    });
+};
+
+const saveVideoFile = async (key: string, file: File): Promise<void> => {
+    try {
+        const db = await openDB();
+        return new Promise((resolve, reject) => {
+            try {
+                const transaction = db.transaction(STORE_NAME, 'readwrite');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.put(file, key);
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject(request.error);
+            } catch (err) {
+                reject(err);
+            }
+        });
+    } catch (e) {
+        throw e;
+    }
+};
+
+const getVideoFile = async (key: string): Promise<File | null> => {
+    try {
+        const db = await openDB();
+        return new Promise((resolve, reject) => {
+            try {
+                const transaction = db.transaction(STORE_NAME, 'readonly');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.get(key);
+                request.onsuccess = () => resolve(request.result || null);
+                request.onerror = () => reject(request.error);
+            } catch (err) {
+                reject(err);
+            }
+        });
+    } catch (e) {
+        throw e;
+    }
+};
+
+const deleteVideoFile = async (key: string): Promise<void> => {
+    try {
+        const db = await openDB();
+        return new Promise((resolve, reject) => {
+            try {
+                const transaction = db.transaction(STORE_NAME, 'readwrite');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.delete(key);
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject(request.error);
+            } catch (err) {
+                reject(err);
+            }
+        });
+    } catch (e) {
+        throw e;
+    }
+};
+
+const getStoredVideoList = (): PresetVideo[] => {
+    const saved = localStorage.getItem('aevr_tour_videos');
+    if (saved) {
+        try {
+            return JSON.parse(saved);
+        } catch (e) {
+            console.error("Error parsing saved videos from localStorage", e);
+        }
+    }
+    return PRESET_VIDEOS;
+};
+
 const VideoDashboardCard = () => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -128,13 +228,68 @@ const VideoDashboardCard = () => {
     const [activePreset, setActivePreset] = useState<number | null>(0);
     const [isPlaying, setIsPlaying] = useState<boolean>(false);
     const [isMuted, setIsMuted] = useState<boolean>(true);
-    const [customUrl, setCustomUrl] = useState<string>('');
     const [videoError, setVideoError] = useState<string | null>(null);
     const [currentTime, setCurrentTime] = useState<number>(0);
     const [duration, setDuration] = useState<number>(0);
     const [userRole, setUserRole] = useState<'guest' | 'host' | 'admin' | null>(null);
+    const [isUsingSupabase, setIsUsingSupabase] = useState<boolean>(false);
+    const [isUploading, setIsUploading] = useState<boolean>(false);
 
+    // Sync fallback list to localStorage (only if not using Supabase)
     useEffect(() => {
+        if (!isUsingSupabase && videoList.length > 0) {
+            localStorage.setItem('aevr_tour_videos', JSON.stringify(videoList));
+        }
+    }, [videoList, isUsingSupabase]);
+
+    // Load custom/preset videos on mount
+    useEffect(() => {
+        const loadVideos = async () => {
+            try {
+                // 1. Try to fetch from Supabase
+                const dbVideos = await api.fetchTourVideos();
+                if (dbVideos && dbVideos.length > 0) {
+                    setVideoList(dbVideos);
+                    setVideoSrc(dbVideos[0].url);
+                    setIsUsingSupabase(true);
+                    return;
+                }
+            } catch (err) {
+                console.warn("Failed to load tour videos from Supabase, falling back to local storage:", err);
+            }
+
+            // 2. Fallback to IndexedDB / localStorage
+            setIsUsingSupabase(false);
+            const listToLoad = getStoredVideoList();
+            const loadedList = await Promise.all(
+                listToLoad.map(async (video) => {
+                    if (video.isLocal && video.id) {
+                        try {
+                            const file = await getVideoFile(video.id);
+                            if (file) {
+                                const objectUrl = URL.createObjectURL(file);
+                                return { ...video, url: objectUrl };
+                            }
+                        } catch (err) {
+                            console.error("Failed to load IndexedDB video file", err);
+                        }
+                        return null;
+                    }
+                    return video;
+                })
+            );
+            
+            const cleanList = loadedList.filter((v): v is PresetVideo => v !== null);
+            
+            if (cleanList.length > 0) {
+                setVideoList(cleanList);
+                setVideoSrc(cleanList[0].url);
+            } else {
+                setVideoList(PRESET_VIDEOS);
+                setVideoSrc(PRESET_VIDEOS[0].url);
+            }
+        };
+
         const checkRole = async () => {
             try {
                 const role = await api.getCurrentUserRole();
@@ -143,6 +298,8 @@ const VideoDashboardCard = () => {
                 console.error("Error fetching user role", err);
             }
         };
+
+        loadVideos();
         checkRole();
     }, []);
 
@@ -209,17 +366,72 @@ const VideoDashboardCard = () => {
         setVideoError(null);
     };
 
-    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleRemoveVideo = async (index: number, e: React.MouseEvent) => {
+        e.stopPropagation();
+        const targetVideo = videoList[index];
+        if (!targetVideo) return;
+
+        try {
+            if (isUsingSupabase && targetVideo.id) {
+                await api.deleteTourVideo(targetVideo.id, targetVideo.url);
+            } else if (targetVideo.isLocal && targetVideo.id) {
+                await deleteVideoFile(targetVideo.id);
+            }
+        } catch (err) {
+            console.error("Failed to delete video:", err);
+            setVideoError("Failed to delete video from database/storage.");
+            return;
+        }
+
+        setVideoList(prev => {
+            const nextList = prev.filter((_, i) => i !== index);
+            if (activePreset === index) {
+                if (nextList.length > 0) {
+                    setActivePreset(0);
+                    setVideoSrc(nextList[0].url);
+                } else {
+                    setActivePreset(null);
+                    setVideoSrc('');
+                }
+            } else if (activePreset !== null && activePreset > index) {
+                setActivePreset(activePreset - 1);
+            }
+            return nextList;
+        });
+    };
+
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (file) {
-            try {
+        if (!file) return;
+
+        setIsUploading(true);
+        setVideoError(null);
+
+        try {
+            if (isUsingSupabase) {
+                // Upload to Supabase Storage & Database
+                const newVideo = await api.uploadTourVideo(file);
+                setVideoList(prev => {
+                    const nextList = [...prev, newVideo];
+                    setActivePreset(nextList.length - 1);
+                    return nextList;
+                });
+                setVideoSrc(newVideo.url);
+            } else {
+                // Local IndexedDB fallback
                 const objectUrl = URL.createObjectURL(file);
                 const displayTitle = file.name.length > 22 ? file.name.substring(0, 19) + "..." : file.name;
+                const id = 'video_' + Date.now();
+                
+                await saveVideoFile(id, file);
+
                 const newVideo: PresetVideo = {
+                    id,
                     name: displayTitle,
                     url: objectUrl,
                     thumb: "https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?q=80&w=240&auto=format&fit=crop",
-                    duration: "Local File"
+                    duration: "Local File",
+                    isLocal: true
                 };
 
                 setVideoList(prev => {
@@ -228,51 +440,26 @@ const VideoDashboardCard = () => {
                     return nextList;
                 });
                 setVideoSrc(objectUrl);
-                setVideoError(null);
-            } catch (err) {
-                setVideoError("Failed to load chosen video file.");
+            }
+        } catch (err) {
+            console.error("Video upload failed:", err);
+            setVideoError(err instanceof Error ? err.message : "Failed to load chosen video file.");
+        } finally {
+            setIsUploading(false);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
             }
         }
     };
 
-    const handleUrlSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        const trimmedUrl = customUrl.trim();
-        if (trimmedUrl) {
-            try {
-                let displayTitle = "Web Link";
-                try {
-                    const urlObj = new URL(trimmedUrl);
-                    const pathParts = urlObj.pathname.split('/');
-                    const filename = pathParts[pathParts.length - 1];
-                    if (filename && filename.includes('.')) {
-                        displayTitle = filename;
-                    } else {
-                        displayTitle = urlObj.hostname;
-                    }
-                } catch {
-                    // Fallback
-                }
-
-                const displayTitleFinal = displayTitle.length > 22 ? displayTitle.substring(0, 19) + "..." : displayTitle;
-                const newVideo: PresetVideo = {
-                    name: displayTitleFinal,
-                    url: trimmedUrl,
-                    thumb: "https://images.unsplash.com/photo-1485846234645-a62644f84728?q=80&w=240&auto=format&fit=crop",
-                    duration: "Link"
-                };
-
-                setVideoList(prev => {
-                    const nextList = [...prev, newVideo];
-                    setActivePreset(nextList.length - 1);
-                    return nextList;
-                });
-                setVideoSrc(trimmedUrl);
-                setVideoError(null);
-                setCustomUrl('');
-            } catch (err) {
-                setVideoError("Failed to load the video URL.");
-            }
+    const handleFullScreen = () => {
+        if (!videoRef.current) return;
+        if (videoRef.current.requestFullscreen) {
+            videoRef.current.requestFullscreen();
+        } else if ((videoRef.current as any).webkitRequestFullscreen) {
+            (videoRef.current as any).webkitRequestFullscreen();
+        } else if ((videoRef.current as any).msRequestFullscreen) {
+            (videoRef.current as any).msRequestFullscreen();
         }
     };
 
@@ -287,77 +474,57 @@ const VideoDashboardCard = () => {
 
     return (
         <div className={styles.videoDashboardCard}>
-            <div className={styles.videoPlayerContainer}>
-                <video
-                    ref={videoRef}
-                    className={styles.customVideo}
-                    src={videoSrc}
-                    loop
-                    muted={isMuted}
-                    playsInline
-                    onTimeUpdate={handleTimeUpdate}
-                    onLoadedMetadata={handleLoadedMetadata}
-                    onError={() => setVideoError("Error loading video source. Make sure it is a valid format (e.g. MP4).")}
-                    onClick={handlePlayPause}
-                />
-                
-                {!isPlaying && !videoError && (
-                    <button type="button" className={styles.videoPlayOverlayBtn} onClick={handlePlayPause} aria-label="Play video">
-                        <Play size={28} fill="currentColor" />
-                    </button>
-                )}
+            <div className={styles.videoLeftColumn}>
+                <div className={`${styles.videoPlayerContainer} ${userRole !== 'admin' ? styles.videoPlayerFullHeight : ''}`}>
+                    <video
+                        ref={videoRef}
+                        className={styles.customVideo}
+                        src={videoSrc}
+                        loop
+                        muted={isMuted}
+                        playsInline
+                        onTimeUpdate={handleTimeUpdate}
+                        onLoadedMetadata={handleLoadedMetadata}
+                        onError={() => setVideoError("Error loading video source. Make sure it is a valid format (e.g. MP4).")}
+                        onClick={handlePlayPause}
+                    />
+                    
+                    {!isPlaying && !videoError && (
+                        <button type="button" className={styles.videoPlayOverlayBtn} onClick={handlePlayPause} aria-label="Play video">
+                            <Play size={28} fill="currentColor" />
+                        </button>
+                    )}
 
-                <div className={styles.videoControlsOverlay}>
-                    <div className={styles.videoProgressContainer}>
-                        <div className={styles.videoProgressBar} onClick={handleProgressClick}>
-                            <div className={styles.videoProgressFill} style={{ width: `${progressPercentage}%` }} />
-                        </div>
-                        <span className={styles.videoProgressTime}>
-                            {formatTime(currentTime)} / {formatTime(duration)}
-                        </span>
-                    </div>
-
-                    <div className={styles.videoControlsRow}>
-                        <div className={styles.videoControlsGroup}>
+                    <div className={styles.videoControlsOverlay}>
+                        <div className={styles.videoControlsRow}>
                             <button type="button" className={styles.videoControlBtn} onClick={handlePlayPause} aria-label={isPlaying ? "Pause" : "Play"}>
-                                {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
+                                {isPlaying ? <Pause size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" />}
                             </button>
                             <button type="button" className={styles.videoControlBtn} onClick={handleMuteUnmute} aria-label={isMuted ? "Unmute" : "Mute"}>
-                                {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+                                {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+                            </button>
+                            <span className={styles.videoProgressTime}>
+                                {formatTime(currentTime)} / {formatTime(duration)}
+                            </span>
+                            
+                            <div className={styles.videoProgressBar} onClick={handleProgressClick}>
+                                <div className={styles.videoProgressFill} style={{ width: `${progressPercentage}%` }}>
+                                    <div className={styles.videoProgressThumb} />
+                                </div>
+                            </div>
+
+                            <button type="button" className={styles.videoControlBtn} onClick={handleFullScreen} aria-label="Fullscreen">
+                                <Maximize2 size={16} />
+                            </button>
+                            <button type="button" className={styles.videoControlBtn} aria-label="More options">
+                                <MoreHorizontal size={16} />
                             </button>
                         </div>
                     </div>
-                </div>
-            </div>
-
-            <div className={styles.videoSourcePanel}>
-                <div className={styles.videoPanelHeader}>
-                    <h2 className={styles.videoPanelTitle}>Aevr Villa Tour</h2>
-                    <p className={styles.videoPanelSubtitle}>Experience curated retreats through our travel guide gallery, or upload your own video to test.</p>
-                </div>
-
-                <div className={styles.presetSectionTitle}>Select Tour Video</div>
-                <div className={styles.presetGrid}>
-                    {videoList.map((preset, index) => (
-                        <button
-                            key={index}
-                            type="button"
-                            className={`${styles.presetItem} ${activePreset === index ? styles.presetItemActive : ''}`}
-                            onClick={() => handlePresetClick(index)}
-                        >
-                            <div className={styles.presetThumbWrapper}>
-                                <img src={preset.thumb} className={styles.presetThumb} alt={preset.name} />
-                            </div>
-                            <div className={styles.presetInfo}>
-                                <span className={styles.presetName}>{preset.name}</span>
-                                <span className={styles.presetDuration}>{preset.duration}</span>
-                            </div>
-                        </button>
-                    ))}
                 </div>
 
                 {userRole === 'admin' && (
-                    <div className={styles.sourceActions}>
+                    <div className={styles.uploadCard}>
                         <input
                             ref={fileInputRef}
                             type="file"
@@ -365,29 +532,84 @@ const VideoDashboardCard = () => {
                             style={{ display: 'none' }}
                             onChange={handleFileUpload}
                         />
+                        <div className={styles.uploadCardHeader}>
+                            <div className={styles.uploadIconWrapper}>
+                                <UploadCloud size={20} />
+                            </div>
+                            <div className={styles.uploadCardText}>
+                                <span className={styles.uploadCardTitle}>Upload your own tour video</span>
+                                <span className={styles.uploadCardSubtitle}>MP4, WebM up to 200MB</span>
+                            </div>
+                        </div>
                         <button
                             type="button"
-                            className={styles.fileInputLabel}
+                            className={styles.uploadCardButton}
                             onClick={() => fileInputRef.current?.click()}
+                            disabled={isUploading}
                         >
-                            <Upload size={16} />
-                            Choose Local Video
+                            {isUploading ? 'Uploading...' : 'Upload Video'}
                         </button>
-
-                        <form className={styles.urlInputContainer} onSubmit={handleUrlSubmit}>
-                            <input
-                                type="url"
-                                className={styles.urlInputField}
-                                placeholder="Or paste video link (mp4)..."
-                                value={customUrl}
-                                onChange={(e) => setCustomUrl(e.target.value)}
-                            />
-                            <button type="submit" className={styles.urlSubmitBtn}>
-                                <Link2 size={14} />
-                            </button>
-                        </form>
                     </div>
                 )}
+            </div>
+
+
+            <div className={styles.videoSourcePanel}>
+                <div className={styles.videoPanelHeader}>
+                    <Leaf className={styles.leafIcon} size={20} />
+                    <h2 className={styles.videoPanelTitle}>Acvr Villa Tour</h2>
+                    <p className={styles.videoPanelSubtitle}>Experience curated retreats through our travel guide gallery, or upload your own video to test.</p>
+                </div>
+
+                <div className={styles.presetSectionTitle}>Select Tour Video</div>
+                <div className={styles.presetGrid}>
+                    {videoList.map((preset, index) => (
+                        <div
+                            key={index}
+                            role="button"
+                            tabIndex={0}
+                            className={`${styles.presetItem} ${activePreset === index ? styles.presetItemActive : ''}`}
+                            onClick={() => handlePresetClick(index)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    handlePresetClick(index);
+                                }
+                            }}
+                        >
+                            <div className={styles.presetThumbWrapper}>
+                                <img src={preset.thumb} className={styles.presetThumb} alt={preset.name} />
+                                <div className={styles.presetPlayOverlay}>
+                                    <Play size={10} fill="currentColor" />
+                                </div>
+                            </div>
+                            <div className={styles.presetInfo}>
+                                <span className={styles.presetName}>{preset.name}</span>
+                                <div className={styles.presetDurationRow}>
+                                    <Clock3 size={11} className={styles.durationIcon} />
+                                    <span className={styles.presetDuration}>{preset.duration}</span>
+                                </div>
+                            </div>
+                            <div className={styles.presetRightActions}>
+                                {activePreset === index && (
+                                    <div className={styles.activeCheckCircle}>
+                                        <Check size={12} strokeWidth={3} />
+                                    </div>
+                                )}
+                                {userRole === 'admin' && (
+                                    <button
+                                        type="button"
+                                        className={styles.presetRemoveBtn}
+                                        onClick={(e) => handleRemoveVideo(index, e)}
+                                        aria-label={`Remove video ${preset.name}`}
+                                    >
+                                        <Trash2 size={14} />
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    ))}
+                </div>
 
                 {videoError && (
                     <div className={styles.videoErrorAlert} role="alert">
@@ -398,6 +620,12 @@ const VideoDashboardCard = () => {
         </div>
     );
 };
+
+const HERO_IMAGES = [
+    '/coastal_calm_hero.png',
+    '/beige_palace_hero.png',
+    '/heritage_palace_hero.png'
+];
 
 export const Home = () => {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -447,6 +675,14 @@ export const Home = () => {
 
     const [roomsOpen, setRoomsOpen] = useState(false);
     const [guestsOpen, setGuestsOpen] = useState(false);
+    const [currentHeroImageIndex, setCurrentHeroImageIndex] = useState(0);
+
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setCurrentHeroImageIndex((prev) => (prev + 1) % HERO_IMAGES.length);
+        }, 3000);
+        return () => clearInterval(timer);
+    }, []);
 
     useEffect(() => {
         const handleCloseAll = () => {
@@ -566,30 +802,36 @@ export const Home = () => {
                     baths,
                     guestFavoriteOnly,
                 };
-                const data = await api.fetchListings(filters);
-                setListings(data);
 
-                try {
-                    const drops = await api.fetchActiveFlashDrops(new Date());
-                    setActiveDrops(drops);
-                    setActiveDrop(drops.length > 0 ? drops[0] : null);
-                } catch (flashSaleError) {
-                    setActiveDrops([]);
-                    setActiveDrop(null);
+                // Fetch listings and flash-sale drop in PARALLEL to halve wait time
+                const [listingsResult, flashSaleResult] = await Promise.allSettled([
+                    api.fetchListings(filters),
+                    api.fetchActiveFlashDrops(new Date()),
+                ]);
 
+                if (listingsResult.status === 'fulfilled') {
+                    setListings(listingsResult.value);
+                } else {
+                    const message = listingsResult.reason instanceof Error
+                        ? listingsResult.reason.message
+                        : 'Could not load listings from Supabase.';
+                    setListings([]);
+                    setListingError(message);
                     if (import.meta.env.DEV) {
-                        console.error(flashSaleError);
+                        console.error(listingsResult.reason);
                     }
                 }
-            } catch (error) {
-                const message = error instanceof Error ? error.message : 'Could not load listings from Supabase.';
-                setListings([]);
-                setActiveDrops([]);
-                setActiveDrop(null);
-                setListingError(message);
 
-                if (import.meta.env.DEV) {
-                    console.error(error);
+                if (flashSaleResult.status === 'fulfilled') {
+                    const drops = flashSaleResult.value;
+                    setActiveDrops(drops);
+                    setActiveDrop(drops.length > 0 ? drops[0] : null);
+                } else {
+                    setActiveDrops([]);
+                    setActiveDrop(null);
+                    if (import.meta.env.DEV) {
+                        console.error(flashSaleResult.reason);
+                    }
                 }
             } finally {
                 setLoading(false);
@@ -658,6 +900,13 @@ export const Home = () => {
     return (
         <>
             <div className={styles.heroSection}>
+                {HERO_IMAGES.map((imgUrl, idx) => (
+                    <div
+                        key={imgUrl}
+                        className={`${styles.heroBgImage} ${idx === currentHeroImageIndex ? styles.heroBgImageActive : ''}`}
+                        style={{ backgroundImage: `url(${imgUrl})` }}
+                    />
+                ))}
                 <div className={styles.heroOverlay} />
                 <div className={styles.heroContent}>
                     <h1 className={styles.heroTitle}>
@@ -665,10 +914,10 @@ export const Home = () => {
                     </h1>
                     
                     <p className={styles.heroSubtitle}>
-                        <span className={styles.coastalBlueText}>Bespoke Villas.</span> Timeless Memories.
+                        <span className={styles.coastalBlueText}>Handpicked Luxury.</span> Fully Verified Stays.
                     </p>
                     <p className={styles.heroDescription}>
-                        Explore curated private estates, heritage havelis, and luxury retreats.
+                        Experience India's most extraordinary private villas and heritage estates, professionally managed with a 100% comfort guarantee for your perfect escape.
                     </p>
 
                     <div className={styles.heroSearchContainer}>
@@ -1117,8 +1366,8 @@ export const Home = () => {
                             <h2 className={styles.sectionHeading}>{luxurySection ? 'Aevr Luxe stays' : 'Featured stays'}</h2>
                         </div>
                         <div className={styles.grid}>
-                            {listings.map((listing) => (
-                                <ListingCard key={listing.id} listing={listing} activeFlashSale={activeDrops} />
+                            {listings.map((listing, index) => (
+                                <ListingCard key={listing.id} listing={listing} activeFlashSale={activeDrops} cardIndex={index} />
                             ))}
                         </div>
                     </>

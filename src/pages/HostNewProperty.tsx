@@ -256,6 +256,7 @@ export const HostNewProperty = () => {
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const [previewUrls, setPreviewUrls] = useState<string[]>([]);
     const [existingMedia, setExistingMedia] = useState<ListingMediaItem[]>([]);
+    const [coverImageIndex, setCoverImageIndex] = useState<number>(0);
     const [videoLinks, setVideoLinks] = useState('');
     const [availabilityBlocks, setAvailabilityBlocks] = useState<AvailabilityBlock[]>([]);
     const [error, setError] = useState<string | null>(null);
@@ -382,18 +383,29 @@ export const HostNewProperty = () => {
     const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
         setError(null);
         const files = Array.from(event.target.files ?? []);
-        setSelectedFiles((prev) => [...prev, ...files]);
+        if (files.length > 0) {
+            setSelectedFiles((prev) => [...prev, ...files]);
+            setCoverImageIndex(0);
+        }
     };
 
     const handleDrop = (event: DragEvent<HTMLDivElement>) => {
         event.preventDefault();
         setIsDragging(false);
         const files = Array.from(event.dataTransfer.files).filter((f) => f.type.startsWith('image/'));
-        if (files.length > 0) setSelectedFiles((prev) => [...prev, ...files]);
+        if (files.length > 0) {
+            setSelectedFiles((prev) => [...prev, ...files]);
+            setCoverImageIndex(0);
+        }
     };
 
     const removeFile = (index: number) => {
         setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+        if (coverImageIndex === index) {
+            setCoverImageIndex(0);
+        } else if (coverImageIndex > index) {
+            setCoverImageIndex(coverImageIndex - 1);
+        }
     };
 
     const updateRoomType = (roomTypeId: string, field: keyof RoomTypeFormState) => (
@@ -578,8 +590,15 @@ export const HostNewProperty = () => {
                 throw new Error('Could not upload images. Make sure the `listing-images` storage bucket exists.');
             }
 
+            const baseImages = uploadedPropertyMedia ?? existingPropertyImages;
+            const reorderedImages = [...baseImages];
+            if (coverImageIndex >= 0 && coverImageIndex < baseImages.length) {
+                const [coverImg] = reorderedImages.splice(coverImageIndex, 1);
+                reorderedImages.unshift(coverImg);
+            }
+
             const propertyMedia = [
-                ...(uploadedPropertyMedia ?? existingPropertyImages),
+                ...reorderedImages,
                 ...propertyVideoMedia,
             ].map((item, i) => ({ ...item, sortOrder: i }));
 
@@ -1066,6 +1085,19 @@ export const HostNewProperty = () => {
                                                         title="Remove image"
                                                     >
                                                         <X size={12} />
+                                                    </button>
+                                                )}
+                                                {index === coverImageIndex ? (
+                                                    <div className={styles.coverBadge}>
+                                                        Cover Photo
+                                                    </div>
+                                                ) : (
+                                                    <button
+                                                        type="button"
+                                                        className={styles.setCoverBtn}
+                                                        onClick={(e) => { e.stopPropagation(); setCoverImageIndex(index); }}
+                                                    >
+                                                        Set as cover
                                                     </button>
                                                 )}
                                             </>
