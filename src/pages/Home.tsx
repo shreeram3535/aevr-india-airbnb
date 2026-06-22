@@ -436,6 +436,7 @@ export const Home = () => {
 
     const [listings, setListings] = useState<Listing[]>([]);
     const [activeDrop, setActiveDrop] = useState<FlashSaleDrop | null>(null);
+    const [activeDrops, setActiveDrops] = useState<FlashSaleDrop[]>([]);
     const [nowTs, setNowTs] = useState(Date.now());
     const [loading, setLoading] = useState(true);
     const [listingError, setListingError] = useState<string | null>(null);
@@ -569,9 +570,11 @@ export const Home = () => {
                 setListings(data);
 
                 try {
-                    const drop = await api.fetchActiveFlashDrop(new Date());
-                    setActiveDrop(drop);
+                    const drops = await api.fetchActiveFlashDrops(new Date());
+                    setActiveDrops(drops);
+                    setActiveDrop(drops.length > 0 ? drops[0] : null);
                 } catch (flashSaleError) {
+                    setActiveDrops([]);
                     setActiveDrop(null);
 
                     if (import.meta.env.DEV) {
@@ -581,6 +584,7 @@ export const Home = () => {
             } catch (error) {
                 const message = error instanceof Error ? error.message : 'Could not load listings from Supabase.';
                 setListings([]);
+                setActiveDrops([]);
                 setActiveDrop(null);
                 setListingError(message);
 
@@ -1114,7 +1118,7 @@ export const Home = () => {
                         </div>
                         <div className={styles.grid}>
                             {listings.map((listing) => (
-                                <ListingCard key={listing.id} listing={listing} />
+                                <ListingCard key={listing.id} listing={listing} activeFlashSale={activeDrops} />
                             ))}
                         </div>
                     </>

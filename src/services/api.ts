@@ -558,6 +558,80 @@ const fetchActiveFlashDrop = async (nowIso: string): Promise<FlashSaleDrop | nul
     return mapFlashSale(data as unknown as SupabaseFlashSaleRow);
 };
 
+const fetchActiveFlashDrops = async (nowIso: string): Promise<FlashSaleDrop[]> => {
+    if (!supabase) {
+        return [];
+    }
+
+    let { data, error } = await supabase
+        .from('flash_sale_drops')
+        .select(FLASH_SALE_SELECT)
+        .eq('is_active', true)
+        .lte('start_at', nowIso)
+        .gt('end_at', nowIso)
+        .order('start_at', { ascending: false });
+
+    if (isMissingHostNameColumnError(error)) {
+        const fallbackResult = await supabase
+            .from('flash_sale_drops')
+            .select(FLASH_SALE_SELECT_WITHOUT_HOST_NAME)
+            .eq('is_active', true)
+            .lte('start_at', nowIso)
+            .gt('end_at', nowIso)
+            .order('start_at', { ascending: false });
+
+        data = fallbackResult.data as typeof data;
+        error = fallbackResult.error;
+    }
+
+    if (error || !data) {
+        return [];
+    }
+
+    return (data as unknown as SupabaseFlashSaleRow[])
+        .map(mapFlashSale)
+        .filter((drop): drop is FlashSaleDrop => drop !== null);
+};
+
+const fetchActiveFlashDropForListing = async (listingId: string, nowIso: string): Promise<FlashSaleDrop | null> => {
+    if (!supabase) {
+        return null;
+    }
+
+    let { data, error } = await supabase
+        .from('flash_sale_drops')
+        .select(FLASH_SALE_SELECT)
+        .eq('listing_id', listingId)
+        .eq('is_active', true)
+        .lte('start_at', nowIso)
+        .gt('end_at', nowIso)
+        .order('start_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+    if (isMissingHostNameColumnError(error)) {
+        const fallbackResult = await supabase
+            .from('flash_sale_drops')
+            .select(FLASH_SALE_SELECT_WITHOUT_HOST_NAME)
+            .eq('listing_id', listingId)
+            .eq('is_active', true)
+            .lte('start_at', nowIso)
+            .gt('end_at', nowIso)
+            .order('start_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+        data = fallbackResult.data as typeof data;
+        error = fallbackResult.error;
+    }
+
+    if (error || !data) {
+        return null;
+    }
+
+    return mapFlashSale(data as unknown as SupabaseFlashSaleRow);
+};
+
 const fetchLatestAdminFlashDrop = async (): Promise<FlashSaleDrop | null> => {
     if (!supabase) {
         return null;
@@ -1229,6 +1303,14 @@ export const api = {
         return fetchActiveFlashDrop(now.toISOString());
     },
 
+    fetchActiveFlashDrops: async (now = new Date()): Promise<FlashSaleDrop[]> => {
+        return fetchActiveFlashDrops(now.toISOString());
+    },
+
+    fetchActiveFlashDropForListing: async (listingId: string, now = new Date()): Promise<FlashSaleDrop | null> => {
+        return fetchActiveFlashDropForListing(listingId, now.toISOString());
+    },
+
     fetchAdminDropState: async (): Promise<FlashSaleDrop | null> => {
         return fetchLatestAdminFlashDrop();
     },
@@ -1456,7 +1538,7 @@ export const api = {
             throw new Error('End date must be at least 1 hour after the start date');
         }
 
-        await supabase.from('flash_sale_drops').update({ is_active: false }).eq('is_active', true);
+        await supabase.from('flash_sale_drops').update({ is_active: false }).eq('listing_id', input.listingId).eq('is_active', true);
 
         const { data, error } = await supabase
             .from('flash_sale_drops')

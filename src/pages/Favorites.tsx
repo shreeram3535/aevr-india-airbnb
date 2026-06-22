@@ -4,23 +4,29 @@ import { ListingCard } from '../components/ListingCard';
 import { SkeletonScreen } from '../components/SkeletonScreen';
 import { api } from '../services/api';
 import { favoritesService } from '../services/favorites';
-import type { Listing } from '../types';
+import type { Listing, FlashSaleDrop } from '../types';
 
 export const Favorites = () => {
     const [listings, setListings] = useState<Listing[]>([]);
     const [loading, setLoading] = useState(true);
+    const [activeDrops, setActiveDrops] = useState<FlashSaleDrop[]>([]);
 
     useEffect(() => {
         const loadFavorites = async () => {
             setLoading(true);
             try {
-                // In a real app, we might have an API to fetch by IDs.
-                // Here we'll fetch all and filter client side or add a mock method.
-                // For efficiency, we will fetch all and filter since mock data is small.
-                const allListings = await api.fetchListings({});
+                const [standardListings, luxeListings, drops] = await Promise.all([
+                    api.fetchListings({}),
+                    api.fetchListings({ luxurySection: true }),
+                    api.fetchActiveFlashDrops(),
+                ]);
+                const allListings = [...standardListings, ...luxeListings];
                 const favoriteIds = favoritesService.getFavorites();
                 const favs = allListings.filter(l => favoriteIds.includes(l.id));
                 setListings(favs);
+                setActiveDrops(drops);
+            } catch (error) {
+                console.error('Error loading favorites or flash sale drop:', error);
             } finally {
                 setLoading(false);
             }
@@ -42,7 +48,7 @@ export const Favorites = () => {
             ) : listings.length > 0 ? (
                 <div className={styles.grid}>
                     {listings.map((listing) => (
-                        <ListingCard key={listing.id} listing={listing} />
+                        <ListingCard key={listing.id} listing={listing} activeFlashSale={activeDrops} />
                     ))}
                 </div>
             ) : (
