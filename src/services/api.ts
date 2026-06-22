@@ -70,6 +70,7 @@ type SupabaseListingRow = {
     baths: number | null;
     is_active: boolean;
     internal_name?: string | null;
+    amenity_labels?: string[] | null;
     room_types: unknown | null;
     local_experiences: unknown | null;
     category: JoinedEntity<{
@@ -206,6 +207,7 @@ const LISTING_SELECT = `
     baths,
     is_active,
     internal_name,
+    amenity_labels,
     category:categories (
         id,
         slug,
@@ -237,6 +239,8 @@ const LISTING_SELECT = `
     )
 `;
 const LISTING_SELECT_WITHOUT_HOST_NAME = LISTING_SELECT.replace(/\n\s*host_name,/, '');
+const LISTING_SELECT_WITHOUT_AMENITY_LABELS = LISTING_SELECT.replace(/\n\s*amenity_labels,/, '');
+const LISTING_SELECT_MINIMAL = LISTING_SELECT_WITHOUT_HOST_NAME.replace(/\n\s*amenity_labels,/, '');
 
 const isMissingHostNameColumnError = (error: unknown) => {
     if (!error || typeof error !== 'object') {
@@ -247,6 +251,17 @@ const isMissingHostNameColumnError = (error: unknown) => {
     return [record.message, record.details, record.hint]
         .filter((value): value is string => typeof value === 'string')
         .some((value) => value.toLowerCase().includes('host_name'));
+};
+
+const isMissingAmenityLabelsColumnError = (error: unknown) => {
+    if (!error || typeof error !== 'object') {
+        return false;
+    }
+
+    const record = error as { message?: unknown; details?: unknown; hint?: unknown };
+    return [record.message, record.details, record.hint]
+        .filter((value): value is string => typeof value === 'string')
+        .some((value) => value.toLowerCase().includes('amenity_labels'));
 };
 
 const first = <T,>(value: JoinedEntity<T>): T | null => {
@@ -364,9 +379,24 @@ const mapListing = (row: SupabaseListingRow): Listing => {
         .sort((a, b) => a.sortOrder - b.sortOrder);
     const images = getImageUrlsFromMedia(media);
 
-    const amenities = (row.listing_amenities ?? [])
+    // Amenities from the normalized join (may be incomplete if RLS blocks inactive rows)
+    const joinedAmenities = (row.listing_amenities ?? [])
         .map((entry) => entry.amenity?.label)
         .filter((label): label is string => Boolean(label));
+
+    // Amenities stored directly on the listing row (always readable, used as fallback)
+    const directAmenities = (row.amenity_labels ?? []).filter(Boolean);
+
+    // Merge: join result takes priority, direct labels fill any gaps
+    const seen = new Set(joinedAmenities.map((a) => a.toLowerCase()));
+    const amenities = [
+        ...joinedAmenities,
+        ...directAmenities.filter((a) => !seen.has(a.toLowerCase())),
+    ];
+
+    if (import.meta.env.DEV) {
+        console.log('[mapListing] joined amenities:', joinedAmenities, '| direct amenity_labels:', directAmenities, '| merged:', amenities);
+    }
     const roomTypes = normalizeRoomTypes(row.room_types);
     const localExperiences = normalizeExperiences(row.local_experiences);
     const displayHostName = row.host_name?.trim() || host?.full_name?.trim() || 'Host';
@@ -520,6 +550,8 @@ const FLASH_SALE_SELECT = `
     )
 `;
 const FLASH_SALE_SELECT_WITHOUT_HOST_NAME = FLASH_SALE_SELECT.replace(/\n\s*host_name,/, '');
+const FLASH_SALE_SELECT_WITHOUT_AMENITY_LABELS = FLASH_SALE_SELECT.replace(/\n\s*amenity_labels,/, '');
+const FLASH_SALE_SELECT_MINIMAL = FLASH_SALE_SELECT_WITHOUT_HOST_NAME.replace(/\n\s*amenity_labels,/, '');
 
 const fetchActiveFlashDrop = async (nowIso: string): Promise<FlashSaleDrop | null> => {
     if (!supabase) {
@@ -540,6 +572,36 @@ const fetchActiveFlashDrop = async (nowIso: string): Promise<FlashSaleDrop | nul
         const fallbackResult = await supabase
             .from('flash_sale_drops')
             .select(FLASH_SALE_SELECT_WITHOUT_HOST_NAME)
+            .eq('is_active', true)
+            .lte('start_at', nowIso)
+            .gt('end_at', nowIso)
+            .order('start_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+        data = fallbackResult.data as typeof data;
+        error = fallbackResult.error;
+    }
+
+    if (isMissingAmenityLabelsColumnError(error)) {
+        const fallbackResult = await supabase
+            .from('flash_sale_drops')
+            .select(FLASH_SALE_SELECT_WITHOUT_AMENITY_LABELS)
+            .eq('is_active', true)
+            .lte('start_at', nowIso)
+            .gt('end_at', nowIso)
+            .order('start_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+        data = fallbackResult.data as typeof data;
+        error = fallbackResult.error;
+    }
+
+    if (isMissingHostNameColumnError(error) && isMissingAmenityLabelsColumnError(error)) {
+        const fallbackResult = await supabase
+            .from('flash_sale_drops')
+            .select(FLASH_SALE_SELECT_MINIMAL)
             .eq('is_active', true)
             .lte('start_at', nowIso)
             .gt('end_at', nowIso)
@@ -807,6 +869,18 @@ const fetchSupabaseListings = async (filters: ListingFilters = {}): Promise<List
         error = fallbackResult.error;
     }
 
+    if (isMissingAmenityLabelsColumnError(error)) {
+        const fallbackResult = await buildQuery(LISTING_SELECT_WITHOUT_AMENITY_LABELS);
+        data = fallbackResult.data as typeof data;
+        error = fallbackResult.error;
+    }
+
+    if (isMissingHostNameColumnError(error) && isMissingAmenityLabelsColumnError(error)) {
+        const fallbackResult = await buildQuery(LISTING_SELECT_MINIMAL);
+        data = fallbackResult.data as typeof data;
+        error = fallbackResult.error;
+    }
+
     if (error || !data) {
         if (SHOW_DEV_ERRORS) {
             throw new Error(`Could not load listings from Supabase. ${describeSupabaseError(error)}`);
@@ -841,6 +915,16 @@ const fetchSupabaseAdminListings = async (): Promise<ListingsResponse> => {
         error = fallbackResult.error;
     }
 
+    if (isMissingAmenityLabelsColumnError(error)) {
+        const fallbackResult = await supabase
+            .from('listings')
+            .select(LISTING_SELECT_WITHOUT_AMENITY_LABELS)
+            .order('created_at', { ascending: false });
+
+        data = fallbackResult.data as typeof data;
+        error = fallbackResult.error;
+    }
+
     if (error || !data) {
         return [];
     }
@@ -859,6 +943,10 @@ const fetchSupabaseListingById = async (id: string): Promise<Listing | undefined
         .eq('id', id)
         .maybeSingle();
 
+    if (import.meta.env.DEV && error) {
+        console.error('[fetchSupabaseListingById] Supabase error:', error);
+    }
+
     if (isMissingHostNameColumnError(error)) {
         const fallbackResult = await supabase
             .from('listings')
@@ -868,6 +956,21 @@ const fetchSupabaseListingById = async (id: string): Promise<Listing | undefined
 
         data = fallbackResult.data as typeof data;
         error = fallbackResult.error;
+    }
+
+    if (isMissingAmenityLabelsColumnError(error)) {
+        const fallbackResult = await supabase
+            .from('listings')
+            .select(LISTING_SELECT_WITHOUT_AMENITY_LABELS)
+            .eq('id', id)
+            .maybeSingle();
+
+        data = fallbackResult.data as typeof data;
+        error = fallbackResult.error;
+    }
+
+    if (import.meta.env.DEV) {
+        console.log('[fetchSupabaseListingById] raw data listing_amenities:', (data as any)?.listing_amenities);
     }
 
     if (error || !data) {
@@ -969,10 +1072,11 @@ const resolveAmenityIds = async (labels: string[]) => {
         return [];
     }
 
+    // Fetch all amenities (not filtering by is_active) so that newly upserted
+    // custom amenities are found even if the is_active flag differs.
     const { data } = await supabase
         .from('amenities')
-        .select('id, label, slug')
-        .eq('is_active', true);
+        .select('id, label, slug');
 
     return (data ?? []).filter((amenity) => {
         const label = amenity.label.trim().toLowerCase();
@@ -1008,31 +1112,45 @@ const ensureAmenities = async (labels: string[]) => {
         return !existingKeys.has(key);
     });
 
-    if (missing.length > 0) {
-        try {
-            const { error } = await supabase
-                .from('amenities')
-                .upsert(
-                    missing.map((label, index) => ({
-                        slug: slugifyAmenity(label),
-                        label: label.trim(),
-                        icon_name: 'Sparkles',
-                        sort_order: 100 + index,
-                        is_active: true,
-                    })),
-                    { onConflict: 'slug' }
-                );
-
-            if (error) {
-                console.warn('Unable to upsert missing amenities in database (likely due to RLS policies):', error.message || error);
-            }
-        } catch (err) {
-            console.warn('Error trying to upsert missing amenities in database:', err);
-        }
+    if (missing.length === 0) {
+        return existing;
     }
 
+    if (import.meta.env.DEV) {
+        console.log('[ensureAmenities] Inserting missing custom amenities:', missing);
+    }
+
+    const rowsToInsert = missing.map((label, index) => ({
+        slug: slugifyAmenity(label),
+        label: label.trim(),
+        icon_name: 'Sparkles',
+        sort_order: 100 + index,
+        is_active: true,
+    }));
+
+    try {
+        // Upsert with select so we get IDs back directly (avoids a second DB round-trip)
+        const { data: upserted, error } = await supabase
+            .from('amenities')
+            .upsert(rowsToInsert, { onConflict: 'slug', ignoreDuplicates: false })
+            .select('id, label, slug');
+
+        if (error) {
+            console.warn('[ensureAmenities] Upsert failed:', error.message || error);
+        } else if (upserted && upserted.length > 0) {
+            if (import.meta.env.DEV) {
+                console.log('[ensureAmenities] Upserted rows:', upserted);
+            }
+            return [...existing, ...(upserted as Array<{ id: string; label: string; slug: string }>)];
+        }
+    } catch (err) {
+        console.warn('[ensureAmenities] Error persisting amenities:', err);
+    }
+
+    // Final fallback: re-read from DB (may or may not find the newly inserted rows)
     return resolveAmenityIds(normalizedLabels);
 };
+
 
 const persistListingMedia = async (listingId: string, media: ListingMediaItem[], altText: string) => {
     if (!supabase) {
@@ -1063,18 +1181,39 @@ const persistListingAmenities = async (listingId: string, amenityLabels: string[
         return;
     }
 
+    if (import.meta.env.DEV) {
+        console.log('[persistListingAmenities] Saving amenities for listing:', listingId, '| Labels:', amenityLabels);
+    }
+
     await supabase.from('listing_amenities').delete().eq('listing_id', listingId);
 
     const amenityRows = await ensureAmenities(amenityLabels);
+
+    if (import.meta.env.DEV) {
+        console.log('[persistListingAmenities] Resolved amenity rows:', amenityRows);
+    }
+
     if (amenityRows.length > 0) {
-        await supabase.from('listing_amenities').insert(
+        const { error } = await supabase.from('listing_amenities').insert(
             amenityRows.map((amenity) => ({
                 listing_id: listingId,
                 amenity_id: amenity.id,
             }))
         );
+        if (import.meta.env.DEV) {
+            if (error) {
+                console.error('[persistListingAmenities] Insert failed:', error);
+            } else {
+                console.log('[persistListingAmenities] Insert succeeded for', amenityRows.length, 'amenities');
+            }
+        }
+    } else {
+        if (import.meta.env.DEV) {
+            console.warn('[persistListingAmenities] No amenity rows resolved — nothing will be linked to the listing!');
+        }
     }
 };
+
 
 const getSupabaseErrorMessage = (error: unknown, fallback: string) => {
     if (!error) {
@@ -1561,6 +1700,7 @@ export const api = {
                 room_types: serializeRoomTypes(input.roomTypes),
                 local_experiences: input.localExperiences ? serializeExperiences(input.localExperiences) : undefined,
                 rating: 5.0,
+                amenity_labels: input.amenityLabels.map((a) => a.trim()).filter(Boolean),
             })
             .select('id')
             .single();
@@ -1632,6 +1772,7 @@ export const api = {
                 room_types: serializeRoomTypes(input.roomTypes),
                 local_experiences: input.localExperiences ? serializeExperiences(input.localExperiences) : undefined,
                 host_id: hostId,
+                amenity_labels: input.amenityLabels.map((a) => a.trim()).filter(Boolean),
             })
             .eq('id', listingId)
             .eq('host_id', hostId);
@@ -1696,6 +1837,7 @@ export const api = {
                 availability_summary: input.availabilitySummary ?? null,
                 room_types: serializeRoomTypes(input.roomTypes),
                 local_experiences: input.localExperiences ? serializeExperiences(input.localExperiences) : undefined,
+                amenity_labels: input.amenityLabels.map((a) => a.trim()).filter(Boolean),
             })
             .eq('id', listingId);
 
