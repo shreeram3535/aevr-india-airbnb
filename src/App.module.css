@@ -2271,7 +2271,7 @@
 .compactFeaturesGrid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 20px 16px;
+    gap: 20px 28px;
     flex: 1;
     align-content: center;
 }
@@ -2282,7 +2282,7 @@
     align-items: flex-start;
     gap: 12px;
     text-align: left;
-    padding: 16px 14px;
+    padding: 12px 10px;
     border-radius: var(--radius-xl);
     border: 1px solid transparent;
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);

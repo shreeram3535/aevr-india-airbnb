@@ -1406,7 +1406,7 @@ export const Home = () => {
                                 <ShieldCheck className={styles.featureIcon} size={20} />
                                 <div className={styles.featureTextGroup}>
                                     <h3 className={styles.featureTitle}>Safe & Secure</h3>
-                                    <p className={styles.featureDescription}>Trusted by 1000+ families</p>
+                                    <p className={styles.featureDescription}>Trusted by 1000+ families for secure stays</p>
                                 </div>
                             </div>
                         </div>
