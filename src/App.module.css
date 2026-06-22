@@ -2443,6 +2443,7 @@
     position: relative;
     border-radius: var(--radius-xl);
     transition: background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    align-self: stretch;
 }
 
 .interactiveField:hover {
