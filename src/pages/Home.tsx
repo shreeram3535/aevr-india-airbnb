@@ -557,7 +557,7 @@ const VideoDashboardCard = () => {
             <div className={styles.videoSourcePanel}>
                 <div className={styles.videoPanelHeader}>
                     <Leaf className={styles.leafIcon} size={20} />
-                    <h2 className={styles.videoPanelTitle}>Acvr Villa Tour</h2>
+                    <h2 className={styles.videoPanelTitle}>Aevr Villa Tour</h2>
                     <p className={styles.videoPanelSubtitle}>Experience curated retreats through our travel guide gallery, or upload your own video to test.</p>
                 </div>
 
