@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ElementType, type SyntheticEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type SyntheticEvent } from 'react';
 import { useParams } from 'react-router-dom';
 import {
     Star,
@@ -6,23 +6,8 @@ import {
     Share,
     Grid,
     Key,
-    MapPin,
-    Wifi,
-    Car,
-    Utensils,
-    Bath,
     BedDouble,
     Users,
-    Sparkles,
-    Snowflake,
-    Dumbbell,
-    Coffee,
-    ConciergeBell,
-    Waves,
-    Umbrella,
-    Trees,
-    ShieldCheck,
-    Compass,
     X,
     ExternalLink,
     PlayCircle,
@@ -32,7 +17,11 @@ import {
     Minus,
     Plus,
     ChevronDown,
+    Compass,
+    Bath,
+    ShieldCheck,
 } from 'lucide-react';
+import AmenityIcon from '../components/AmenityIcon';
 import { SkeletonScreen } from '../components/SkeletonScreen';
 import styles from './ListingDetails.module.css';
 import { api } from '../services/api';
@@ -43,29 +32,6 @@ import { getFallbackImage } from '../services/media';
 import { FuzzyMap } from '../components/FuzzyMap';
 import { hasValidCoords, extractCoordsFromGoogleMapsUrl } from '../services/mapUtils';
 
-const amenityIcons: Record<string, ElementType> = {
-    wifi: Wifi,
-    pool: Waves,
-    kitchen: Utensils,
-    ac: Snowflake,
-    heater: Sparkles,
-    gym: Dumbbell,
-    elevator: Sparkles,
-    'private beach': Umbrella,
-    breakfast: Coffee,
-    butler: ConciergeBell,
-    'nature trails': Trees,
-    'organic food': Sparkles,
-    'estate walk': Trees,
-    'lake view': Sparkles,
-    'cycle rental': Car,
-    cafe: Coffee,
-};
-
-const getAmenityIcon = (label: string): ElementType => {
-    const key = label.trim().toLowerCase();
-    return amenityIcons[key] ?? MapPin;
-};
 
 const formatPrice = (amount: number, currency?: string) =>
     new Intl.NumberFormat('en-IN', {
@@ -288,7 +254,9 @@ export const ListingDetails = () => {
     const [submittingBooking, setSubmittingBooking] = useState(false);
     const [isVerifiedGuest, setIsVerifiedGuest] = useState(false);
     const [copied, setCopied] = useState(false);
+    const [descriptionExpanded, setDescriptionExpanded] = useState(false);
     const [showPhotosModal, setShowPhotosModal] = useState(false);
+    const [showAmenitiesModal, setShowAmenitiesModal] = useState(false);
     const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
     const autoSubmitHandled = useRef(false);
     const mobileSliderRef = useRef<HTMLDivElement | null>(null);
@@ -471,10 +439,7 @@ export const ListingDetails = () => {
     const taxes = listing ? Math.round(subtotal * gstRate) : 0;
     const total = subtotal + taxes;
     const listingMedia = useMemo(() => listing?.media ?? [], [listing?.media]);
-    const galleryMedia = useMemo(() => {
-        const roomMedia = selectedRoomType?.media ?? [];
-        return roomMedia.length > 0 ? roomMedia : listingMedia;
-    }, [listingMedia, selectedRoomType?.media]);
+    const galleryMedia = listingMedia;
     // Removed static experiences
 
     const hostPhone = normalizePhoneNumber(listing?.host.phone);
@@ -484,7 +449,7 @@ export const ListingDetails = () => {
 
     useEffect(() => {
         setCurrentMediaIndex(0);
-    }, [galleryMedia]);
+    }, [listingMedia]);
 
     const toggleFavorite = () => {
         if (!listing) return;
@@ -888,64 +853,6 @@ Please let me know the next steps for confirming the booking.`;
                         </div>
                     </div>
 
-                    {/* ── Where you'll be ─────────────────────── */}
-                    {(() => {
-                        const dbCoords = hasValidCoords(listing.location.lat, listing.location.lng)
-                            ? { lat: listing.location.lat, lng: listing.location.lng }
-                            : null;
-                        const linkCoords = !dbCoords && listing.mapLink
-                            ? extractCoordsFromGoogleMapsUrl(listing.mapLink)
-                            : null;
-                        const coords = dbCoords ?? linkCoords;
-
-                        if (coords) {
-                            return (
-                                <div className={styles.whereSection}>
-                                    <h2>Where you'll be</h2>
-                                    <p className={styles.whereSubtitle}>
-                                        <MapPin size={14} />
-                                        {listing.location.city}, {listing.location.country}
-                                    </p>
-                                    <FuzzyMap
-                                        lat={coords.lat}
-                                        lng={coords.lng}
-                                        listingId={listing.id}
-                                        city={listing.location.city}
-                                    />
-                                    {listing.mapLink && (
-                                        <a
-                                            href={listing.mapLink}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            style={{ display: 'inline-flex', marginTop: '10px', color: 'var(--color-primary)', fontWeight: 600, fontSize: 14 }}
-                                        >
-                                            Open on Google Maps
-                                        </a>
-                                    )}
-                                </div>
-                            );
-                        }
-                        if (listing.mapLink) {
-                            return (
-                                <div className={styles.whereSection}>
-                                    <h2>Where you'll be</h2>
-                                    <p className={styles.whereSubtitle}>
-                                        <MapPin size={14} />
-                                        {listing.location.city}, {listing.location.country}
-                                    </p>
-                                    <a
-                                        href={listing.mapLink}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        style={{ display: 'inline-flex', marginTop: '10px', color: 'var(--color-primary)', fontWeight: 600 }}
-                                    >
-                                        Open on Google Maps
-                                    </a>
-                                </div>
-                            );
-                        }
-                        return null;
-                    })()}
 
                     <div className={styles.feature}>
                         <div className={styles.featureIcon}><Key size={24} /></div>
@@ -990,13 +897,33 @@ Please let me know the next steps for confirming the booking.`;
                     </div>
 
                     <div className={styles.description}>
-                        <p>{listing.description}</p>
+                        <div
+                            className={`${styles.descriptionBody} ${
+                                descriptionExpanded ? styles.descriptionBodyExpanded : ''
+                            }`}
+                        >
+                            <p className={styles.descriptionText}>{listing.description}</p>
                             {listing.host.bio && (
-                                <p style={{ marginTop: '16px', color: 'var(--text-secondary)' }}>
+                                <p className={styles.descriptionBio}>
                                     {listing.host.bio}
                                 </p>
                             )}
                         </div>
+                        <button
+                            type="button"
+                            className={styles.descriptionToggle}
+                            onClick={() => setDescriptionExpanded((v) => !v)}
+                        >
+                            <span>{descriptionExpanded ? 'Show less' : 'Show more'}</span>
+                            <ChevronDown
+                                size={16}
+                                style={{
+                                    transition: 'transform 0.25s',
+                                    transform: descriptionExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                                }}
+                            />
+                        </button>
+                    </div>
 
                     <div className={styles.contactSection}>
                         <div className={styles.contactHeader}>
@@ -1020,23 +947,49 @@ Please let me know the next steps for confirming the booking.`;
                     <div className={styles.amenities}>
                         <h2>What this place offers</h2>
                         <div className={styles.amenityList}>
-                            {listing.amenities.length > 0 ? listing.amenities.map((amenity) => {
-                                const AmenityIcon = getAmenityIcon(amenity);
-                                return (
-                                    <div key={amenity} className={styles.amenityItem}>
-                                        <AmenityIcon size={20} />
-                                        {amenity}
-                                    </div>
-                                );
-                            }) : (
-                                <>
-                                    <div className={styles.amenityItem}><Wifi size={20} /> Wifi</div>
-                                    <div className={styles.amenityItem}><Car size={20} /> Free parking on premises</div>
-                                    <div className={styles.amenityItem}><Utensils size={20} /> Kitchen</div>
-                                </>
-                            )}
+                            {(listing.amenities.length > 0 ? listing.amenities : ['WiFi', 'Free parking', 'Kitchen']).slice(0, 10).map((amenity) => (
+                                <div key={amenity} className={styles.amenityItem}>
+                                    <AmenityIcon name={amenity} size={24} />
+                                    <span>{amenity}</span>
+                                </div>
+                            ))}
                         </div>
+                        {listing.amenities.length > 10 && (
+                            <button
+                                className={styles.showAllAmenities}
+                                onClick={() => setShowAmenitiesModal(true)}
+                            >
+                                Show all {listing.amenities.length} amenities
+                            </button>
+                        )}
                     </div>
+
+                    {/* Amenities Modal */}
+                    {showAmenitiesModal && (
+                        <div className={styles.amenitiesModal} onClick={() => setShowAmenitiesModal(false)}>
+                            <div
+                                className={styles.amenitiesModalContent}
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                <button
+                                    className={styles.amenitiesModalClose}
+                                    onClick={() => setShowAmenitiesModal(false)}
+                                    aria-label="Close"
+                                >
+                                    <X size={20} />
+                                </button>
+                                <h2>What this place offers</h2>
+                                <div className={styles.amenitiesModalList}>
+                                    {listing.amenities.map((amenity) => (
+                                        <div key={amenity} className={styles.amenitiesModalItem}>
+                                            <AmenityIcon name={amenity} size={24} />
+                                            <span>{amenity}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {listing.localExperiences && listing.localExperiences.length > 0 && (
                         <section className={styles.localExperiences}>
@@ -1084,6 +1037,39 @@ Please let me know the next steps for confirming the booking.`;
                             <p>Designed for easy check-in and a smooth stay.</p>
                         </div>
                     </div>
+
+                    {/* ── Where you'll be ─────────────────────── */}
+                    {(() => {
+                        const dbCoords = hasValidCoords(listing.location.lat, listing.location.lng)
+                            ? { lat: listing.location.lat, lng: listing.location.lng }
+                            : null;
+                        const linkCoords = !dbCoords && listing.mapLink
+                            ? extractCoordsFromGoogleMapsUrl(listing.mapLink)
+                            : null;
+                        const coords = dbCoords ?? linkCoords;
+
+                        if (coords) {
+                            return (
+                                <div className={styles.whereSection}>
+                                    <h2>Where you'll be</h2>
+                                    <p className={styles.whereSubtitle}>
+                                        {listing.location.city}, {listing.location.country}
+                                    </p>
+                                    <FuzzyMap
+                                        lat={coords.lat}
+                                        lng={coords.lng}
+                                        listingId={listing.id}
+                                        city={listing.location.city}
+                                    />
+                                    {/* Privacy note — no link, exact location shared only after booking */}
+                                    <p className={styles.whereExactNote}>
+                                        Exact location will be provided after booking.
+                                    </p>
+                                </div>
+                            );
+                        }
+                        return null;
+                    })()}
                 </div>
 
                 <div className={styles.bookingCardWrapper}>
