@@ -2549,7 +2549,7 @@
 }
 
 .videoLeftColumn {
-    flex: 2.2;
+    flex: 3.2;
     display: flex;
     flex-direction: column;
     gap: 16px;
