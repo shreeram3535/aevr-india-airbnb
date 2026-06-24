@@ -17,6 +17,9 @@ import {
     Minus,
     Plus,
     ChevronDown,
+    Compass,
+    Bath,
+    ShieldCheck,
 } from 'lucide-react';
 import AmenityIcon from '../components/AmenityIcon';
 import { SkeletonScreen } from '../components/SkeletonScreen';
