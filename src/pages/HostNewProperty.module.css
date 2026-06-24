@@ -886,8 +886,41 @@
 }
 
 /* ══════════════════════════════════════════════════════════════════════
-   AMENITIES (Step 7)
+   AMENITIES (Step 8)
 ══════════════════════════════════════════════════════════════════════ */
+
+/* Category wrapper */
+.amenityCategoryList {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.amenityCategory {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.amenityCategoryLabel {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-bold);
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin: 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--color-gray-100);
+}
+
+.categoryIcon {
+    color: var(--color-primary);
+    flex-shrink: 0;
+}
+
 .amenityGrid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
@@ -937,6 +970,32 @@
 .amenityCheck {
     margin-left: auto;
     flex-shrink: 0;
+}
+
+/* Custom amenity section */
+.customAmenitySection {
+    border-top: 1px solid var(--color-gray-100);
+    padding-top: 20px;
+    margin-top: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.customAmenityHeading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    font-size: var(--font-size-md);
+    font-weight: var(--font-weight-bold);
+    color: var(--text-primary);
+}
+
+.customAmenityHint {
+    margin: 0 0 8px;
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
 }
 
 .customAmenityRow {

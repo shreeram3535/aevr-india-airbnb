@@ -557,7 +557,7 @@ const VideoDashboardCard = () => {
             <div className={styles.videoSourcePanel}>
                 <div className={styles.videoPanelHeader}>
                     <Leaf className={styles.leafIcon} size={20} />
-                    <h2 className={styles.videoPanelTitle}>Acvr Villa Tour</h2>
+                    <h2 className={styles.videoPanelTitle}>Aevr Villa Tour</h2>
                     <p className={styles.videoPanelSubtitle}>Experience curated retreats through our travel guide gallery, or upload your own video to test.</p>
                 </div>
 
@@ -972,6 +972,7 @@ export const Home = () => {
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     setHeroBedrooms(opt.value);
+                                                    updateParams({ bedrooms: opt.value || null });
                                                     setRoomsOpen(false);
                                                 }}
                                             >
@@ -1016,6 +1017,7 @@ export const Home = () => {
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     setHeroGuests(opt.value);
+                                                    updateParams({ guests: opt.value || null });
                                                     setGuestsOpen(false);
                                                 }}
                                             >
@@ -1410,7 +1412,7 @@ export const Home = () => {
                                 <ShieldCheck className={styles.featureIcon} size={20} />
                                 <div className={styles.featureTextGroup}>
                                     <h3 className={styles.featureTitle}>Safe & Secure</h3>
-                                    <p className={styles.featureDescription}>Trusted by 1000+ families</p>
+                                    <p className={styles.featureDescription}>Trusted by 1000+ families for secure stays</p>
                                 </div>
                             </div>
                         </div>

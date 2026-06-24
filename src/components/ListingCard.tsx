@@ -67,15 +67,55 @@ const getSpecialAmenity = (listing: Listing) => {
         return { label: 'Private Pool', Icon: Waves };
     }
 
-    // Fallback check in listing's amenities array
+    // Check stored amenities from DB (standard known keywords)
     if (listing.amenities.some(a => a.toLowerCase().includes('pool'))) {
         return { label: 'Private Pool', Icon: Waves };
     }
-    if (listing.amenities.some(a => a.toLowerCase().includes('mountain'))) {
+    if (listing.amenities.some(a => a.toLowerCase().includes('beach'))) {
+        return { label: 'Beach Access', Icon: Waves };
+    }
+    if (listing.amenities.some(a => a.toLowerCase().includes('mountain') || a.toLowerCase().includes('hill'))) {
         return { label: 'Mountain View', Icon: Mountain };
     }
-    if (listing.amenities.some(a => a.toLowerCase().includes('lake'))) {
+    if (listing.amenities.some(a => a.toLowerCase().includes('lake') || a.toLowerCase().includes('backwater'))) {
         return { label: 'Lake View', Icon: Waves };
+    }
+    if (listing.amenities.some(a => a.toLowerCase().includes('hot tub') || a.toLowerCase().includes('jacuzzi'))) {
+        return { label: 'Hot Tub', Icon: Waves };
+    }
+    if (listing.amenities.some(a => a.toLowerCase().includes('gym') || a.toLowerCase().includes('fitness'))) {
+        return { label: 'Gym', Icon: Compass };
+    }
+    if (listing.amenities.some(a => a.toLowerCase().includes('bbq') || a.toLowerCase().includes('barbeque'))) {
+        return { label: 'BBQ Grill', Icon: Compass };
+    }
+    if (listing.amenities.some(a => a.toLowerCase().includes('garden') || a.toLowerCase().includes('lawn'))) {
+        return { label: 'Garden', Icon: Compass };
+    }
+    if (listing.amenities.some(a => a.toLowerCase().includes('balcony') || a.toLowerCase().includes('terrace'))) {
+        return { label: 'Balcony', Icon: Compass };
+    }
+    if (listing.amenities.some(a => a.toLowerCase().includes('fireplace'))) {
+        return { label: 'Fireplace', Icon: Compass };
+    }
+
+    // Show first custom amenity (not in predefined set) with a Sparkles icon
+    const predefinedKeys = new Set([
+        'wifi', 'kitchen', 'pool', 'ac', 'gym', 'parking', 'hot tub',
+        'bbq', 'tv', 'washer', 'dryer', 'pet friendly', 'workspace',
+        'balcony', 'garden', 'beach access', 'elevator', 'fireplace',
+    ]);
+    const customAmenity = listing.amenities.find(
+        (a) => !predefinedKeys.has(a.toLowerCase())
+    );
+    if (customAmenity) {
+        return { label: customAmenity, Icon: Sparkles };
+    }
+
+    // Show first stored amenity if any (predefined set)
+    if (listing.amenities.length > 0) {
+        const first = listing.amenities[0];
+        return { label: first, Icon: Sparkles };
     }
 
     // Ultimate Fallback

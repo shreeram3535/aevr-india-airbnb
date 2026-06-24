@@ -2180,7 +2180,7 @@
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
-    height: 380px;
+    min-height: 380px;
 }
 
 .dashboardCardTitle {
@@ -2271,7 +2271,7 @@
 .compactFeaturesGrid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 20px 16px;
+    gap: 20px 28px;
     flex: 1;
     align-content: center;
 }
@@ -2282,7 +2282,7 @@
     align-items: flex-start;
     gap: 12px;
     text-align: left;
-    padding: 16px 14px;
+    padding: 12px 10px;
     border-radius: var(--radius-xl);
     border: 1px solid transparent;
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
@@ -2443,6 +2443,7 @@
     position: relative;
     border-radius: var(--radius-xl);
     transition: background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    align-self: stretch;
 }
 
 .interactiveField:hover {
@@ -2545,11 +2546,11 @@
     gap: 32px;
     align-items: stretch;
     box-sizing: border-box;
-    height: 380px;
+    min-height: 380px;
 }
 
 .videoLeftColumn {
-    flex: 2.2;
+    flex: 3.2;
     display: flex;
     flex-direction: column;
     gap: 16px;
@@ -2764,6 +2765,7 @@
     margin-bottom: 0;
     max-height: 220px;
     overflow-y: auto;
+    overflow-x: hidden;
     padding-right: 4px;
 }
 
@@ -2851,6 +2853,7 @@
     flex-direction: column;
     text-align: left;
     gap: 4px;
+    min-width: 0;
 }
 
 .presetName {
@@ -2858,6 +2861,9 @@
     font-weight: 600;
     color: var(--text-primary);
     line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .presetDurationRow {

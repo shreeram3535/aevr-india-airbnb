@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ElementType, type SyntheticEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type SyntheticEvent } from 'react';
 import { useParams } from 'react-router-dom';
 import {
     Star,
@@ -6,22 +6,8 @@ import {
     Share,
     Grid,
     Key,
-    MapPin,
-    Wifi,
-    Car,
-    Utensils,
-    Bath,
     BedDouble,
     Users,
-    Snowflake,
-    Dumbbell,
-    Coffee,
-    ConciergeBell,
-    Waves,
-    Umbrella,
-    Trees,
-    ShieldCheck,
-    Compass,
     X,
     ExternalLink,
     PlayCircle,
@@ -31,21 +17,8 @@ import {
     Minus,
     Plus,
     ChevronDown,
-    Tv,
-    Building2,
-    ArrowUpDown,
-    ParkingSquare,
-    Flame,
-    Leaf,
-    Bike,
-    UtensilsCrossed,
-    Droplets,
-    Shield,
-    WashingMachine,
-    Refrigerator,
-    Microwave,
-    ShowerHead,
 } from 'lucide-react';
+import AmenityIcon from '../components/AmenityIcon';
 import { SkeletonScreen } from '../components/SkeletonScreen';
 import styles from './ListingDetails.module.css';
 import { api } from '../services/api';
@@ -56,61 +29,6 @@ import { getFallbackImage } from '../services/media';
 import { FuzzyMap } from '../components/FuzzyMap';
 import { hasValidCoords, extractCoordsFromGoogleMapsUrl } from '../services/mapUtils';
 
-const amenityIcons: Record<string, ElementType> = {
-    // Connectivity
-    wifi: Wifi,
-    // Climate
-    ac: Snowflake,
-    heater: Flame,
-    'air conditioning': Snowflake,
-    // Parking & Transport
-    parking: ParkingSquare,
-    'cycle rental': Bike,
-    car: Car,
-    // Entertainment & Rooms
-    tv: Tv,
-    television: Tv,
-    balcony: Building2,
-    terrace: Building2,
-    // Fitness & Recreation
-    gym: Dumbbell,
-    pool: Waves,
-    'private beach': Umbrella,
-    // Vertical Movement
-    elevator: ArrowUpDown,
-    lift: ArrowUpDown,
-    // Food & Beverage
-    kitchen: Utensils,
-    breakfast: Coffee,
-    cafe: Coffee,
-    butler: ConciergeBell,
-    'organic food': Leaf,
-    restaurant: UtensilsCrossed,
-    // Nature & Outdoors
-    'nature trails': Trees,
-    'estate walk': Trees,
-    garden: Trees,
-    // Views
-    'lake view': Droplets,
-    'sea view': Waves,
-    'mountain view': Compass,
-    // Safety
-    security: Shield,
-    // Laundry & Appliances
-    laundry: WashingMachine,
-    washer: WashingMachine,
-    refrigerator: Refrigerator,
-    microwave: Microwave,
-    // Bathroom
-    bath: Bath,
-    shower: ShowerHead,
-    bathtub: Bath,
-};
-
-const getAmenityIcon = (label: string): ElementType => {
-    const key = label.trim().toLowerCase();
-    return amenityIcons[key] ?? MapPin;
-};
 
 const formatPrice = (amount: number, currency?: string) =>
     new Intl.NumberFormat('en-IN', {
@@ -1145,15 +1063,12 @@ Please let me know the next steps for confirming the booking.`;
                     <div className={styles.amenities}>
                         <h2>What this place offers</h2>
                         <div className={styles.amenityList}>
-                            {(listing.amenities.length > 0 ? listing.amenities : ['Wifi', 'Free parking', 'Kitchen']).slice(0, 10).map((amenity) => {
-                                const AmenityIcon = getAmenityIcon(amenity);
-                                return (
-                                    <div key={amenity} className={styles.amenityItem}>
-                                        <AmenityIcon size={24} />
-                                        <span>{amenity}</span>
-                                    </div>
-                                );
-                            })}
+                            {(listing.amenities.length > 0 ? listing.amenities : ['WiFi', 'Free parking', 'Kitchen']).slice(0, 10).map((amenity) => (
+                                <div key={amenity} className={styles.amenityItem}>
+                                    <AmenityIcon name={amenity} size={24} />
+                                    <span>{amenity}</span>
+                                </div>
+                            ))}
                         </div>
                         {listing.amenities.length > 10 && (
                             <button
@@ -1181,15 +1096,12 @@ Please let me know the next steps for confirming the booking.`;
                                 </button>
                                 <h2>What this place offers</h2>
                                 <div className={styles.amenitiesModalList}>
-                                    {listing.amenities.map((amenity) => {
-                                        const AmenityIcon = getAmenityIcon(amenity);
-                                        return (
-                                            <div key={amenity} className={styles.amenitiesModalItem}>
-                                                <AmenityIcon size={24} />
-                                                <span>{amenity}</span>
-                                            </div>
-                                        );
-                                    })}
+                                    {listing.amenities.map((amenity) => (
+                                        <div key={amenity} className={styles.amenitiesModalItem}>
+                                            <AmenityIcon name={amenity} size={24} />
+                                            <span>{amenity}</span>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
                         </div>

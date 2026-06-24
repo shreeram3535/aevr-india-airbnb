@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
     CalendarDays, Plus, Trash2, PlayCircle, CheckCircle2, ChevronRight,
     ChevronLeft, Upload, MapPin, Home, DollarSign, BedDouble, Image, Wifi,
-    Check, X, Compass,
+    Check, X, Compass, Snowflake, Utensils, Palmtree, Car, Coffee, Mountain, Shield, Sparkles,
 } from 'lucide-react';
 import styles from './HostNewProperty.module.css';
 import { api } from '../services/api';
@@ -12,6 +12,7 @@ import { hasSupabaseConfig } from '../services/supabase';
 import { uploadListingImages } from '../services/storage';
 import { HostApprovalStatusView } from '../components/HostApprovalStatus';
 import { SkeletonScreen } from '../components/SkeletonScreen';
+import AmenityIcon from '../components/AmenityIcon';
 import type { AvailabilityBlock, AvailabilityBlockStatus, Category, Listing, ListingMediaItem, RoomType, Experience, ExperienceCategory } from '../types';
 import { createExternalVideoMedia } from '../services/media';
 import { extractCoordsFromGoogleMapsUrl } from '../services/mapUtils';
@@ -59,55 +60,59 @@ type ExperienceFormState = {
     travelTime: string;
 };
 
-/* ─── Amenity SVG icons (Airbnb-style vectors) ───────────────────────────── */
+/* ─── Amenity data (grouped by category) ─────────────────────────────────── */
 
-const AmenityIcon = ({ name }: { name: string }) => {
-    const s = { width: 24, height: 24, viewBox: '0 0 32 32', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
-    switch (name) {
-        case 'Wifi': return <svg {...s}><path d="M5 12.55a11 11 0 0 1 14.08 0" /><path d="M1.42 9a16 16 0 0 1 21.16 0" /><path d="M8.53 16.11a6 6 0 0 1 6.95 0" /><circle cx="12" cy="20" r="1" fill="currentColor" /></svg>;
-        case 'Kitchen': return <svg {...s}><rect x="3" y="3" width="26" height="7" rx="2" /><path d="M3 10v18a2 2 0 0 0 2 2h22a2 2 0 0 0 2-2V10" /><line x1="10" y1="10" x2="10" y2="30" /><circle cx="20" cy="20" r="4" /><line x1="20" y1="16" x2="20" y2="13" /></svg>;
-        case 'Pool': return <svg {...s}><path d="M2 20c2-2 4-2 6 0s4 2 6 0 4-2 6 0 4 2 6 0" /><path d="M2 26c2-2 4-2 6 0s4 2 6 0 4-2 6 0 4 2 6 0" /><path d="M10 14V6l6-4" /><line x1="16" y1="6" x2="22" y2="6" /></svg>;
-        case 'AC': return <svg {...s}><rect x="2" y="6" width="28" height="12" rx="3" /><line x1="8" y1="18" x2="6" y2="26" /><line x1="16" y1="18" x2="16" y2="26" /><line x1="24" y1="18" x2="26" y2="26" /><line x1="7" y1="12" x2="25" y2="12" /></svg>;
-        case 'Gym': return <svg {...s}><path d="M6 10H4a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" /><path d="M26 10h2a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2" /><line x1="6" y1="16" x2="26" y2="16" /><rect x="6" y="10" width="4" height="12" rx="2" /><rect x="22" y="10" width="4" height="12" rx="2" /></svg>;
-        case 'Parking': return <svg {...s}><rect x="3" y="3" width="26" height="26" rx="4" /><path d="M11 22V10h6a5 5 0 0 1 0 10h-6" /></svg>;
-        case 'Hot tub': return <svg {...s}><path d="M4 22v2a4 4 0 0 0 4 4h16a4 4 0 0 0 4-4v-2" /><path d="M4 22H28" /><path d="M8 22V16a8 8 0 0 1 16 0v6" /><path d="M10 8c0-2 1.5-4 4-4" /><path d="M18 8c0-2 1.5-4 4-4" /></svg>;
-        case 'BBQ': return <svg {...s}><path d="M5 12c0 6 4.5 10 11 10s11-4 11-10" /><path d="M4 12h24" /><line x1="16" y1="22" x2="16" y2="28" /><line x1="10" y1="28" x2="22" y2="28" /><path d="M9 6c1-2 3-2 4 0s3 2 4 0 3-2 4 0" /></svg>;
-        case 'TV': return <svg {...s}><rect x="2" y="7" width="28" height="18" rx="3" /><path d="M10 25l2 4h8l2-4" /><line x1="8" y1="13" x2="24" y2="13" /><line x1="8" y1="18" x2="20" y2="18" /></svg>;
-        case 'Washer': return <svg {...s}><rect x="3" y="3" width="26" height="26" rx="4" /><circle cx="16" cy="18" r="6" /><circle cx="16" cy="18" r="3" /><line x1="8" y1="8" x2="8" y2="8" strokeWidth={3} /><line x1="13" y1="8" x2="19" y2="8" /></svg>;
-        case 'Dryer': return <svg {...s}><rect x="3" y="3" width="26" height="26" rx="4" /><circle cx="16" cy="18" r="6" /><path d="M12 14l8 8M20 14l-8 8" /><line x1="8" y1="8" x2="8" y2="8" strokeWidth={3} /><line x1="13" y1="8" x2="19" y2="8" /></svg>;
-        case 'Pet friendly': return <svg {...s}><ellipse cx="8" cy="10" rx="3" ry="4" /><ellipse cx="24" cy="10" rx="3" ry="4" /><ellipse cx="4" cy="20" rx="3" ry="4" /><ellipse cx="28" cy="20" rx="3" ry="4" /><path d="M16 14c-5 0-9 3-9 8 0 3 4 6 9 6s9-3 9-6c0-5-4-8-9-8z" /></svg>;
-        case 'Workspace': return <svg {...s}><rect x="2" y="6" width="28" height="18" rx="3" /><line x1="2" y1="26" x2="30" y2="26" /><line x1="16" y1="24" x2="16" y2="26" /><line x1="9" y1="12" x2="23" y2="12" /><line x1="9" y1="17" x2="18" y2="17" /></svg>;
-        case 'Balcony': return <svg {...s}><rect x="3" y="3" width="26" height="26" rx="2" /><line x1="3" y1="16" x2="29" y2="16" /><line x1="10" y1="16" x2="10" y2="29" /><line x1="22" y1="16" x2="22" y2="29" /></svg>;
-        case 'Garden': return <svg {...s}><path d="M16 28V16" /><path d="M16 16c0 0-4-6-8-8 0 0 2 8 8 8z" /><path d="M16 16c0 0 4-6 8-8 0 0-2 8-8 8z" /><path d="M16 20c0 0-5-3-9-2 0 0 3 7 9 2z" /><line x1="10" y1="28" x2="22" y2="28" /></svg>;
-        case 'Beach access': return <svg {...s}><path d="M4 28c4-8 10-12 14-10" /><path d="M4 28c2-10 8-16 16-14" /><circle cx="22" cy="8" r="4" /><line x1="4" y1="28" x2="28" y2="28" /></svg>;
-        case 'Elevator': return <svg {...s}><rect x="5" y="2" width="22" height="28" rx="3" /><line x1="16" y1="2" x2="16" y2="30" /><path d="M10 10l-3-4-3 4" /><path d="M22 22l3 4 3-4" /></svg>;
-        case 'Fireplace': return <svg {...s}><path d="M6 28V10a10 10 0 0 1 20 0v18" /><path d="M4 28h24" /><path d="M16 22c-3 0-5-2-5-5 0-4 5-7 5-7s5 3 5 7c0 3-2 5-5 5z" /></svg>;
-        default: return <svg {...s}><circle cx="16" cy="16" r="10" /><line x1="16" y1="10" x2="16" y2="22" /><line x1="10" y1="16" x2="22" y2="16" /></svg>;
-    }
+type AmenityCategory = {
+    label: string;
+    icon: React.ComponentType<any>;
+    amenities: string[];
 };
 
-/* ─── Amenity data ───────────────────────────────────────────────────────── */
-
-const AMENITY_CHIPS = [
-    { key: 'Wifi' },
-    { key: 'Kitchen' },
-    { key: 'Pool' },
-    { key: 'AC' },
-    { key: 'Gym' },
-    { key: 'Parking' },
-    { key: 'Hot tub' },
-    { key: 'BBQ' },
-    { key: 'TV' },
-    { key: 'Washer' },
-    { key: 'Dryer' },
-    { key: 'Pet friendly' },
-    { key: 'Workspace' },
-    { key: 'Balcony' },
-    { key: 'Garden' },
-    { key: 'Beach access' },
-    { key: 'Elevator' },
-    { key: 'Fireplace' },
+const AMENITY_CATEGORIES: AmenityCategory[] = [
+    {
+        label: 'Connectivity & Tech',
+        icon: Wifi,
+        amenities: ['WiFi', 'TV', 'Dedicated workspace'],
+    },
+    {
+        label: 'Climate',
+        icon: Snowflake,
+        amenities: ['AC', 'Heating', 'Ceiling fan'],
+    },
+    {
+        label: 'Kitchen & Dining',
+        icon: Utensils,
+        amenities: ['Kitchen', 'Refrigerator', 'Microwave', 'Breakfast included'],
+    },
+    {
+        label: 'Outdoors & Recreation',
+        icon: Palmtree,
+        amenities: ['Pool', 'Plunge pool', 'Hot tub / Jacuzzi', 'Garden', 'Terrace', 'Balcony', 'BBQ grill', 'Bonfire area', 'Private beach', 'Gym', 'Yoga space', 'Ayurvedic spa'],
+    },
+    {
+        label: 'Transport & Parking',
+        icon: Car,
+        amenities: ['Free parking', 'Valet parking', 'EV charging', 'Cycle rental', 'Airport transfer'],
+    },
+    {
+        label: 'Food & Hospitality',
+        icon: Coffee,
+        amenities: ['Restaurant', 'Butler service', 'Concierge', 'Room service', 'Organic meals', 'Café on site'],
+    },
+    {
+        label: 'Nature & Views',
+        icon: Mountain,
+        amenities: ['Nature trails', 'Estate walk', 'Mountain view', 'Sea view', 'Lake view', 'Forest view'],
+    },
+    {
+        label: 'Safety & Convenience',
+        icon: Shield,
+        amenities: ['24/7 security', 'CCTV cameras', 'Smoke alarm', 'First aid kit', 'Elevator', 'Luggage storage', 'Pet friendly', 'Fireplace', 'Washer', 'Dryer', 'Iron & board'],
+    },
 ];
+
+// Flat list of all predefined amenity keys (used to identify custom ones)
+const ALL_PREDEFINED_AMENITIES = AMENITY_CATEGORIES.flatMap((c) => c.amenities);
 
 /* ─── Step definitions ───────────────────────────────────────────────────── */
 
@@ -1254,47 +1259,64 @@ export const HostNewProperty = () => {
                             </div>
                         </div>
 
-                        {/* Chip grid */}
-                        <div className={styles.amenityGrid} id="amenity-chips">
-                            {AMENITY_CHIPS.map((amenity) => {
-                                const active = selectedAmenities.has(amenity.key);
-                                return (
-                                    <button
-                                        key={amenity.key}
-                                        type="button"
-                                        className={`${styles.amenityChip} ${active ? styles.amenityChipActive : ''}`}
-                                        onClick={() => toggleAmenity(amenity.key)}
-                                    >
-                                        <span className={styles.amenityChipIcon}>
-                                            <AmenityIcon name={amenity.key} />
-                                        </span>
-                                        <span>{amenity.key}</span>
-                                        {active && <Check size={13} className={styles.amenityCheck} />}
-                                    </button>
-                                );
-                            })}
+                        {/* Grouped chip categories */}
+                        <div id="amenity-chips" className={styles.amenityCategoryList}>
+                            {AMENITY_CATEGORIES.map((category) => (
+                                <div key={category.label} className={styles.amenityCategory}>
+                                    <p className={styles.amenityCategoryLabel}>
+                                        <category.icon size={16} className={styles.categoryIcon} />
+                                        <span>{category.label}</span>
+                                    </p>
+                                    <div className={styles.amenityGrid}>
+                                        {category.amenities.map((key) => {
+                                            const active = selectedAmenities.has(key);
+                                            return (
+                                                <button
+                                                    key={key}
+                                                    type="button"
+                                                    className={`${styles.amenityChip} ${active ? styles.amenityChipActive : ''}`}
+                                                    onClick={() => toggleAmenity(key)}
+                                                >
+                                                    <span className={styles.amenityChipIcon}>
+                                                        <AmenityIcon name={key} />
+                                                    </span>
+                                                    <span>{key}</span>
+                                                    {active && <Check size={13} className={styles.amenityCheck} />}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            ))}
                         </div>
 
-                        {/* Custom amenity */}
-                        <div className={styles.customAmenityRow}>
-                            <input
-                                id="custom-amenity-input"
-                                className={styles.customAmenityInput}
-                                value={customAmenity}
-                                onChange={(e) => setCustomAmenity(e.target.value)}
-                                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addCustomAmenity(); } }}
-                                placeholder="Add custom amenity…"
-                            />
-                            <button type="button" className={styles.customAmenityAdd} onClick={addCustomAmenity}>
-                                <Plus size={16} />
-                            </button>
+                        {/* Custom amenity — for truly unique offerings */}
+                        <div className={styles.customAmenitySection}>
+                            <p className={styles.customAmenityHeading}>
+                                <Sparkles size={18} className={styles.categoryIcon} />
+                                <span>Something unique to your property?</span>
+                            </p>
+                            <p className={styles.customAmenityHint}>Add amenities that aren't in the list above — e.g. "Private helipad", "Koi pond", "Chess room".</p>
+                            <div className={styles.customAmenityRow}>
+                                <input
+                                    id="custom-amenity-input"
+                                    className={styles.customAmenityInput}
+                                    value={customAmenity}
+                                    onChange={(e) => setCustomAmenity(e.target.value)}
+                                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addCustomAmenity(); } }}
+                                    placeholder="Type and press Enter or click +"
+                                />
+                                <button type="button" className={styles.customAmenityAdd} onClick={addCustomAmenity}>
+                                    <Plus size={16} />
+                                </button>
+                            </div>
                         </div>
 
-                        {/* Selected custom amenities (not in predefined list) */}
-                        {Array.from(selectedAmenities).filter((a) => !AMENITY_CHIPS.some((c) => c.key === a)).length > 0 && (
+                        {/* Selected custom amenities tags */}
+                        {Array.from(selectedAmenities).filter((a) => !ALL_PREDEFINED_AMENITIES.includes(a)).length > 0 && (
                             <div className={styles.customAmenityTags}>
                                 {Array.from(selectedAmenities)
-                                    .filter((a) => !AMENITY_CHIPS.some((c) => c.key === a))
+                                    .filter((a) => !ALL_PREDEFINED_AMENITIES.includes(a))
                                     .map((a) => (
                                         <span key={a} className={styles.customAmenityTag}>
                                             {a}
