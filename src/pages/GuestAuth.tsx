@@ -78,6 +78,7 @@ export const GuestAuth = () => {
     const handleGoogleLogin = async () => {
         setMessage(null);
         try {
+            localStorage.setItem('aevr.oauth_role', 'guest');
             const { error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
@@ -121,7 +122,7 @@ export const GuestAuth = () => {
                 navigate(nextPath, { replace: true });
             } else {
                 setMessageType('info');
-                setMessage('Account created. Check your email to verify your account, then come back to finish your booking.');
+                setMessage('Account created! Please check your email to verify your account, then come back to finish your booking.');
             }
         } catch (error) {
             setMessage(error instanceof Error ? error.message : 'Unable to continue');

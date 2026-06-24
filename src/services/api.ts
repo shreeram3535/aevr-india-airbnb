@@ -662,6 +662,21 @@ const fetchCurrentProfileBasic = async (): Promise<Pick<SupabaseProfileRow, 'id'
         return null;
     }
 
+    const oauthRole = localStorage.getItem('aevr.oauth_role');
+    if (oauthRole && (oauthRole === 'guest' || oauthRole === 'host')) {
+        localStorage.removeItem('aevr.oauth_role');
+        const updateData: Record<string, any> = { role: oauthRole };
+        if (oauthRole === 'host') {
+            updateData.host_approval_status = 'pending';
+        } else {
+            updateData.host_approval_status = 'approved';
+        }
+        await supabase
+            .from('profiles')
+            .update(updateData)
+            .eq('id', authData.user.id);
+    }
+
     const { data, error } = await supabase
         .from('profiles')
         .select('id, full_name, avatar_url, role, is_verified_guest')
