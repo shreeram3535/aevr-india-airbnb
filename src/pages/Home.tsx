@@ -746,7 +746,7 @@ export const Home = () => {
 
     const clearFilters = () => {
         const params = new URLSearchParams(searchParams);
-        ['category', 'luxurySection', 'sort', 'minPrice', 'maxPrice', 'guests', 'bedrooms', 'baths', 'favorites'].forEach((key) => params.delete(key));
+        ['category', 'luxurySection', 'sort', 'minPrice', 'maxPrice', 'guests', 'bedrooms', 'baths', 'favorites', 'search'].forEach((key) => params.delete(key));
         setSearchParams(params);
     };
 
@@ -1376,7 +1376,10 @@ export const Home = () => {
                 ) : (
                     <div className={styles.emptyState}>
                         <h2>No listings found</h2>
-                        <p>Try loosening a filter, switching category, or clearing filters.</p>
+                        <p>No properties found matching your search.</p>
+                        <button type="button" className={styles.clearFiltersBtn} onClick={clearFilters}>
+                            Clear Filters
+                        </button>
                     </div>
                 )}
             </main>

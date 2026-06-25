@@ -23,6 +23,7 @@ type FormState = {
     title: string;
     description: string;
     hostName: string;
+    hostContactNumber: string;
     pricePerNight: string;
     currency: string;
     categorySlug: string;
@@ -133,6 +134,7 @@ const initialState: FormState = {
     title: '',
     description: '',
     hostName: '',
+    hostContactNumber: '',
     pricePerNight: '',
     currency: 'INR',
     categorySlug: 'cabins',
@@ -164,6 +166,7 @@ const listingToForm = (listing: Listing): FormState => ({
     title: listing.title,
     description: listing.description,
     hostName: listing.host.name,
+    hostContactNumber: listing.host.phone ?? '',
     pricePerNight: String(listing.price),
     currency: listing.currency ?? 'INR',
     categorySlug: listing.category,
@@ -588,6 +591,9 @@ export const HostNewProperty = () => {
             const hostName = form.hostName.trim();
             if (!hostName) throw new Error('Add the host name for this property.');
 
+            const hostContactNumber = form.hostContactNumber.trim();
+            if (!hostContactNumber) throw new Error('Add the host contact number for this property.');
+
             const uploadedPropertyMedia = selectedFiles.length > 0
                 ? await uploadListingImages(session.user.id, selectedFiles)
                 : undefined;
@@ -625,6 +631,7 @@ export const HostNewProperty = () => {
                 title: form.title,
                 description: form.description,
                 hostName,
+                hostContactNumber,
                 pricePerNight: startingPrice,
                 currency: form.currency,
                 categorySlug: form.categorySlug,
@@ -718,6 +725,16 @@ export const HostNewProperty = () => {
                                 value={form.hostName}
                                 onChange={updateField('hostName')}
                                 placeholder="Name shown on the listing"
+                                required
+                            />
+                        </label>
+                        <label className={styles.field}>
+                            <span>Host contact number</span>
+                            <input
+                                id="field-host-phone"
+                                value={form.hostContactNumber}
+                                onChange={updateField('hostContactNumber')}
+                                placeholder="e.g. +91 98765 43210"
                                 required
                             />
                         </label>
