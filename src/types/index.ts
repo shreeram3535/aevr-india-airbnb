@@ -223,6 +223,7 @@ export interface CreateListingInput {
     title: string;
     description: string;
     hostName: string;
+    hostContactNumber: string;
     pricePerNight: number;
     currency: string;
     categorySlug: string;
