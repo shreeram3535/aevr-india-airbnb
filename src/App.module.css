@@ -1316,7 +1316,6 @@
     border-bottom: none;
     margin-bottom: 0px;
     box-sizing: border-box;
-    overflow: hidden;
 }
 
 .heroBgImage {
@@ -1342,7 +1341,7 @@
 
 .heroContent {
     position: relative;
-    z-index: 10;
+    z-index: 200;
     max-width: 800px;
     width: 100%;
     margin: 0 auto;
@@ -1438,6 +1437,12 @@
     text-align: left;
     padding: 2px 12px;
     min-width: 0;
+    position: relative;
+}
+
+.interactiveField {
+    cursor: pointer;
+    user-select: none;
 }
 
 .destinationField {
