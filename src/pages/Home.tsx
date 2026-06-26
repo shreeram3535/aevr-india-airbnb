@@ -1036,32 +1036,39 @@ export const Home = () => {
             </div>
 
                 {/* Mode toggle: Aevr / Aevr Luxe (placed below stats) */}
-                <div className={styles.homeModeToggle}>
-                    <div className={`${styles.sliderIndicator} ${luxurySection ? styles.sliderIndicatorLuxe : ''}`} />
-                    <button
-                        type="button"
-                        className={`${styles.modeButton} ${!luxurySection ? styles.modeButtonActive : ''}`}
-                        onClick={() => {
-                            const next = new URLSearchParams(searchParams);
-                            next.delete('luxurySection');
-                            next.delete('category');
-                            setSearchParams(next);
-                        }}
-                    >
-                        Aevr
-                    </button>
-                    <button
-                        type="button"
-                        className={`${styles.modeButton} ${luxurySection ? `${styles.modeButtonActive} ${styles.modeButtonActiveLuxe}` : ''}`}
-                        onClick={() => {
-                            const next = new URLSearchParams(searchParams);
-                            next.delete('category');
-                            next.set('luxurySection', '1');
-                            setSearchParams(next);
-                        }}
-                    >
-                        Aevr Luxe
-                    </button>
+                <div className={styles.homeModeToggleContainer}>
+                    <div className={styles.homeModeToggle}>
+                        <div className={`${styles.sliderIndicator} ${luxurySection ? styles.sliderIndicatorLuxe : ''}`} />
+                        <button
+                            type="button"
+                            className={`${styles.modeButton} ${!luxurySection ? styles.modeButtonActive : ''}`}
+                            onClick={() => {
+                                const next = new URLSearchParams(searchParams);
+                                next.delete('luxurySection');
+                                next.delete('category');
+                                setSearchParams(next);
+                            }}
+                        >
+                            Aevr
+                        </button>
+                        <button
+                            type="button"
+                            className={`${styles.modeButton} ${luxurySection ? `${styles.modeButtonActive} ${styles.modeButtonActiveLuxe}` : ''}`}
+                            onClick={() => {
+                                const next = new URLSearchParams(searchParams);
+                                next.delete('category');
+                                next.set('luxurySection', '1');
+                                setSearchParams(next);
+                            }}
+                        >
+                            Aevr Luxe
+                        </button>
+                    </div>
+                    <p className={styles.modeToggleSubtitle}>
+                        {!luxurySection 
+                            ? 'Discover every stay on AEVR — from budget-friendly escapes to premium luxury villas.' 
+                            : 'Explore our handpicked collection of luxury villas and heritage stays, priced above ₹10,000 per night.'}
+                    </p>
                 </div>
 
             <main className={`${styles.homeMainContainer} ${luxurySection ? styles.homeModeLuxe : styles.homeModeAevr}`}>
