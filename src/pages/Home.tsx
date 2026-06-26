@@ -689,8 +689,8 @@ export const Home = () => {
             setRoomsOpen(false);
             setGuestsOpen(false);
         };
-        document.addEventListener('click', handleCloseAll);
-        return () => document.removeEventListener('click', handleCloseAll);
+        document.addEventListener('mousedown', handleCloseAll);
+        return () => document.removeEventListener('mousedown', handleCloseAll);
     }, []);
 
     const toggleRooms = (e: React.MouseEvent) => {
@@ -940,7 +940,7 @@ export const Home = () => {
                             <div className={styles.searchDivider} />
                             <div 
                                 className={`${styles.searchField} ${styles.interactiveField}`} 
-                                onClick={toggleRooms}
+                                onMouseDown={toggleRooms}
                                 role="button"
                                 tabIndex={0}
                                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { setRoomsOpen(prev => !prev); setGuestsOpen(false); } }}
@@ -956,7 +956,7 @@ export const Home = () => {
                                     </div>
                                 </div>
                                 {roomsOpen && (
-                                    <div className={styles.customDropdownMenu} onClick={(e) => e.stopPropagation()}>
+                                    <div className={styles.customDropdownMenu} onMouseDown={(e) => e.stopPropagation()}>
                                         {[
                                             { value: '', label: 'Add rooms' },
                                             { value: '1', label: '1 room' },
@@ -969,7 +969,7 @@ export const Home = () => {
                                                 key={opt.value}
                                                 type="button"
                                                 className={`${styles.customDropdownOption} ${heroBedrooms === opt.value ? styles.optionActive : ''}`}
-                                                onClick={(e) => {
+                                                onMouseDown={(e) => {
                                                     e.stopPropagation();
                                                     setHeroBedrooms(opt.value);
                                                     updateParams({ bedrooms: opt.value || null });
@@ -985,7 +985,7 @@ export const Home = () => {
                             <div className={styles.searchDivider} />
                             <div 
                                 className={`${styles.searchField} ${styles.interactiveField}`} 
-                                onClick={toggleGuests}
+                                onMouseDown={toggleGuests}
                                 role="button"
                                 tabIndex={0}
                                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { setGuestsOpen(prev => !prev); setRoomsOpen(false); } }}
@@ -1001,7 +1001,7 @@ export const Home = () => {
                                     </div>
                                 </div>
                                 {guestsOpen && (
-                                    <div className={styles.customDropdownMenu} onClick={(e) => e.stopPropagation()}>
+                                    <div className={styles.customDropdownMenu} onMouseDown={(e) => e.stopPropagation()}>
                                         {[
                                             { value: '', label: 'Add guests' },
                                             { value: '1', label: '1 guest' },
@@ -1014,7 +1014,7 @@ export const Home = () => {
                                                 key={opt.value}
                                                 type="button"
                                                 className={`${styles.customDropdownOption} ${heroGuests === opt.value ? styles.optionActive : ''}`}
-                                                onClick={(e) => {
+                                                onMouseDown={(e) => {
                                                     e.stopPropagation();
                                                     setHeroGuests(opt.value);
                                                     updateParams({ guests: opt.value || null });
