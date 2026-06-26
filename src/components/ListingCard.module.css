@@ -305,7 +305,7 @@
 
 .card:hover .dots {
     opacity: 1;
-    bottom: 48px;
+    bottom: 12px;
 }
 
 .dot {

@@ -247,11 +247,7 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing, cardIndex, ac
                         </>
                     )}
 
-                    {/* Quick View Overlay */}
-                    <div className={styles.quickViewOverlay}>
-                        <Eye size={14} className={styles.quickViewIcon} />
-                        <span>Quick View</span>
-                    </div>
+
 
                     {/* Guest Favorite / Flash Sale Badge */}
                     {isOnSale ? (

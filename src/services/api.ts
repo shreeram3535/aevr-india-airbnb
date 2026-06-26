@@ -909,6 +909,13 @@ const fetchSupabaseListings = async (filters: ListingFilters = {}): Promise<List
 
         if (luxurySection && luxeCategoryId) {
             query = query.or(`category_id.eq.${luxeCategoryId},price_per_night.gte.10000`);
+        } else {
+            // In standard Aevr mode, hide listings that are in the Luxe category
+            // and hide high-priced stays; these are only visible in Aevr Luxe.
+            if (luxeCategoryId) {
+                query = query.neq('category_id', luxeCategoryId);
+            }
+            query = query.lt('price_per_night', 10000);
         }
 
         if (typeof minPrice === 'number' && !Number.isNaN(minPrice)) {

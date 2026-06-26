@@ -1316,7 +1316,7 @@
     border-bottom: none;
     margin-bottom: 0px;
     box-sizing: border-box;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .heroBgImage {
@@ -1638,7 +1638,7 @@
         padding-top: calc(var(--header-height) + 32px);
         padding-bottom: 0;
         min-height: 500px;
-        overflow: hidden;
+        overflow: visible;
     }
 
     .heroSearchForm {
