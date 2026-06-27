@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type SyntheticEvent } from 'react';
 import { useParams } from 'react-router-dom';
 import {
-    Star,
     Heart,
     Share,
     Grid,
