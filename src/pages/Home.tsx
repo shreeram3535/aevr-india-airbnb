@@ -689,8 +689,8 @@ export const Home = () => {
             setRoomsOpen(false);
             setGuestsOpen(false);
         };
-        document.addEventListener('click', handleCloseAll);
-        return () => document.removeEventListener('click', handleCloseAll);
+        document.addEventListener('mousedown', handleCloseAll);
+        return () => document.removeEventListener('mousedown', handleCloseAll);
     }, []);
 
     const toggleRooms = (e: React.MouseEvent) => {
@@ -746,7 +746,7 @@ export const Home = () => {
 
     const clearFilters = () => {
         const params = new URLSearchParams(searchParams);
-        ['category', 'luxurySection', 'sort', 'minPrice', 'maxPrice', 'guests', 'bedrooms', 'baths', 'favorites'].forEach((key) => params.delete(key));
+        ['category', 'luxurySection', 'sort', 'minPrice', 'maxPrice', 'guests', 'bedrooms', 'baths', 'favorites', 'search'].forEach((key) => params.delete(key));
         setSearchParams(params);
     };
 
@@ -940,7 +940,7 @@ export const Home = () => {
                             <div className={styles.searchDivider} />
                             <div 
                                 className={`${styles.searchField} ${styles.interactiveField}`} 
-                                onClick={toggleRooms}
+                                onMouseDown={toggleRooms}
                                 role="button"
                                 tabIndex={0}
                                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { setRoomsOpen(prev => !prev); setGuestsOpen(false); } }}
@@ -956,7 +956,7 @@ export const Home = () => {
                                     </div>
                                 </div>
                                 {roomsOpen && (
-                                    <div className={styles.customDropdownMenu} onClick={(e) => e.stopPropagation()}>
+                                    <div className={styles.customDropdownMenu} onMouseDown={(e) => e.stopPropagation()}>
                                         {[
                                             { value: '', label: 'Add rooms' },
                                             { value: '1', label: '1 room' },
@@ -969,7 +969,7 @@ export const Home = () => {
                                                 key={opt.value}
                                                 type="button"
                                                 className={`${styles.customDropdownOption} ${heroBedrooms === opt.value ? styles.optionActive : ''}`}
-                                                onClick={(e) => {
+                                                onMouseDown={(e) => {
                                                     e.stopPropagation();
                                                     setHeroBedrooms(opt.value);
                                                     updateParams({ bedrooms: opt.value || null });
@@ -985,7 +985,7 @@ export const Home = () => {
                             <div className={styles.searchDivider} />
                             <div 
                                 className={`${styles.searchField} ${styles.interactiveField}`} 
-                                onClick={toggleGuests}
+                                onMouseDown={toggleGuests}
                                 role="button"
                                 tabIndex={0}
                                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { setGuestsOpen(prev => !prev); setRoomsOpen(false); } }}
@@ -1001,7 +1001,7 @@ export const Home = () => {
                                     </div>
                                 </div>
                                 {guestsOpen && (
-                                    <div className={styles.customDropdownMenu} onClick={(e) => e.stopPropagation()}>
+                                    <div className={styles.customDropdownMenu} onMouseDown={(e) => e.stopPropagation()}>
                                         {[
                                             { value: '', label: 'Add guests' },
                                             { value: '1', label: '1 guest' },
@@ -1014,7 +1014,7 @@ export const Home = () => {
                                                 key={opt.value}
                                                 type="button"
                                                 className={`${styles.customDropdownOption} ${heroGuests === opt.value ? styles.optionActive : ''}`}
-                                                onClick={(e) => {
+                                                onMouseDown={(e) => {
                                                     e.stopPropagation();
                                                     setHeroGuests(opt.value);
                                                     updateParams({ guests: opt.value || null });
@@ -1036,32 +1036,39 @@ export const Home = () => {
             </div>
 
                 {/* Mode toggle: Aevr / Aevr Luxe (placed below stats) */}
-                <div className={styles.homeModeToggle}>
-                    <div className={`${styles.sliderIndicator} ${luxurySection ? styles.sliderIndicatorLuxe : ''}`} />
-                    <button
-                        type="button"
-                        className={`${styles.modeButton} ${!luxurySection ? styles.modeButtonActive : ''}`}
-                        onClick={() => {
-                            const next = new URLSearchParams(searchParams);
-                            next.delete('luxurySection');
-                            next.delete('category');
-                            setSearchParams(next);
-                        }}
-                    >
-                        Aevr
-                    </button>
-                    <button
-                        type="button"
-                        className={`${styles.modeButton} ${luxurySection ? `${styles.modeButtonActive} ${styles.modeButtonActiveLuxe}` : ''}`}
-                        onClick={() => {
-                            const next = new URLSearchParams(searchParams);
-                            next.delete('category');
-                            next.set('luxurySection', '1');
-                            setSearchParams(next);
-                        }}
-                    >
-                        Aevr Luxe
-                    </button>
+                <div className={styles.homeModeToggleContainer}>
+                    <div className={styles.homeModeToggle}>
+                        <div className={`${styles.sliderIndicator} ${luxurySection ? styles.sliderIndicatorLuxe : ''}`} />
+                        <button
+                            type="button"
+                            className={`${styles.modeButton} ${!luxurySection ? styles.modeButtonActive : ''}`}
+                            onClick={() => {
+                                const next = new URLSearchParams(searchParams);
+                                next.delete('luxurySection');
+                                next.delete('category');
+                                setSearchParams(next);
+                            }}
+                        >
+                            Aevr
+                        </button>
+                        <button
+                            type="button"
+                            className={`${styles.modeButton} ${luxurySection ? `${styles.modeButtonActive} ${styles.modeButtonActiveLuxe}` : ''}`}
+                            onClick={() => {
+                                const next = new URLSearchParams(searchParams);
+                                next.delete('category');
+                                next.set('luxurySection', '1');
+                                setSearchParams(next);
+                            }}
+                        >
+                            Aevr Luxe
+                        </button>
+                    </div>
+                    <p className={styles.modeToggleSubtitle}>
+                        {!luxurySection 
+                            ? 'Discover every stay on AEVR — from budget-friendly escapes to premium luxury villas.' 
+                            : 'Explore our handpicked collection of luxury villas and heritage stays, priced above ₹10,000 per night.'}
+                    </p>
                 </div>
 
             <main className={`${styles.homeMainContainer} ${luxurySection ? styles.homeModeLuxe : styles.homeModeAevr}`}>
@@ -1376,7 +1383,10 @@ export const Home = () => {
                 ) : (
                     <div className={styles.emptyState}>
                         <h2>No listings found</h2>
-                        <p>Try loosening a filter, switching category, or clearing filters.</p>
+                        <p>No properties found matching your search.</p>
+                        <button type="button" className={styles.clearFiltersBtn} onClick={clearFilters}>
+                            Clear Filters
+                        </button>
                     </div>
                 )}
             </main>

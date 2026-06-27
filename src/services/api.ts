@@ -52,6 +52,7 @@ type SupabaseListingRow = {
     id: string;
     host_id?: string;
     host_name?: string | null;
+    host_phone?: string | null;
     map_link?: string | null;
     title: string;
     description: string;
@@ -187,6 +188,8 @@ export type CurrentUserSummary = {
 const LISTING_SELECT = `
     host_id,
     id,
+    host_name,
+    host_phone,
     map_link,
     title,
     description,
@@ -239,7 +242,9 @@ const LISTING_SELECT = `
         )
     )
 `;
-const LISTING_SELECT_WITHOUT_HOST_NAME = LISTING_SELECT.replace(/\n\s*host_name,/, '');
+const LISTING_SELECT_WITHOUT_HOST_NAME = LISTING_SELECT
+    .replace(/\n\s*host_name,/, '')
+    .replace(/\n\s*host_phone,/, '');
 const LISTING_SELECT_WITHOUT_AMENITY_LABELS = LISTING_SELECT.replace(/\n\s*amenity_labels,/, '');
 const LISTING_SELECT_MINIMAL = LISTING_SELECT_WITHOUT_HOST_NAME.replace(/\n\s*amenity_labels,/, '');
 
@@ -249,9 +254,11 @@ const isMissingHostNameColumnError = (error: unknown) => {
     }
 
     const record = error as { message?: unknown; details?: unknown; hint?: unknown };
-    return [record.message, record.details, record.hint]
+    const combined = [record.message, record.details, record.hint]
         .filter((value): value is string => typeof value === 'string')
-        .some((value) => value.toLowerCase().includes('host_name'));
+        .join(' ')
+        .toLowerCase();
+    return combined.includes('host_name') || combined.includes('host_phone');
 };
 
 const isMissingAmenityLabelsColumnError = (error: unknown) => {
@@ -401,6 +408,7 @@ const mapListing = (row: SupabaseListingRow): Listing => {
     const roomTypes = normalizeRoomTypes(row.room_types);
     const localExperiences = normalizeExperiences(row.local_experiences);
     const displayHostName = row.host_name?.trim() || host?.full_name?.trim() || 'Host';
+    const displayHostPhone = row.host_phone?.trim() || host?.phone?.trim() || undefined;
 
     return {
         id: row.id,
@@ -428,7 +436,7 @@ const mapListing = (row: SupabaseListingRow): Listing => {
             avatarUrl: host?.avatar_url ?? '',
             isSuperhost: host?.is_superhost ?? false,
             bio: host?.bio ?? undefined,
-            phone: host?.phone ?? undefined,
+            phone: displayHostPhone,
         },
         amenities,
         isGuestFavorite: row.is_guest_favorite,
@@ -724,6 +732,21 @@ const fetchCurrentProfileBasic = async (): Promise<Pick<SupabaseProfileRow, 'id'
         return null;
     }
 
+    const oauthRole = localStorage.getItem('aevr.oauth_role');
+    if (oauthRole && (oauthRole === 'guest' || oauthRole === 'host')) {
+        localStorage.removeItem('aevr.oauth_role');
+        const updateData: Record<string, any> = { role: oauthRole };
+        if (oauthRole === 'host') {
+            updateData.host_approval_status = 'pending';
+        } else {
+            updateData.host_approval_status = 'approved';
+        }
+        await supabase
+            .from('profiles')
+            .update(updateData)
+            .eq('id', authData.user.id);
+    }
+
     const { data, error } = await supabase
         .from('profiles')
         .select('id, full_name, avatar_url, role, is_verified_guest')
@@ -921,7 +944,7 @@ const fetchSupabaseListings = async (filters: ListingFilters = {}): Promise<List
 
         if (search?.trim()) {
             const q = search.trim();
-            query = query.or(`city.ilike.%${q}%,country.ilike.%${q}%,title.ilike.%${q}%`);
+            query = query.or(`city.ilike.%${q}%,country.ilike.%${q}%,title.ilike.%${q}%,description.ilike.%${q}%`);
         }
 
         return query.order(
@@ -1308,6 +1331,10 @@ const getSupabaseErrorMessage = (error: unknown, fallback: string) => {
 
         if (combined.toLowerCase().includes('host_name')) {
             return 'The database is missing the listings.host_name column. Run this in Supabase SQL Editor: alter table public.listings add column if not exists host_name text;';
+        }
+
+        if (combined.toLowerCase().includes('host_phone')) {
+            return 'The database is missing the listings.host_phone column. Run this in Supabase SQL Editor: alter table public.listings add column if not exists host_phone text;';
         }
 
         return combined || fallback;
@@ -1767,6 +1794,7 @@ export const api = {
                 title: input.title,
                 description: input.description,
                 host_name: input.hostName.trim(),
+                host_phone: input.hostContactNumber.trim(),
                 price_per_night: input.pricePerNight,
                 currency: input.currency,
                 city: input.city,
@@ -1840,6 +1868,7 @@ export const api = {
                 title: input.title,
                 description: input.description,
                 host_name: input.hostName.trim(),
+                host_phone: input.hostContactNumber.trim(),
                 price_per_night: input.pricePerNight,
                 currency: input.currency,
                 city: input.city,
@@ -1906,6 +1935,7 @@ export const api = {
                 title: input.title,
                 description: input.description,
                 host_name: input.hostName.trim(),
+                host_phone: input.hostContactNumber.trim(),
                 price_per_night: input.pricePerNight,
                 currency: input.currency,
                 city: input.city,

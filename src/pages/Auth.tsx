@@ -46,6 +46,7 @@ export const Auth = () => {
     const handleGoogleLogin = async () => {
         setMessage(null);
         try {
+            localStorage.setItem('aevr.oauth_role', signUpRole);
             const { error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
@@ -90,7 +91,7 @@ export const Auth = () => {
                 navigate(next, { replace: true });
             } else {
                 setMessageType('info');
-                setMessage('Account created. Check your email to verify your account, then sign in.');
+                setMessage('Account created! Please check your email to verify your account, then sign in.');
             }
         } catch (error) {
             setMessage(error instanceof Error ? error.message : 'Unable to continue');
