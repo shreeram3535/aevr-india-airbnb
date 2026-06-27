@@ -1218,12 +1218,6 @@ Please let me know the next steps for confirming the booking.`;
                                     </>
                                 )}
                             </div>
-                            <div className={styles.cardMeta}>
-                                <Star size={14} fill="currentColor" />
-                                <span>{listing.rating}</span>
-                                <span>·</span>
-                                <span>{listing.reviewCount} reviews</span>
-                            </div>
                         </div>
 
                         {isVerifiedGuest && (

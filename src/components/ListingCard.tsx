@@ -302,12 +302,7 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing, cardIndex, ac
                         <div className={styles.statusRight}>
                             {listing.reviewCount === 0 || listing.rating === 0 ? (
                                 <span className={styles.goldNewLabel}>New</span>
-                            ) : (
-                                <span className={styles.rating}>
-                                    <Star size={11} className={styles.starIcon} />
-                                    <span>{listing.rating.toFixed(1)} ({listing.reviewCount})</span>
-                                </span>
-                            )}
+                            ) : null}
                         </div>
                     </div>
                     
