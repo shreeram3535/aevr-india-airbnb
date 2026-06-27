@@ -1,6 +1,7 @@
 import React from 'react';
 import styles from './Footer.module.css';
 import { Globe, Instagram, MessageCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const INSTAGRAM_URL = 'https://www.instagram.com/aevrindia?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==';
 const WHATSAPP_URL = 'https://wa.me/918890807482';
@@ -14,19 +15,19 @@ export const Footer: React.FC = () => {
                     <ul>
                         <li><a href={WHATSAPP_URL} target="_blank" rel="noreferrer">WhatsApp: +91 88908 07482</a></li>
                         <li><a href={INSTAGRAM_URL} target="_blank" rel="noreferrer">Instagram: @aevrindia</a></li>
-                        <li><a href="#">Help Center</a></li>
+                        <li><Link to="/help">Help Center</Link></li>
                     </ul>
                 </div>
                 <div className={styles.section}>
                     <h3>Hosting</h3>
                     <ul>
-                        <li><a href="#">Aevr your home</a></li>
+                        <li><Link to="/host">Aevr your home</Link></li>
                     </ul>
                 </div>
                 <div className={styles.section}>
                     <h3>Aevr</h3>
                     <ul>
-                        <li><a href="#">New features</a></li>
+                        <li><Link to="/new-features">New features</Link></li>
                     </ul>
                 </div>
             </div>
@@ -34,11 +35,11 @@ export const Footer: React.FC = () => {
                 <div className={styles.left}>
                     <span>© 2026 Aevr, Inc.</span>
                     <span>·</span>
-                    <a href="#">Privacy</a>
+                    <Link to="/privacy-policy">Privacy Policy</Link>
                     <span>·</span>
-                    <a href="#">Terms</a>
+                    <Link to="/terms">Terms</Link>
                     <span>·</span>
-                    <a href="#">Sitemap</a>
+                    <Link to="/sitemap">Sitemap</Link>
                 </div>
                 <div className={styles.right}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Globe size={16} /> English (IN)</span>

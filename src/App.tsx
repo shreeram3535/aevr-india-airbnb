@@ -15,6 +15,8 @@ import { AdminHostApprovals } from './pages/AdminHostApprovals';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { AdminGuestVerification } from './pages/AdminGuestVerification';
 import { AdminProperties } from './pages/AdminProperties';
+import { PrivacyPolicy } from './pages/PrivacyPolicy';
+import HelpCenter from './pages/HelpCenter';
 import './styles/global.css';
 
 function App() {
@@ -29,7 +31,9 @@ function App() {
           <Route path="bookings" element={<Trips />} />
           <Route path="guest/auth" element={<GuestAuth />} />
           <Route path="auth" element={<Auth />} />
+          <Route path="privacy-policy" element={<PrivacyPolicy />} />
         </Route>
+        <Route path="/help" element={<HelpCenter />} />
         <Route path="/host" element={<HostLayout />}>
           <Route index element={<HostDashboard />} />
           <Route path="auth" element={<HostAuth />} />
