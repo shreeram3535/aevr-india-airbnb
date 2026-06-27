@@ -758,7 +758,7 @@ const fetchCurrentProfileBasic = async (): Promise<Pick<SupabaseProfileRow, 'id'
         return data as Pick<SupabaseProfileRow, 'id' | 'full_name' | 'avatar_url' | 'role' | 'is_verified_guest'>;
     }
 
-    const { data: fallbackData, error: fallbackError } = await supabase
+    const { data: fallbackData } = await supabase
         .from('profiles')
         .select('id, full_name, avatar_url, role')
         .eq('id', authData.user.id)
