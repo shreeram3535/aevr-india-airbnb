@@ -15,12 +15,10 @@ export const Favorites = () => {
         const loadFavorites = async () => {
             setLoading(true);
             try {
-                const [standardListings, luxeListings, drops] = await Promise.all([
+                const [allListings, drops] = await Promise.all([
                     api.fetchListings({}),
-                    api.fetchListings({ luxurySection: true }),
                     api.fetchActiveFlashDrops(),
                 ]);
-                const allListings = [...standardListings, ...luxeListings];
                 const favoriteIds = favoritesService.getFavorites();
                 const favs = allListings.filter(l => favoriteIds.includes(l.id));
                 setListings(favs);

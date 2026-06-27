@@ -21,18 +21,20 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/auth" element={<Auth />} />
+        <Route path="/guest/auth" element={<GuestAuth />} />
+        <Route path="/host/auth" element={<HostAuth />} />
+
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="rooms/:id" element={<ListingDetails />} />
           <Route path="favorites" element={<Favorites />} />
           <Route path="trips" element={<Trips />} />
           <Route path="bookings" element={<Trips />} />
-          <Route path="guest/auth" element={<GuestAuth />} />
-          <Route path="auth" element={<Auth />} />
         </Route>
+        
         <Route path="/host" element={<HostLayout />}>
           <Route index element={<HostDashboard />} />
-          <Route path="auth" element={<HostAuth />} />
           <Route path="new" element={<HostNewProperty />} />
           <Route path="edit/:id" element={<HostNewProperty />} />
           <Route path="admin" element={<AdminDashboard />} />

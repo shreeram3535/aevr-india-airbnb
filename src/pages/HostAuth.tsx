@@ -41,7 +41,7 @@ export const HostAuth = () => {
             const { error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
-                    redirectTo: `${window.location.origin}/`,
+                    redirectTo: `${window.location.origin}/host/auth`,
                     queryParams: { role: 'host' } 
                 }
             });
@@ -187,7 +187,7 @@ export const HostAuth = () => {
                         type="button" 
                         onClick={handleGoogleLogin} 
                         disabled={!hasSupabaseConfig}
-                        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', padding: '12px', backgroundColor: '#fff', border: '1px solid #E2E8F0', borderRadius: '8px', cursor: 'pointer', fontWeight: 500, fontSize: '0.95rem', marginBottom: '20px', color: '#1e293b' }}
+                        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', padding: '12px', backgroundColor: '#fff', border: '1px solid #E2E8F0', borderRadius: '8px', cursor: 'pointer', fontWeight: 500, fontSize: '0.95rem', color: '#1e293b' }}
                     >
                         <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                             <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -198,7 +198,7 @@ export const HostAuth = () => {
                         Continue with Google
                     </button>
 
-                    <div style={{ display: 'flex', alignItems: 'center', margin: '20px 0', color: '#94a3b8', fontSize: '0.85rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', color: '#94a3b8', fontSize: '0.85rem' }}>
                         <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>
                         <span style={{ padding: '0 12px' }}>or use email</span>
                         <div style={{ flex: 1, height: '1px', backgroundColor: '#e2e8f0' }}></div>

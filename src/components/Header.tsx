@@ -21,6 +21,7 @@ import {
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { api } from '../services/api';
 import { authService } from '../services/auth';
+import { supabase } from '../services/supabase';
 
 export const Header: React.FC = () => {
     const instagramUrl = 'https://www.instagram.com/aevrindia?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==';
@@ -91,6 +92,17 @@ export const Header: React.FC = () => {
         };
 
         loadUser();
+
+        if (supabase) {
+            const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event) => {
+                if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'USER_UPDATED') {
+                    await loadUser();
+                }
+            });
+            return () => {
+                subscription.unsubscribe();
+            };
+        }
     }, []);
 
 

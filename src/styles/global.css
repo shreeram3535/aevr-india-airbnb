@@ -42,6 +42,7 @@ ol {
 img {
     max-width: 100%;
     display: block;
+    pointer-events: none;
 }
 
 /* Scrollbar styling for a cleaner look */

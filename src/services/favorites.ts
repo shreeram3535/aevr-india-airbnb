@@ -1,9 +1,47 @@
-const STORAGE_KEY = 'airbnb_clone_favorites';
+const getStorageKey = (): string => {
+    try {
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith('sb-') && key.endsWith('-auth-token')) {
+                const value = localStorage.getItem(key);
+                if (value) {
+                    const parsed = JSON.parse(value);
+                    const userId = parsed?.user?.id;
+                    if (userId) {
+                        const userKey = `airbnb_clone_favorites_${userId}`;
+                        // Migrate anonymous favorites to this user's wishlist
+                        const anonKey = 'airbnb_clone_favorites_anonymous';
+                        const anonStored = localStorage.getItem(anonKey);
+                        if (anonStored) {
+                            try {
+                                const anonFavs = JSON.parse(anonStored);
+                                if (Array.isArray(anonFavs) && anonFavs.length > 0) {
+                                    const userStored = localStorage.getItem(userKey);
+                                    const userFavs = userStored ? JSON.parse(userStored) : [];
+                                    const merged = Array.from(new Set([...userFavs, ...anonFavs]));
+                                    localStorage.setItem(userKey, JSON.stringify(merged));
+                                }
+                            } catch (e) {
+                                console.error('Failed to migrate anonymous favorites:', e);
+                            }
+                            localStorage.removeItem(anonKey);
+                        }
+                        return userKey;
+                    }
+                }
+            }
+        }
+    } catch (e) {
+        console.error('Failed to parse user ID from localStorage:', e);
+    }
+    return 'airbnb_clone_favorites_anonymous';
+};
 
 export const favoritesService = {
     getFavorites: (): string[] => {
         try {
-            const stored = localStorage.getItem(STORAGE_KEY);
+            const key = getStorageKey();
+            const stored = localStorage.getItem(key);
             return stored ? JSON.parse(stored) : [];
         } catch {
             return [];
@@ -29,7 +67,8 @@ export const favoritesService = {
             isFavorited = false;
         }
 
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(newFavorites));
+        const key = getStorageKey();
+        localStorage.setItem(key, JSON.stringify(newFavorites));
 
         // Dispatch a custom event so components can react (simple state management)
         window.dispatchEvent(new Event('favorites-updated'));

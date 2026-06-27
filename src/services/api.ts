@@ -735,16 +735,17 @@ const fetchCurrentProfileBasic = async (): Promise<Pick<SupabaseProfileRow, 'id'
     const oauthRole = localStorage.getItem('aevr.oauth_role');
     if (oauthRole && (oauthRole === 'guest' || oauthRole === 'host')) {
         localStorage.removeItem('aevr.oauth_role');
-        const updateData: Record<string, any> = { role: oauthRole };
-        if (oauthRole === 'host') {
-            updateData.host_approval_status = 'pending';
-        } else {
-            updateData.host_approval_status = 'approved';
-        }
+        const metadata = authData.user.user_metadata ?? {};
         await supabase
             .from('profiles')
-            .update(updateData)
-            .eq('id', authData.user.id);
+            .upsert({
+                id: authData.user.id,
+                full_name: metadata.full_name || metadata.name || authData.user.email?.split('@')[0] || 'User',
+                avatar_url: metadata.avatar_url || null,
+                role: oauthRole,
+                host_approval_status: oauthRole === 'host' ? 'pending' : 'approved',
+                is_verified_guest: false,
+            }, { onConflict: 'id' });
     }
 
     const { data, error } = await supabase
@@ -763,14 +764,32 @@ const fetchCurrentProfileBasic = async (): Promise<Pick<SupabaseProfileRow, 'id'
         .eq('id', authData.user.id)
         .maybeSingle();
 
-    if (fallbackError || !fallbackData) {
-        return null;
+    if (fallbackData) {
+        return {
+            ...(fallbackData as Pick<SupabaseProfileRow, 'id' | 'full_name' | 'avatar_url' | 'role'>),
+            is_verified_guest: false,
+        };
     }
 
-    return {
-        ...(fallbackData as Pick<SupabaseProfileRow, 'id' | 'full_name' | 'avatar_url' | 'role'>),
-        is_verified_guest: false,
-    };
+    // Self-healing fallback: If the profile row is completely missing in the DB,
+    // upsert a default row based on the user's auth metadata so they can use the app.
+    try {
+        const metadata = authData.user.user_metadata ?? {};
+        const defaultRole = metadata.role === 'host' || metadata.role === 'admin' ? metadata.role : 'guest';
+        const defaultProfile = {
+            id: authData.user.id,
+            full_name: metadata.full_name || metadata.name || authData.user.email?.split('@')[0] || 'User',
+            avatar_url: metadata.avatar_url || null,
+            role: defaultRole,
+            host_approval_status: defaultRole === 'host' ? 'pending' : 'approved',
+            is_verified_guest: false
+        };
+        await supabase.from('profiles').upsert(defaultProfile, { onConflict: 'id' });
+        return defaultProfile;
+    } catch (e) {
+        console.error('Self-healing profile creation failed:', e);
+        return null;
+    }
 };
 
 const fetchHostApprovalStatusFromProfile = async (): Promise<HostApprovalStatus | null> => {
@@ -895,8 +914,6 @@ const fetchSupabaseListings = async (filters: ListingFilters = {}): Promise<List
         return [];
     }
 
-    const luxeCategoryId = await resolveCategoryId('luxe');
-
     const buildQuery = (selectColumns: string) => {
         let query = supabaseClient
             .from('listings')
@@ -907,15 +924,8 @@ const fetchSupabaseListings = async (filters: ListingFilters = {}): Promise<List
             query = query.eq('category_id', categoryId);
         }
 
-        if (luxurySection && luxeCategoryId) {
-            query = query.or(`category_id.eq.${luxeCategoryId},price_per_night.gte.10000`);
-        } else {
-            // In standard Aevr mode, hide listings that are in the Luxe category
-            // and hide high-priced stays; these are only visible in Aevr Luxe.
-            if (luxeCategoryId) {
-                query = query.neq('category_id', luxeCategoryId);
-            }
-            query = query.lt('price_per_night', 10000);
+        if (luxurySection) {
+            query = query.gte('price_per_night', 10000);
         }
 
         if (typeof minPrice === 'number' && !Number.isNaN(minPrice)) {

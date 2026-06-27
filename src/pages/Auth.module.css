@@ -3,7 +3,7 @@
    ════════════════════════════════════════════════════════════════════════ */
 
 .page {
-    min-height: calc(100vh - var(--header-height));
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -12,11 +12,12 @@
     padding: 60px 24px;
     background-color: #faf9f6; /* Warm neutral luxury off-white */
     position: relative;
-    margin-top: var(--header-height);
 }
 
 .backLink {
-    position: relative;
+    position: absolute;
+    top: 32px;
+    left: 40px;
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -27,8 +28,6 @@
     border: none;
     cursor: pointer;
     transition: color 0.15s;
-    width: max-content;
-    align-self: center;
 }
 
 .backLink:hover {
@@ -301,7 +300,6 @@
     .backLink {
         position: static;
         margin-bottom: 20px;
-        align-self: center;
-        transform: none;
+        align-self: flex-start;
     }
 }
