@@ -11,7 +11,6 @@ import {
     X,
     ExternalLink,
     PlayCircle,
-    Phone,
     ChevronLeft,
     ChevronRight,
     Minus,
@@ -126,38 +125,6 @@ const getHotelGstRate = (nightlyRate: number) => {
     return 0.18;
 };
 
-const normalizePhoneNumber = (value?: string | null) => {
-    if (!value) return '';
-    return value.replace(/[^\d+]/g, '');
-};
-
-const toWhatsAppPhone = (value?: string | null) => {
-    const normalized = normalizePhoneNumber(value);
-    if (!normalized) return '';
-    if (normalized.startsWith('+')) {
-        return normalized.slice(1);
-    }
-    if (normalized.startsWith('00')) {
-        return normalized.slice(2);
-    }
-    if (normalized.length === 10) {
-        return `91${normalized}`;
-    }
-    return normalized;
-};
-
-const formatPhoneDisplay = (value?: string | null) => {
-    const normalized = normalizePhoneNumber(value);
-    if (!normalized) return '';
-    if (normalized.startsWith('+')) return normalized;
-    if (normalized.length === 10) {
-        return `+91 ${normalized.slice(0, 5)} ${normalized.slice(5)}`;
-    }
-    if (normalized.length === 12 && normalized.startsWith('91')) {
-        return `+${normalized.slice(0, 2)} ${normalized.slice(2, 7)} ${normalized.slice(7)}`;
-    }
-    return normalized;
-};
 
 const getHostedByLabel = (listing: { category?: string; price?: number }) => {
     const normalizedCategory = listing.category?.toLowerCase() ?? '';
@@ -546,12 +513,6 @@ export const ListingDetails = () => {
     const listingMedia = useMemo(() => listing?.media ?? [], [listing?.media]);
     const galleryMedia = listingMedia;
     // Removed static experiences
-
-    const hostPhone = normalizePhoneNumber(listing?.host.phone);
-    const displayPhone = formatPhoneDisplay(listing?.host.phone);
-    const callHref = hostPhone ? `tel:${hostPhone}` : undefined;
-    const whatsappPhone = toWhatsAppPhone(listing?.host.phone);
-    const whatsappHref = whatsappPhone ? `https://wa.me/${whatsappPhone}` : undefined;
 
     useEffect(() => {
         setCurrentMediaIndex(0);
@@ -1043,26 +1004,7 @@ Please let me know the next steps for confirming the booking.`;
                         </button>
                     </div>
 
-                    <div className={styles.contactSection}>
-                        <div className={styles.contactHeader}>
-                            <h2>Contact host</h2>
-                            <span>{displayPhone || 'Contact number not added'}</span>
-                        </div>
-                        <div className={styles.contactActions}>
-                            {callHref && (
-                                <a href={callHref} className={styles.contactButton}>
-                                    <Phone size={18} />
-                                    <span>Call now</span>
-                                </a>
-                            )}
-                            {whatsappHref && (
-                                <a href={whatsappHref} target="_blank" rel="noreferrer" className={styles.whatsappButton}>
-                                    <img src="/whatsapp.svg" alt="" className={styles.whatsappIcon} aria-hidden="true" />
-                                    <span>WhatsApp</span>
-                                </a>
-                            )}
-                        </div>
-                    </div>
+
 
                     <div className={styles.amenities}>
                         <h2>What this place offers</h2>
@@ -1522,18 +1464,6 @@ Please let me know the next steps for confirming the booking.`;
                             >
                                 {submittingBooking ? 'Please wait...' : bookingActionLabel}
                             </button>
-
-                            <div className={styles.sidebarContactSection}>
-                                <div className={styles.sidebarContactLabel}>Contact</div>
-                                {whatsappHref ? (
-                                    <a href={whatsappHref} target="_blank" rel="noreferrer" className={styles.sidebarWhatsappButton}>
-                                        <img src="/whatsapp.svg" alt="" className={styles.whatsappIcon} aria-hidden="true" />
-                                        <span>WhatsApp</span>
-                                    </a>
-                                ) : (
-                                    <span className={styles.sidebarContactLabel}>Number not added</span>
-                                )}
-                            </div>
 
                             <div className={styles.bookingNote}>
                                 {bookingHeadline}. You will not be charged yet.

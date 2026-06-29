@@ -5,7 +5,6 @@ export interface User {
     isSuperhost: boolean;
     role?: 'guest' | 'host' | 'admin';
     bio?: string;
-    phone?: string;
 }
 
 export type HostApprovalStatus = 'pending' | 'approved' | 'rejected';
@@ -223,7 +222,6 @@ export interface CreateListingInput {
     title: string;
     description: string;
     hostName: string;
-    hostContactNumber: string;
     pricePerNight: number;
     currency: string;
     categorySlug: string;
