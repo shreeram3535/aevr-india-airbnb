@@ -52,7 +52,6 @@ type SupabaseListingRow = {
     id: string;
     host_id?: string;
     host_name?: string | null;
-    host_phone?: string | null;
     map_link?: string | null;
     title: string;
     description: string;
@@ -189,7 +188,6 @@ const LISTING_SELECT = `
     host_id,
     id,
     host_name,
-    host_phone,
     map_link,
     title,
     description,
@@ -243,8 +241,7 @@ const LISTING_SELECT = `
     )
 `;
 const LISTING_SELECT_WITHOUT_HOST_NAME = LISTING_SELECT
-    .replace(/\n\s*host_name,/, '')
-    .replace(/\n\s*host_phone,/, '');
+    .replace(/\n\s*host_name,/, '');
 const LISTING_SELECT_WITHOUT_AMENITY_LABELS = LISTING_SELECT.replace(/\n\s*amenity_labels,/, '');
 const LISTING_SELECT_MINIMAL = LISTING_SELECT_WITHOUT_HOST_NAME.replace(/\n\s*amenity_labels,/, '');
 
@@ -258,7 +255,7 @@ const isMissingHostNameColumnError = (error: unknown) => {
         .filter((value): value is string => typeof value === 'string')
         .join(' ')
         .toLowerCase();
-    return combined.includes('host_name') || combined.includes('host_phone');
+    return combined.includes('host_name');
 };
 
 const isMissingAmenityLabelsColumnError = (error: unknown) => {
@@ -408,7 +405,6 @@ const mapListing = (row: SupabaseListingRow): Listing => {
     const roomTypes = normalizeRoomTypes(row.room_types);
     const localExperiences = normalizeExperiences(row.local_experiences);
     const displayHostName = row.host_name?.trim() || host?.full_name?.trim() || 'Host';
-    const displayHostPhone = row.host_phone?.trim() || host?.phone?.trim() || undefined;
 
     return {
         id: row.id,
@@ -436,7 +432,6 @@ const mapListing = (row: SupabaseListingRow): Listing => {
             avatarUrl: host?.avatar_url ?? '',
             isSuperhost: host?.is_superhost ?? false,
             bio: host?.bio ?? undefined,
-            phone: displayHostPhone,
         },
         amenities,
         isGuestFavorite: row.is_guest_favorite,
@@ -1804,7 +1799,6 @@ export const api = {
                 title: input.title,
                 description: input.description,
                 host_name: input.hostName.trim(),
-                host_phone: input.hostContactNumber.trim(),
                 price_per_night: input.pricePerNight,
                 currency: input.currency,
                 city: input.city,
@@ -1878,7 +1872,7 @@ export const api = {
                 title: input.title,
                 description: input.description,
                 host_name: input.hostName.trim(),
-                host_phone: input.hostContactNumber.trim(),
+                
                 price_per_night: input.pricePerNight,
                 currency: input.currency,
                 city: input.city,
@@ -1945,7 +1939,7 @@ export const api = {
                 title: input.title,
                 description: input.description,
                 host_name: input.hostName.trim(),
-                host_phone: input.hostContactNumber.trim(),
+                
                 price_per_night: input.pricePerNight,
                 currency: input.currency,
                 city: input.city,
