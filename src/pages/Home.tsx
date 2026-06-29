@@ -624,7 +624,9 @@ const VideoDashboardCard = () => {
 const HERO_IMAGES = [
     '/coastal_calm_hero.png',
     '/beige_palace_hero.png',
-    '/heritage_palace_hero.png'
+    '/heritage_palace_hero.png',
+    '/mountain_retreat_hero.png',
+    '/backwater_paradise_hero.png'
 ];
 
 export const Home = () => {
@@ -916,14 +918,11 @@ export const Home = () => {
                     <p className={styles.heroSubtitle}>
                         <span className={styles.coastalBlueText}>Handpicked Luxury.</span> Fully Verified Stays.
                     </p>
-                    <p className={styles.heroDescription}>
-                        Experience India's most extraordinary private villas and heritage estates, professionally managed with a 100% comfort guarantee for your perfect escape.
-                    </p>
 
                     <div className={styles.heroSearchContainer}>
                         <form className={styles.heroSearchForm} onSubmit={handleHeroSearch}>
                             <div className={`${styles.searchField} ${styles.destinationField}`}>
-                                <MapPin size={20} className={styles.searchFieldIcon} />
+                                <MapPin size={22} className={styles.searchFieldIcon} />
                                 <div className={styles.searchFieldTextGroup}>
                                     <label className={styles.searchFieldLabel} htmlFor="hero-destination">Where to?</label>
                                     <div className={styles.inputDropdownWrapper}>
@@ -945,7 +944,7 @@ export const Home = () => {
                                 tabIndex={0}
                                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { setRoomsOpen(prev => !prev); setGuestsOpen(false); } }}
                             >
-                                <BedDouble size={20} className={styles.searchFieldIcon} />
+                                <BedDouble size={22} className={styles.searchFieldIcon} />
                                 <div className={styles.searchFieldTextGroup}>
                                     <span className={styles.searchFieldLabel}>Rooms</span>
                                     <div className={styles.customSelectTrigger}>
@@ -990,7 +989,7 @@ export const Home = () => {
                                 tabIndex={0}
                                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { setGuestsOpen(prev => !prev); setRoomsOpen(false); } }}
                             >
-                                <User size={20} className={styles.searchFieldIcon} />
+                                <User size={22} className={styles.searchFieldIcon} />
                                 <div className={styles.searchFieldTextGroup}>
                                     <span className={styles.searchFieldLabel}>Guests</span>
                                     <div className={styles.customSelectTrigger}>
@@ -1028,7 +1027,7 @@ export const Home = () => {
                                 )}
                             </div>
                             <button type="submit" className={styles.heroSearchButton} aria-label="Search">
-                                <Search size={18} />
+                                <Search size={20} />
                             </button>
                         </form>
                     </div>
