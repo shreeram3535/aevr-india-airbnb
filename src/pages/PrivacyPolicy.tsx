@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Shield, Mail, Globe, ArrowLeft, Calendar, FileText, ChevronRight, Info } from 'lucide-react';
+import { Mail, Globe, ChevronRight, Info } from 'lucide-react';
 import styles from './PrivacyPolicy.module.css';
 
 export const PrivacyPolicy: React.FC = () => {
@@ -59,20 +59,30 @@ export const PrivacyPolicy: React.FC = () => {
             {/* Header Hero Section */}
             <div className={styles.heroSection}>
                 <div className={styles.heroContent}>
-                    <Link to="/" className={styles.backLink}>
-                        <ArrowLeft size={16} /> Back to Home
-                    </Link>
-                    <div className={styles.heroIconWrapper}>
-                        <Shield size={32} />
+                    <div className={styles.breadcrumbRow}>
+                        <Link to="/" className={styles.breadcrumbLink}>Home</Link>
+                        <span className={styles.breadcrumbSeparator}>/</span>
+                        <span className={styles.breadcrumbCurrent}>Privacy Policy</span>
                     </div>
-                    <h1 className={styles.title}>Privacy Policy</h1>
+                    
+                    <div className={styles.titleContainer}>
+                        <span className={styles.preTitle}>Trust & Transparency</span>
+                        <h1 className={styles.title}>Privacy Policy</h1>
+                        <p className={styles.subtitle}>
+                            How we safeguard your personal data, respect your privacy, and ensure a secure experience at Aevr.
+                        </p>
+                    </div>
+
                     <div className={styles.metaRow}>
-                        <span className={styles.metaItem}>
-                            <Calendar size={14} /> Effective Date: 26/06/2026
-                        </span>
-                        <span className={styles.metaItem}>
-                            <FileText size={14} /> Aevr India
-                        </span>
+                        <div className={styles.metaItem}>
+                            <span className={styles.metaLabel}>Published:</span>
+                            <span className={styles.metaValue}>26 June, 2026</span>
+                        </div>
+                        <div className={styles.metaDivider} />
+                        <div className={styles.metaItem}>
+                            <span className={styles.metaLabel}>Entity:</span>
+                            <span className={styles.metaValue}>Aevr India</span>
+                        </div>
                     </div>
                 </div>
             </div>
