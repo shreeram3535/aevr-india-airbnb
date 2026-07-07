@@ -17,6 +17,7 @@ import { AdminGuestVerification } from './pages/AdminGuestVerification';
 import { AdminProperties } from './pages/AdminProperties';
 import { PrivacyPolicy } from './pages/PrivacyPolicy';
 import HelpCenter from './pages/HelpCenter';
+import { MapExplore } from './pages/MapExplore';
 import './styles/global.css';
 
 function App() {
@@ -33,6 +34,7 @@ function App() {
           <Route path="favorites" element={<Favorites />} />
           <Route path="trips" element={<Trips />} />
           <Route path="bookings" element={<Trips />} />
+          <Route path="map" element={<MapExplore />} />
           <Route path="privacy-policy" element={<PrivacyPolicy />} />
         </Route>
         <Route path="/help" element={<HelpCenter />} />

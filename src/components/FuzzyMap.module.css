@@ -1,48 +1,37 @@
-/* FuzzyMap.module.css — Matches Airbnb exactly */
+/* FuzzyMap.module.css */
 
-/* ── Outer wrapper ─────────────────────────── */
+/* ── Wrapper ──────────────────────────────────────────────── */
 .wrapper {
     position: relative;
-    border-radius: 12px;
+    border-radius: 16px;
     overflow: hidden;
     margin-top: 16px;
-    border: 1px solid #dddddd;
-    transition: all 0.3s ease;
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    /* bottom padding for the info bar */
+    padding-bottom: 38px;
+    background: #ede8df;
 }
 
-.wrapperFullscreen {
-    position: fixed;
-    inset: 0;
-    border-radius: 0;
-    border: none;
-    z-index: 9999;
-    margin-top: 0;
-}
-
-/* ── Map container ─────────────────────────── */
-.mapContainer {
+/* ── Google Maps iframe ───────────────────────────────────── */
+.iframe {
     width: 100%;
-    height: 480px;
+    height: 500px;
+    border: none;
+    display: block;
     transition: opacity 0.4s ease;
-    background: #ede8df;   /* CartoDB Voyager warm beige */
-    cursor: grab;
 }
 
-.mapContainer:active {
-    cursor: grabbing;
-}
-
-.wrapperFullscreen .mapContainer {
-    height: 100vh;
-}
-
-/* ── Skeleton ──────────────────────────────── */
+/* ── Skeleton shimmer (shown while iframe loads) ──────────── */
 .skeleton {
     position: absolute;
-    inset: 0;
-    z-index: 10;
+    inset: 0 0 38px 0; /* leave room for bottom bar */
     background: #ede8df;
-    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    pointer-events: none;
 }
 
 .skeletonShimmer {
@@ -51,11 +40,23 @@
     background: linear-gradient(
         105deg,
         transparent 30%,
-        rgba(255, 255, 255, 0.55) 50%,
+        rgba(255, 255, 255, 0.6) 50%,
         transparent 70%
     );
     background-size: 300% 100%;
     animation: shimmer 1.5s ease-in-out infinite;
+}
+
+.skeletonLabel {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #767676;
+    font-family: var(--font-family);
 }
 
 @keyframes shimmer {
@@ -63,153 +64,45 @@
     100% { background-position: -200% 0; }
 }
 
-/* ── Airbnb black circle marker ─────────────── */
-:global(.airbnb-map-marker) {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: #222222;
-    border: 2.5px solid #ffffff;
-    box-shadow:
-        0 2px 4px rgba(0, 0, 0, 0.25),
-        0 6px 16px rgba(0, 0, 0, 0.18);
+/* ── Bottom info bar ──────────────────────────────────────── */
+.bottomBar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 38px;
     display: flex;
     align-items: center;
-    justify-content: center;
-    animation: markerPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    gap: 6px;
+    padding: 0 14px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-top: 1px solid rgba(0, 0, 0, 0.07);
+    font-size: 12px;
+    font-weight: 500;
+    color: #555;
+    font-family: var(--font-family);
 }
 
-:global(.airbnb-map-marker-icon) {
-    width: 20px;
-    height: 20px;
+.pinIcon {
+    color: #ff385c;
     flex-shrink: 0;
 }
 
-@keyframes markerPop {
-    0%   { transform: scale(0.4) translateY(10px); opacity: 0; }
-    100% { transform: scale(1) translateY(0);      opacity: 1; }
-}
-
-/* ── Search button (top-left) — Airbnb ─────── */
-.searchBtn {
-    position: absolute;
-    top: 12px;
-    left: 12px;
-    z-index: 500;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: #ffffff;
-    border: none;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.20), 0 2px 8px rgba(0,0,0,0.12);
+.externalLink {
+    margin-left: auto;
     display: flex;
     align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    color: #222222;
-    transition: box-shadow 0.15s ease;
+    gap: 5px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #282B2B;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: opacity 0.15s ease;
 }
 
-.searchBtn:hover {
-    box-shadow: 0 2px 8px rgba(0,0,0,0.25), 0 4px 16px rgba(0,0,0,0.15);
-}
-
-/* ── Fullscreen button (top-right corner) ───── */
-.fullscreenBtn {
-    position: absolute;
-    top: 12px;
-    right: 52px; /* left of the zoom controls */
-    z-index: 500;
-    width: 36px;
-    height: 36px;
-    border-radius: 4px;
-    background: #ffffff;
-    border: none;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.20), 0 2px 8px rgba(0,0,0,0.12);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    color: #222222;
-    transition: box-shadow 0.15s ease;
-}
-
-.fullscreenBtn:hover {
-    box-shadow: 0 2px 8px rgba(0,0,0,0.25), 0 4px 16px rgba(0,0,0,0.15);
-}
-
-/* ── Leaflet zoom controls (right side, like Airbnb) */
-:global(.leaflet-top.leaflet-right) {
-    top: 12px;
-    right: 12px;
-}
-
-:global(.leaflet-control-zoom) {
-    border: none !important;
-    box-shadow:
-        0 1px 4px rgba(0,0,0,0.20),
-        0 2px 8px rgba(0,0,0,0.12) !important;
-    border-radius: 4px !important;
-    overflow: hidden;
-    margin: 0 !important;
-}
-
-:global(.leaflet-control-zoom-in),
-:global(.leaflet-control-zoom-out) {
-    width: 36px !important;
-    height: 36px !important;
-    line-height: 36px !important;
-    font-size: 20px !important;
-    font-weight: 300 !important;
-    color: #222222 !important;
-    background: #ffffff !important;
-    border: none !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    text-decoration: none !important;
-}
-
-:global(.leaflet-control-zoom-in:hover),
-:global(.leaflet-control-zoom-out:hover) {
-    background: #f7f7f7 !important;
-    color: #000000 !important;
-}
-
-:global(.leaflet-control-zoom-in) {
-    border-bottom: 1px solid #ebebeb !important;
-}
-
-/* Attribution — tiny like Airbnb's */
-:global(.leaflet-control-attribution) {
-    font-size: 10px !important;
-    color: #717171 !important;
-    background: rgba(255,255,255,0.8) !important;
-    padding: 2px 6px !important;
-}
-
-:global(.leaflet-control-attribution a) {
-    color: #717171 !important;
-}
-
-/* ── Error fallback ─────────────────────────── */
-.errorState {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    height: 320px;
-    border-radius: 12px;
-    background: #f7f7f7;
-    color: #717171;
-    font-size: 14px;
-    margin-top: 16px;
-    border: 1px solid #ebebeb;
-}
-
-.errorState a {
-    color: var(--color-primary, #008489);
-    text-decoration: underline;
-    cursor: pointer;
+.externalLink:hover {
+    opacity: 0.65;
 }
