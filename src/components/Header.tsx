@@ -16,7 +16,8 @@ import {
     LogIn,
     Instagram,
     MessageCircle,
-    SlidersHorizontal
+    SlidersHorizontal,
+    Map
 } from 'lucide-react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { api } from '../services/api';
@@ -169,6 +170,16 @@ export const Header: React.FC = () => {
                     >
                         <Heart size={18} />
                         <span>Wishlist</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        className={styles.wishlistBtn}
+                        onClick={() => navigate('/map')}
+                        aria-label="Explore map"
+                    >
+                        <Map size={18} />
+                        <span>Map</span>
                     </button>
 
                     <button 

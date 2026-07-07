@@ -15,6 +15,7 @@ import { AdminHostApprovals } from './pages/AdminHostApprovals';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { AdminGuestVerification } from './pages/AdminGuestVerification';
 import { AdminProperties } from './pages/AdminProperties';
+import { MapExplore } from './pages/MapExplore';
 import './styles/global.css';
 
 function App() {
@@ -27,6 +28,7 @@ function App() {
           <Route path="favorites" element={<Favorites />} />
           <Route path="trips" element={<Trips />} />
           <Route path="bookings" element={<Trips />} />
+          <Route path="map" element={<MapExplore />} />
           <Route path="guest/auth" element={<GuestAuth />} />
           <Route path="auth" element={<Auth />} />
         </Route>
