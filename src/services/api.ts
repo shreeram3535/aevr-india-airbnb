@@ -56,6 +56,8 @@ type SupabaseListingRow = {
     title: string;
     description: string;
     price_per_night: number;
+    original_price?: number | null;
+    discounted_price?: number | null;
     currency: string;
     rating: number | null;
     review_count: number | null;
@@ -192,6 +194,8 @@ const LISTING_SELECT = `
     title,
     description,
     price_per_night,
+    original_price,
+    discounted_price,
     currency,
     rating,
     review_count,
@@ -411,7 +415,9 @@ const mapListing = (row: SupabaseListingRow): Listing => {
         hostId: row.host_id,
         title: row.title,
         description: row.description,
-        price: row.price_per_night,
+        price: row.discounted_price ?? row.price_per_night,
+        originalPrice: row.original_price ?? undefined,
+        discountedPrice: row.discounted_price ?? undefined,
         currency: row.currency,
         rating: row.rating ?? 0,
         reviewCount: row.review_count ?? 0,
@@ -1783,6 +1789,8 @@ export const api = {
                 description: input.description,
                 host_name: input.hostName.trim(),
                 price_per_night: input.pricePerNight,
+                original_price: input.originalPrice ?? input.pricePerNight,
+                discounted_price: input.discountedPrice ?? input.pricePerNight,
                 currency: input.currency,
                 city: input.city,
                 country: input.country,
@@ -1857,6 +1865,8 @@ export const api = {
                 host_name: input.hostName.trim(),
                 
                 price_per_night: input.pricePerNight,
+                original_price: input.originalPrice ?? input.pricePerNight,
+                discounted_price: input.discountedPrice ?? input.pricePerNight,
                 currency: input.currency,
                 city: input.city,
                 country: input.country,
@@ -1924,6 +1934,8 @@ export const api = {
                 host_name: input.hostName.trim(),
                 
                 price_per_night: input.pricePerNight,
+                original_price: input.originalPrice ?? input.pricePerNight,
+                discounted_price: input.discountedPrice ?? input.pricePerNight,
                 currency: input.currency,
                 city: input.city,
                 country: input.country,

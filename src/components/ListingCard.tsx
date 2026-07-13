@@ -181,6 +181,7 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing, cardIndex, ac
     const activeDrop = getActiveDrop();
     const isOnSale = Boolean(activeDrop);
     const currentPrice = isOnSale && activeDrop ? activeDrop.salePrice : listing.price;
+    const displayOriginalPrice = isOnSale && activeDrop ? listing.price : listing.originalPrice;
 
     const priceLabel = new Intl.NumberFormat('en-IN', {
         style: 'currency',
@@ -188,11 +189,11 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing, cardIndex, ac
         maximumFractionDigits: 0,
     }).format(currentPrice);
 
-    const originalPriceLabel = isOnSale ? new Intl.NumberFormat('en-IN', {
+    const originalPriceLabel = displayOriginalPrice && displayOriginalPrice > currentPrice ? new Intl.NumberFormat('en-IN', {
         style: 'currency',
         currency: listing.currency ?? 'INR',
         maximumFractionDigits: 0,
-    }).format(listing.price) : null;
+    }).format(displayOriginalPrice) : null;
 
     const beds = listing.beds ?? Math.max(1, Math.ceil((listing.guestCountMax ?? 4) / 2));
     const guests = listing.guestCountMax ?? (beds * 2);
@@ -336,7 +337,7 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing, cardIndex, ac
                     
                     <div className={styles.rowFour}>
                         <div className={styles.priceAndPeriod}>
-                            {isOnSale && originalPriceLabel && (
+                            {originalPriceLabel && (
                                 <span className={styles.originalPrice}>{originalPriceLabel}</span>
                             )}
                             <span className={styles.price}>{priceLabel}</span>

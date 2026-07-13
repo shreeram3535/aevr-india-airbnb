@@ -63,6 +63,8 @@ export interface Listing {
     title: string;
     description: string;
     price: number;
+    originalPrice?: number;
+    discountedPrice?: number;
     currency?: string;
     rating: number;
     reviewCount: number;
@@ -223,6 +225,8 @@ export interface CreateListingInput {
     description: string;
     hostName: string;
     pricePerNight: number;
+    originalPrice?: number;
+    discountedPrice?: number;
     currency: string;
     categorySlug: string;
     city: string;

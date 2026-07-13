@@ -1094,6 +1094,11 @@ Please let me know the next steps for confirming the booking.`;
                                         <span className={styles.originalPriceDetails}>{formatPrice(listing.price, listing.currency)}</span>
                                         <span className={styles.salePriceDetails}>{formatPrice(activeDrop.salePrice, listing.currency)}</span>
                                     </>
+                                ) : listing.originalPrice && listing.originalPrice > listing.price ? (
+                                    <>
+                                        <span className={styles.originalPriceDetails}>{formatPrice(listing.originalPrice, listing.currency)}</span>
+                                        <span className={styles.salePriceDetails}>{formatPrice(listing.price, listing.currency)}</span>
+                                    </>
                                 ) : (
                                     formatPrice(listing.price, listing.currency)
                                 )}{' '}
@@ -1151,6 +1156,12 @@ Please let me know the next steps for confirming the booking.`;
                                 {isOnSale && activeDrop && discountedNights > 0 ? (
                                     <div className={styles.priceContainer}>
                                         <span className={styles.originalPriceCard}>{formatPrice(selectedRoomType?.pricePerNight ?? listing.price, listing.currency)}</span>
+                                        <span className={styles.salePriceCard}>{formatPrice(nightlyRate, listing.currency)}</span>
+                                        <span className={styles.period}>/ night</span>
+                                    </div>
+                                ) : listing.originalPrice && listing.originalPrice > listing.price ? (
+                                    <div className={styles.priceContainer}>
+                                        <span className={styles.originalPriceCard}>{formatPrice(listing.originalPrice, listing.currency)}</span>
                                         <span className={styles.salePriceCard}>{formatPrice(nightlyRate, listing.currency)}</span>
                                         <span className={styles.period}>/ night</span>
                                     </div>
