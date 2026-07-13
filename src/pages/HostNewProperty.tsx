@@ -23,7 +23,8 @@ type FormState = {
     title: string;
     description: string;
     hostName: string;
-    pricePerNight: string;
+    originalPrice: string;
+    discountedPrice: string;
     currency: string;
     categorySlug: string;
     city: string;
@@ -133,7 +134,8 @@ const initialState: FormState = {
     title: '',
     description: '',
     hostName: '',
-    pricePerNight: '',
+    originalPrice: '',
+    discountedPrice: '',
     currency: 'INR',
     categorySlug: 'cabins',
     city: '',
@@ -164,7 +166,8 @@ const listingToForm = (listing: Listing): FormState => ({
     title: listing.title,
     description: listing.description,
     hostName: listing.host.name,
-    pricePerNight: String(listing.price),
+    originalPrice: String(listing.originalPrice ?? listing.price),
+    discountedPrice: String(listing.discountedPrice ?? listing.price),
     currency: listing.currency ?? 'INR',
     categorySlug: listing.category,
     city: listing.location.city,
@@ -376,7 +379,7 @@ export const HostNewProperty = () => {
         event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
     ) => {
         setForm((current) => ({ ...current, [field]: event.target.value }));
-        if (field === 'pricePerNight') {
+        if (field === 'discountedPrice') {
             setRoomTypes((current) =>
                 current.length === 1 && !current[0].pricePerNight
                     ? [{ ...current[0], pricePerNight: event.target.value }]
@@ -550,7 +553,7 @@ export const HostNewProperty = () => {
 
             const normalizedRoomTypes = (await Promise.all(
                 roomTypes.map(async (rt, index): Promise<RoomType | null> => {
-                    const pricePerNight = Number(rt.pricePerNight || form.pricePerNight);
+                    const pricePerNight = Number(rt.pricePerNight || form.discountedPrice);
                     const totalCount = Number(rt.totalCount || 1);
                     const maxGuests = rt.maxGuests ? Number(rt.maxGuests) : undefined;
                     const beds = rt.beds ? Number(rt.beds) : undefined;
@@ -587,6 +590,15 @@ export const HostNewProperty = () => {
             const startingPrice = Math.min(...normalizedRoomTypes.map((rt) => rt.pricePerNight));
             const hostName = form.hostName.trim();
             if (!hostName) throw new Error('Add the host name for this property.');
+
+            const origPrice = Number(form.originalPrice);
+            const discPrice = Number(form.discountedPrice);
+            if (discPrice > origPrice) {
+                throw new Error('Discounted price cannot exceed the original price.');
+            }
+            if (discPrice <= 0 || origPrice <= 0) {
+                throw new Error('Prices must be positive numbers.');
+            }
 
             const uploadedPropertyMedia = selectedFiles.length > 0
                 ? await uploadListingImages(session.user.id, selectedFiles)
@@ -626,6 +638,8 @@ export const HostNewProperty = () => {
                 description: form.description,
                 hostName,
                 pricePerNight: startingPrice,
+                originalPrice: origPrice,
+                discountedPrice: discPrice,
                 currency: form.currency,
                 categorySlug: form.categorySlug,
                 city: form.city,
@@ -839,22 +853,37 @@ export const HostNewProperty = () => {
                             </div>
                         </div>
                         <div className={styles.pricingRow}>
-                            <label className={styles.field} style={{ flex: 2 }}>
-                                <span>Starting price per night</span>
+                            <label className={styles.field} style={{ flex: 1 }}>
+                                <span>Original Price (₹)</span>
                                 <div className={styles.priceInputWrapper}>
                                     <span className={styles.currencySymbol}>{form.currency === 'INR' ? '₹' : '$'}</span>
                                     <input
-                                        id="field-price"
+                                        id="field-original-price"
                                         type="number"
                                         min="0"
-                                        value={form.pricePerNight}
-                                        onChange={updateField('pricePerNight')}
+                                        value={form.originalPrice}
+                                        onChange={updateField('originalPrice')}
                                         className={styles.priceInput}
                                         placeholder="0"
                                         required
                                     />
                                 </div>
-                                <small className={styles.helperText}>Room types below can have their own prices.</small>
+                            </label>
+                            <label className={styles.field} style={{ flex: 1 }}>
+                                <span>Discounted Price (₹)</span>
+                                <div className={styles.priceInputWrapper}>
+                                    <span className={styles.currencySymbol}>{form.currency === 'INR' ? '₹' : '$'}</span>
+                                    <input
+                                        id="field-discounted-price"
+                                        type="number"
+                                        min="0"
+                                        value={form.discountedPrice}
+                                        onChange={updateField('discountedPrice')}
+                                        className={styles.priceInput}
+                                        placeholder="0"
+                                        required
+                                    />
+                                </div>
                             </label>
                             <label className={styles.field} style={{ flex: 1 }}>
                                 <span>Currency</span>
