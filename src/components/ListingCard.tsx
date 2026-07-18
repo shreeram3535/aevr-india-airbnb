@@ -147,14 +147,11 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing, cardIndex, ac
         return () => window.removeEventListener('favorites-updated', handleUpdate);
     }, [listing.id]);
 
-    useEffect(() => {
-        setImageLoaded(false);
-    }, [coverImage]);
-
     const nextImage = (e: React.MouseEvent) => {
         e.stopPropagation();
         e.preventDefault();
         if (!hasImages) return;
+        setImageLoaded(false);
         setCurrentImageIndex((prev) => (prev + 1) % imageCount);
     };
 
@@ -162,6 +159,7 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing, cardIndex, ac
         e.stopPropagation();
         e.preventDefault();
         if (!hasImages) return;
+        setImageLoaded(false);
         setCurrentImageIndex((prev) => (prev - 1 + imageCount) % imageCount);
     };
 

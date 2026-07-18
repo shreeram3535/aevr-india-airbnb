@@ -53,7 +53,15 @@ export const FuzzyMap = ({ lat, lng, listingId, city }: FuzzyMapProps) => {
             <div className={styles.bottomBar}>
                 <MapPin size={13} className={styles.pinIcon} />
                 <span>Showing approximate area · Exact address shared after booking</span>
-
+                <a
+                    href={externalUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={styles.externalLink}
+                >
+                    Open in Maps
+                    <ExternalLink size={12} />
+                </a>
             </div>
         </div>
     );

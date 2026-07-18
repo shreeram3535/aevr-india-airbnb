@@ -276,14 +276,14 @@ export const ListingDetails = () => {
     const getStayNights = (checkInStr: string, checkOutStr: string) => {
         const nights: string[] = [];
         if (!checkInStr || !checkOutStr) return nights;
-        const current = new Date(checkInStr);
-        const end = new Date(checkOutStr);
+        const current = parseInputDate(checkInStr);
+        const end = parseInputDate(checkOutStr);
         while (current < end) {
-            const y = current.getFullYear();
-            const m = String(current.getMonth() + 1).padStart(2, '0');
-            const d = String(current.getDate()).padStart(2, '0');
+            const y = current.getUTCFullYear();
+            const m = String(current.getUTCMonth() + 1).padStart(2, '0');
+            const d = String(current.getUTCDate()).padStart(2, '0');
             nights.push(`${y}-${m}-${d}`);
-            current.setDate(current.getDate() + 1);
+            current.setUTCDate(current.getUTCDate() + 1);
         }
         return nights;
     };

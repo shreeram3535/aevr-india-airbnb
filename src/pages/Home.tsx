@@ -152,60 +152,48 @@ const openDB = (): Promise<IDBDatabase> => {
 };
 
 const saveVideoFile = async (key: string, file: File): Promise<void> => {
-    try {
-        const db = await openDB();
-        return new Promise((resolve, reject) => {
-            try {
-                const transaction = db.transaction(STORE_NAME, 'readwrite');
-                const store = transaction.objectStore(STORE_NAME);
-                const request = store.put(file, key);
-                request.onsuccess = () => resolve();
-                request.onerror = () => reject(request.error);
-            } catch (err) {
-                reject(err);
-            }
-        });
-    } catch (e) {
-        throw e;
-    }
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+        try {
+            const transaction = db.transaction(STORE_NAME, 'readwrite');
+            const store = transaction.objectStore(STORE_NAME);
+            const request = store.put(file, key);
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+        } catch (err) {
+            reject(err);
+        }
+    });
 };
 
 const getVideoFile = async (key: string): Promise<File | null> => {
-    try {
-        const db = await openDB();
-        return new Promise((resolve, reject) => {
-            try {
-                const transaction = db.transaction(STORE_NAME, 'readonly');
-                const store = transaction.objectStore(STORE_NAME);
-                const request = store.get(key);
-                request.onsuccess = () => resolve(request.result || null);
-                request.onerror = () => reject(request.error);
-            } catch (err) {
-                reject(err);
-            }
-        });
-    } catch (e) {
-        throw e;
-    }
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+        try {
+            const transaction = db.transaction(STORE_NAME, 'readonly');
+            const store = transaction.objectStore(STORE_NAME);
+            const request = store.get(key);
+            request.onsuccess = () => resolve(request.result || null);
+            request.onerror = () => reject(request.error);
+        } catch (err) {
+            reject(err);
+        }
+    });
 };
 
 const deleteVideoFile = async (key: string): Promise<void> => {
-    try {
-        const db = await openDB();
-        return new Promise((resolve, reject) => {
-            try {
-                const transaction = db.transaction(STORE_NAME, 'readwrite');
-                const store = transaction.objectStore(STORE_NAME);
-                const request = store.delete(key);
-                request.onsuccess = () => resolve();
-                request.onerror = () => reject(request.error);
-            } catch (err) {
-                reject(err);
-            }
-        });
-    } catch (e) {
-        throw e;
-    }
+    const db = await openDB();
+    return new Promise((resolve, reject) => {
+        try {
+            const transaction = db.transaction(STORE_NAME, 'readwrite');
+            const store = transaction.objectStore(STORE_NAME);
+            const request = store.delete(key);
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+        } catch (err) {
+            reject(err);
+        }
+    });
 };
 
 const getStoredVideoList = (): PresetVideo[] => {
