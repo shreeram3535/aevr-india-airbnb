@@ -638,8 +638,6 @@ const fetchActiveFlashDrops = async (nowIso: string): Promise<FlashSaleDrop[]> =
         return [];
     }
 
-    let drops: FlashSaleDrop[] = [];
-
     let { data, error } = await supabase
         .from('flash_sale_drops')
         .select(FLASH_SALE_SELECT)
@@ -674,55 +672,13 @@ const fetchActiveFlashDrops = async (nowIso: string): Promise<FlashSaleDrop[]> =
         error = fallbackResult.error;
     }
 
-    if (!error && data) {
-        drops = (data as unknown as SupabaseFlashSaleRow[])
-            .map(mapFlashSale)
-            .filter((drop): drop is FlashSaleDrop => drop !== null);
+    if (error || !data) {
+        return [];
     }
 
-    // Also check active listings that have discount_end_time > nowIso to capture all discounted properties
-    try {
-        const existingListingIds = new Set(drops.map((d) => d.listingId));
-        const { data: discountedListings, error: listingsErr } = await supabase
-            .from('listings')
-            .select(LISTING_SELECT)
-            .eq('is_active', true)
-            .gt('discount_end_time', nowIso);
-
-        if (!listingsErr && discountedListings) {
-            const extraListings = (discountedListings as unknown as SupabaseListingRow[]).map(mapListing);
-            for (const l of extraListings) {
-                if (
-                    !existingListingIds.has(l.id) &&
-                    l.discountedPrice &&
-                    l.discountEndTime &&
-                    l.discountedPrice < (l.originalPrice ?? l.price)
-                ) {
-                    const origPrice = l.originalPrice ?? l.price;
-                    const discountPercent = Math.round(((origPrice - l.discountedPrice) / origPrice) * 100);
-                    drops.push({
-                        id: `listing-drop-${l.id}`,
-                        listingId: l.id,
-                        listing: l,
-                        saleType: 'manual_price',
-                        saleValue: l.discountedPrice,
-                        startAt: new Date().toISOString(),
-                        endAt: l.discountEndTime,
-                        isActive: true,
-                        createdBy: l.hostId || '',
-                        createdAt: new Date().toISOString(),
-                        updatedAt: new Date().toISOString(),
-                        salePrice: l.discountedPrice,
-                        discountPercent,
-                    });
-                }
-            }
-        }
-    } catch (err) {
-        console.warn('Error fetching discounted listings for flash sale drops:', err);
-    }
-
-    return drops;
+    return (data as unknown as SupabaseFlashSaleRow[])
+        .map(mapFlashSale)
+        .filter((drop): drop is FlashSaleDrop => drop !== null);
 };
 
 const fetchActiveFlashDropForListing = async (listingId: string, nowIso: string): Promise<FlashSaleDrop | null> => {
@@ -1935,24 +1891,6 @@ export const api = {
         await persistListingMedia(newListingId, input.media, input.title);
         await persistListingAmenities(newListingId, input.amenityLabels);
 
-        const origPrice = input.originalPrice ?? input.pricePerNight;
-        const discPrice = input.discountedPrice ?? input.pricePerNight;
-        const hasDiscount = discPrice > 0 && discPrice < origPrice && Boolean(input.discountEndTime);
-
-        if (hasDiscount && input.discountEndTime) {
-            await supabase
-                .from('flash_sale_drops')
-                .insert({
-                    listing_id: newListingId,
-                    sale_type: 'manual_price',
-                    sale_value: discPrice,
-                    start_at: new Date().toISOString(),
-                    end_at: input.discountEndTime,
-                    is_active: true,
-                    created_by: hostId,
-                });
-        }
-
         // Re-fetch so we get a fully-joined listing regardless of RLS read policies.
         const created = await fetchSupabaseListingById(newListingId);
         if (!created) {
@@ -2026,31 +1964,6 @@ export const api = {
         }
 
         await persistListingAmenities(listingId, input.amenityLabels);
-
-        // Sync flash_sale_drops table for discount offer duration
-        const origPrice = input.originalPrice ?? input.pricePerNight;
-        const discPrice = input.discountedPrice ?? input.pricePerNight;
-        const hasDiscount = discPrice > 0 && discPrice < origPrice && Boolean(input.discountEndTime);
-
-        await supabase
-            .from('flash_sale_drops')
-            .update({ is_active: false })
-            .eq('listing_id', listingId)
-            .eq('is_active', true);
-
-        if (hasDiscount && input.discountEndTime) {
-            await supabase
-                .from('flash_sale_drops')
-                .insert({
-                    listing_id: listingId,
-                    sale_type: 'manual_price',
-                    sale_value: discPrice,
-                    start_at: new Date().toISOString(),
-                    end_at: input.discountEndTime,
-                    is_active: true,
-                    created_by: hostId,
-                });
-        }
 
         // Re-fetch the listing so callers always get a fully-joined result.
         const updated = await fetchSupabaseListingById(listingId);
@@ -2133,27 +2046,6 @@ export const api = {
         }
 
         await persistListingAmenities(listingId, input.amenityLabels);
-
-        // Sync flash_sale_drops table for discount offer duration
-        await supabase
-            .from('flash_sale_drops')
-            .update({ is_active: false })
-            .eq('listing_id', listingId)
-            .eq('is_active', true);
-
-        if (hasDiscount && input.discountEndTime) {
-            await supabase
-                .from('flash_sale_drops')
-                .insert({
-                    listing_id: listingId,
-                    sale_type: 'manual_price',
-                    sale_value: discPrice,
-                    start_at: new Date().toISOString(),
-                    end_at: input.discountEndTime,
-                    is_active: true,
-                    created_by: authData.user.id,
-                });
-        }
 
         // Re-fetch so callers always get a fully-joined result.
         const updated = await fetchSupabaseListingById(listingId);
