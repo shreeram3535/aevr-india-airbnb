@@ -716,6 +716,12 @@ export const Home = () => {
         return () => clearInterval(timer);
     }, []);
 
+    // Keep nowTs ticking every second so flash-sale countdowns and banner filters stay live
+    useEffect(() => {
+        const ticker = setInterval(() => setNowTs(Date.now()), 1000);
+        return () => clearInterval(ticker);
+    }, []);
+
     useEffect(() => {
         const handleCloseAll = () => {
             setRoomsOpen(false);
