@@ -36,7 +36,8 @@ import {
     Maximize2,
     MoreHorizontal,
     UploadCloud,
-    Trash2
+    Trash2,
+    ArrowRight
 } from 'lucide-react';
 import styles from '../App.module.css'; // Reusing the grid styles from App module
 
@@ -630,6 +631,34 @@ const HERO_IMAGES = [
     '/backwater_paradise_hero.png'
 ];
 
+const TOP_DESTINATIONS = [
+    {
+        name: 'Udaipur',
+        villasCount: 33,
+        image: 'https://bnwtqridnqbjzwqzkejj.supabase.co/storage/v1/object/public/listing-images/5db62c26-e08c-4c60-a306-89d7637f60cb/1779601571206-rzk4465nvj.jpeg',
+        searchQuery: 'Udaipur'
+    },
+    {
+        name: 'Rishikesh',
+        villasCount: 2,
+        image: 'https://images.unsplash.com/photo-1605649487212-47bdab064df7?q=80&w=600&auto=format&fit=crop',
+        searchQuery: 'Rishikesh'
+    },
+    {
+        name: 'Gurgaon',
+        villasCount: 1,
+        image: 'https://bnwtqridnqbjzwqzkejj.supabase.co/storage/v1/object/public/listing-images/5db62c26-e08c-4c60-a306-89d7637f60cb/1781181109856-v4tdi0915r.jpeg',
+        searchQuery: 'Gurgaon'
+    },
+    {
+        name: 'Coming Soon',
+        villasCount: 0,
+        image: 'https://images.unsplash.com/photo-1571896349842-33c89424de2d?q=80&w=600&auto=format&fit=crop',
+        searchQuery: '',
+        isComingSoon: true
+    }
+];
+
 export const Home = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const categoryParam = searchParams.get('category');
@@ -734,6 +763,22 @@ export const Home = () => {
             guests: heroGuests || null,
             bedrooms: heroBedrooms || null,
         });
+    };
+
+    const handleDestinationClick = (destName: string) => {
+        setHeroSearchQuery(destName);
+        updateParams({
+            search: destName || null,
+        });
+        
+        // Smooth scroll to listings grid
+        setTimeout(() => {
+            const mainEl = document.querySelector('main');
+            if (mainEl) {
+                const topOffset = mainEl.getBoundingClientRect().top + window.scrollY - 100;
+                window.scrollTo({ top: topOffset, behavior: 'smooth' });
+            }
+        }, 100);
     };
 
     const handleSelectCategory = (id: string) => {
@@ -1420,6 +1465,70 @@ export const Home = () => {
                         </button>
                     </div>
                 )}
+
+                {/* Top Destinations Section */}
+                <section className={styles.topDestinationsSection}>
+                    <div className={styles.topDestinationsHeader}>
+                        <div className={styles.topDestinationsHeaderLeft}>
+                            <span className={styles.topDestinationsLabel}>Explore the world</span>
+                            <h2 className={styles.topDestinationsTitle}>Top Destinations</h2>
+                        </div>
+                        <button type="button" className={styles.allDestinationsBtn} onClick={clearFilters}>
+                            <span>All destinations</span>
+                            <ArrowRight size={14} />
+                        </button>
+                    </div>
+
+                    <div className={styles.destinationsGrid}>
+                        {TOP_DESTINATIONS.map((dest) => (
+                            <div
+                                key={dest.name}
+                                className={styles.destinationCard}
+                                onClick={() => !dest.isComingSoon && handleDestinationClick(dest.searchQuery)}
+                                style={{
+                                    cursor: dest.isComingSoon ? 'default' : 'pointer'
+                                }}
+                            >
+                                <img
+                                    src={dest.image}
+                                    alt={dest.name}
+                                    className={styles.destinationCardImage}
+                                    loading="lazy"
+                                />
+                                <div className={styles.destinationCardOverlay} />
+                                {dest.isComingSoon && (
+                                    <span
+                                        style={{
+                                            position: 'absolute',
+                                            top: '16px',
+                                            right: '16px',
+                                            backgroundColor: '#B88A5A',
+                                            color: '#FFFFFF',
+                                            fontSize: '11px',
+                                            fontWeight: 'bold',
+                                            padding: '4px 10px',
+                                            borderRadius: '20px',
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '0.05em',
+                                            boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                                            zIndex: 2
+                                        }}
+                                    >
+                                        Soon
+                                    </span>
+                                )}
+                                <div className={styles.destinationCardContent}>
+                                    <h3 className={styles.destinationCardTitle}>{dest.name}</h3>
+                                    <p className={styles.destinationCardSubtitle}>
+                                        {dest.isComingSoon 
+                                            ? 'Launching soon' 
+                                            : `${dest.villasCount} ${dest.villasCount === 1 ? 'Villa' : 'Villas'}`}
+                                    </p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </section>
             </main>
 
             <section className={styles.bottomDashboardSection}>

@@ -251,7 +251,7 @@ export default function HelpCenter() {
 
   // Custom SVGs for section cards
   const renderSectionIcon = (id: number, size = 24) => {
-    const strokeColor = '#4A6B8A';
+    const strokeColor = '#2E3A43';
     switch (id) {
       case 1: // Booking Support
         return (
@@ -326,9 +326,9 @@ export default function HelpCenter() {
   return (
     <div
       style={{
-        fontFamily: 'Georgia, serif',
-        backgroundColor: '#F4F7FA',
-        color: '#2E4A61',
+        fontFamily: "'Outfit', -apple-system, BlinkMacSystemFont, sans-serif",
+        backgroundColor: '#FCFAF7', // Matches AEVR body bg
+        color: '#282B2B',
         minHeight: '100vh',
         display: 'flex',
         flexDirection: 'column',
@@ -338,11 +338,11 @@ export default function HelpCenter() {
       {/* HEADER */}
       <header
         style={{
-          backgroundColor: '#2E4A61',
-          padding: '48px 24px',
+          backgroundColor: '#2E3A43', // Dark slate blue matching the screenshot
+          padding: '54px 24px',
           color: '#FFFFFF',
           textAlign: 'center',
-          boxShadow: '0 4px 20px rgba(46, 74, 97, 0.15)'
+          boxShadow: '0 4px 20px rgba(40, 43, 43, 0.08)'
         }}
       >
         <div style={{ maxWidth: '900px', margin: '0 auto' }}>
@@ -352,29 +352,29 @@ export default function HelpCenter() {
               display: 'inline-flex',
               alignItems: 'center',
               gap: '10px',
-              padding: '6px 16px',
+              padding: '6px 18px',
               borderRadius: '50px',
-              backgroundColor: 'rgba(255, 255, 255, 0.08)',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
+              backgroundColor: 'rgba(255, 255, 255, 0.06)',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
               marginBottom: '24px',
               textDecoration: 'none',
-              transition: 'background-color 0.2s, border-color 0.2s',
+              transition: 'all 0.2s',
               cursor: 'pointer'
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.15)';
-              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.12)';
+              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.25)';
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
-              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.06)';
+              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.12)';
             }}
           >
             <svg
               viewBox="0 0 24 24"
               width="16"
               height="16"
-              stroke="#A8C4D8"
+              stroke="#B88A5A"
               strokeWidth="2"
               fill="none"
               strokeLinecap="round"
@@ -396,8 +396,8 @@ export default function HelpCenter() {
             <span
               style={{
                 fontSize: '12px',
-                color: '#A8C4D8',
-                borderLeft: '1px solid rgba(255, 255, 255, 0.25)',
+                color: '#CBD5E1',
+                borderLeft: '1px solid rgba(255, 255, 255, 0.2)',
                 paddingLeft: '10px',
                 fontStyle: 'italic'
               }}
@@ -408,10 +408,11 @@ export default function HelpCenter() {
 
           <h1
             style={{
-              fontSize: '36px',
+              fontFamily: "'Playfair Display', Georgia, serif",
+              fontSize: '42px',
               fontWeight: 'normal',
-              margin: '0 0 12px 0',
-              letterSpacing: '-0.02em',
+              margin: '0 0 14px 0',
+              letterSpacing: '-0.01em',
               color: '#FFFFFF'
             }}
           >
@@ -419,11 +420,13 @@ export default function HelpCenter() {
           </h1>
           <p
             style={{
-              fontSize: '16px',
-              color: '#A8C4D8',
-              margin: '0 0 32px 0',
+              fontFamily: "'Playfair Display', Georgia, serif",
+              fontSize: '17px',
+              color: '#CBD5E1',
+              margin: '0 0 36px 0',
               fontStyle: 'italic',
-              fontWeight: '300'
+              fontWeight: '300',
+              letterSpacing: '0.02em'
             }}
           >
             Stays that stay with you — and support that stays with you too.
@@ -447,15 +450,15 @@ export default function HelpCenter() {
               style={{
                 width: '100%',
                 padding: '16px 20px 16px 48px',
-                borderRadius: '8px',
+                borderRadius: '6px',
                 border: 'none',
                 outline: 'none',
-                fontFamily: 'Georgia, serif',
+                fontFamily: "'Outfit', -apple-system, sans-serif",
                 fontSize: '16px',
-                color: '#2E4A61',
+                color: '#282B2B',
                 boxShadow: isSearchFocused
-                  ? '0 0 0 3px rgba(168, 196, 216, 0.5), 0 8px 30px rgba(0, 0, 0, 0.15)'
-                  : '0 4px 15px rgba(0, 0, 0, 0.1)',
+                  ? '0 0 0 3px rgba(184, 138, 90, 0.4), 0 8px 30px rgba(0, 0, 0, 0.15)'
+                  : '0 4px 15px rgba(0, 0, 0, 0.08)',
                 transition: 'all 0.3s ease',
                 boxSizing: 'border-box'
               }}
@@ -465,7 +468,7 @@ export default function HelpCenter() {
               viewBox="0 0 24 24"
               width="18"
               height="18"
-              stroke="#4A6B8A"
+              stroke="#2E3A43"
               strokeWidth="2.5"
               fill="none"
               strokeLinecap="round"
@@ -475,7 +478,7 @@ export default function HelpCenter() {
                 left: '18px',
                 top: '50%',
                 transform: 'translateY(-50%)',
-                opacity: 0.8
+                opacity: 0.7
               }}
             >
               <circle cx="11" cy="11" r="8" />
@@ -491,7 +494,7 @@ export default function HelpCenter() {
                   transform: 'translateY(-50%)',
                   background: 'none',
                   border: 'none',
-                  color: '#4A6B8A',
+                  color: '#64748B',
                   cursor: 'pointer',
                   fontSize: '16px',
                   fontFamily: 'sans-serif',
@@ -513,7 +516,7 @@ export default function HelpCenter() {
           maxWidth: '1000px',
           width: '100%',
           margin: '0 auto',
-          padding: '48px 24px',
+          padding: '54px 24px',
           boxSizing: 'border-box'
         }}
       >
@@ -524,8 +527,8 @@ export default function HelpCenter() {
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-                  gap: '24px'
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(290px, 1fr))',
+                  gap: '36px 28px'
                 }}
               >
                 {filteredSections.map((section) => {
@@ -538,20 +541,20 @@ export default function HelpCenter() {
                       onMouseLeave={() => setHoveredCard(null)}
                       style={{
                         backgroundColor: '#FFFFFF',
-                        border: '1px solid #D6E2EC',
-                        borderLeft: '4px solid #4A6B8A',
-                        borderRadius: '6px',
-                        padding: '24px',
+                        border: '1px solid #2E3A43', // Solid border
+                        borderRadius: '4px', // Mild rounding matching screenshot
+                        padding: '28px 24px',
                         cursor: 'pointer',
-                        transform: isHovered ? 'translateY(-3px)' : 'translateY(0)',
+                        transform: isHovered ? 'translate(3px, -3px)' : 'none',
                         boxShadow: isHovered
-                          ? '0 12px 24px rgba(46, 74, 97, 0.08)'
-                          : '0 2px 4px rgba(46, 74, 97, 0.02)',
-                        transition: 'all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1)',
+                          ? '-9px 9px 0px #2E3A43' // Solid offset shadow bottom-left
+                          : '-6px 6px 0px #2E3A43',
+                        transition: 'all 0.2s ease-in-out',
                         display: 'flex',
                         flexDirection: 'column',
                         justifyContent: 'space-between',
-                        minHeight: '180px'
+                        minHeight: '190px',
+                        boxSizing: 'border-box'
                       }}
                     >
                       <div>
@@ -565,7 +568,7 @@ export default function HelpCenter() {
                         >
                           <div
                             style={{
-                              backgroundColor: '#F4F7FA',
+                              backgroundColor: '#E2ECF5',
                               padding: '8px',
                               borderRadius: '4px',
                               display: 'flex',
@@ -577,10 +580,11 @@ export default function HelpCenter() {
                           </div>
                           <h2
                             style={{
-                              fontSize: '18px',
-                              fontWeight: 'normal',
+                              fontFamily: "'Playfair Display', Georgia, serif",
+                              fontSize: '20px',
+                              fontWeight: 'bold',
                               margin: 0,
-                              color: '#2E4A61'
+                              color: '#2E3A43'
                             }}
                           >
                             {section.title}
@@ -589,9 +593,10 @@ export default function HelpCenter() {
                         <p
                           style={{
                             fontSize: '14px',
-                            color: '#4A6B8A',
-                            lineHeight: '1.5',
-                            margin: '0 0 16px 0'
+                            color: '#4A5568',
+                            lineHeight: '1.6',
+                            margin: '0 0 16px 0',
+                            fontFamily: "'Outfit', -apple-system, sans-serif"
                           }}
                         >
                           {section.description}
@@ -599,13 +604,13 @@ export default function HelpCenter() {
                       </div>
                       <span
                         style={{
-                          fontSize: '13px',
-                          color: '#4A6B8A',
+                          fontSize: '14px',
+                          color: '#2E3A43',
                           fontWeight: 'bold',
                           display: 'inline-flex',
                           alignItems: 'center',
-                          gap: '4px',
-                          textDecoration: isHovered ? 'underline' : 'none'
+                          gap: '6px',
+                          fontFamily: "'Outfit', -apple-system, sans-serif"
                         }}
                       >
                         View answers &rarr;
@@ -621,8 +626,9 @@ export default function HelpCenter() {
                   textAlign: 'center',
                   padding: '64px 32px',
                   backgroundColor: '#FFFFFF',
-                  border: '1px solid #D6E2EC',
-                  borderRadius: '8px',
+                  border: '1px solid #2E3A43',
+                  borderRadius: '4px',
+                  boxShadow: '-6px 6px 0px #2E3A43',
                   marginTop: '16px'
                 }}
               >
@@ -630,7 +636,7 @@ export default function HelpCenter() {
                   viewBox="0 0 24 24"
                   width="48"
                   height="48"
-                  stroke="#A8C4D8"
+                  stroke="#2E3A43"
                   strokeWidth="1.5"
                   fill="none"
                   strokeLinecap="round"
@@ -642,9 +648,10 @@ export default function HelpCenter() {
                 </svg>
                 <h3
                   style={{
-                    fontSize: '22px',
-                    fontWeight: 'normal',
-                    color: '#2E4A61',
+                    fontFamily: "'Playfair Display', Georgia, serif",
+                    fontSize: '24px',
+                    fontWeight: 'bold',
+                    color: '#2E3A43',
                     margin: '0 0 12px 0'
                   }}
                 >
@@ -652,12 +659,12 @@ export default function HelpCenter() {
                 </h3>
                 <p
                   style={{
-                    color: '#4A6B8A',
+                    color: '#4A5568',
                     fontSize: '15px',
-                    fontStyle: 'italic',
+                    lineHeight: '1.6',
                     maxWidth: '440px',
                     margin: '0 auto 24px auto',
-                    lineHeight: '1.6'
+                    fontFamily: "'Outfit', -apple-system, sans-serif"
                   }}
                 >
                   We couldn't find any articles or guidelines matching "{searchQuery}".
@@ -670,19 +677,20 @@ export default function HelpCenter() {
                     }
                   }}
                   style={{
-                    backgroundColor: '#2E4A61',
+                    backgroundColor: '#2E3A43',
                     color: '#FFFFFF',
                     border: 'none',
                     padding: '12px 24px',
                     fontSize: '15px',
-                    fontFamily: 'Georgia, serif',
+                    fontFamily: "'Outfit', -apple-system, sans-serif",
+                    fontWeight: 'bold',
                     borderRadius: '4px',
                     cursor: 'pointer',
-                    transition: 'background-color 0.2s',
+                    transition: 'all 0.2s',
                     boxShadow: '0 2px 8px rgba(46, 74, 97, 0.15)'
                   }}
                   onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#4A6B8A')}
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#2E4A61')}
+                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#2E3A43')}
                 >
                   Contact Our Concierge Support &rarr;
                 </button>
@@ -700,7 +708,7 @@ export default function HelpCenter() {
                 border: 'none',
                 color: '#4A6B8A',
                 cursor: 'pointer',
-                fontFamily: 'Georgia, serif',
+                fontFamily: "'Outfit', -apple-system, sans-serif",
                 fontSize: '15px',
                 fontWeight: 'bold',
                 display: 'inline-flex',
@@ -710,7 +718,7 @@ export default function HelpCenter() {
                 marginBottom: '28px',
                 transition: 'color 0.2s'
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = '#2E4A61')}
+              onMouseEnter={(e) => (e.currentTarget.style.color = '#2E3A43')}
               onMouseLeave={(e) => (e.currentTarget.style.color = '#4A6B8A')}
             >
               <svg
@@ -755,20 +763,22 @@ export default function HelpCenter() {
               <div>
                 <h2
                   style={{
-                    fontSize: '26px',
-                    fontWeight: 'normal',
+                    fontFamily: "'Playfair Display', Georgia, serif",
+                    fontSize: '28px',
+                    fontWeight: 'bold',
                     margin: 0,
-                    color: '#2E4A61'
+                    color: '#2E3A43'
                   }}
                 >
                   {activeSection.title}
                 </h2>
                 <p
                   style={{
-                    margin: '4px 0 0 0',
+                    margin: '6px 0 0 0',
                     color: '#4A6B8A',
                     fontSize: '15px',
-                    fontStyle: 'italic'
+                    fontStyle: 'italic',
+                    fontFamily: "'Playfair Display', Georgia, serif"
                   }}
                 >
                   {activeSection.description}

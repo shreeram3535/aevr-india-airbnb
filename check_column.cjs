@@ -28,7 +28,7 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 async function run() {
   const { data, error } = await supabase
     .from('listings')
-    .select('id, title, internal_name')
+    .select('id, title, original_price, discounted_price')
     .limit(1);
   if (error) {
     console.error('Error fetching listings:', error);
