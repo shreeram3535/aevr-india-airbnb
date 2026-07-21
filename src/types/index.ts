@@ -65,6 +65,7 @@ export interface Listing {
     price: number;
     originalPrice?: number;
     discountedPrice?: number;
+    discountEndTime?: string;
     currency?: string;
     rating: number;
     reviewCount: number;
@@ -227,6 +228,7 @@ export interface CreateListingInput {
     pricePerNight: number;
     originalPrice?: number;
     discountedPrice?: number;
+    discountEndTime?: string;
     currency: string;
     categorySlug: string;
     city: string;

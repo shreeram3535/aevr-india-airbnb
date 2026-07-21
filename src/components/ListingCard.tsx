@@ -122,6 +122,23 @@ const getSpecialAmenity = (listing: Listing) => {
     return { label: 'Garden View', Icon: Compass };
 };
 
+const formatRemainingTime = (endAtIso: string, nowTs: number): { text: string; isExpired: boolean } => {
+    const endMs = new Date(endAtIso).getTime();
+    if (isNaN(endMs)) return { text: '', isExpired: true };
+    const diffMs = endMs - nowTs;
+    if (diffMs <= 0) return { text: '', isExpired: true };
+
+    const totalHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const totalMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+
+    if (totalHours >= 24) {
+        const days = Math.floor(totalHours / 24);
+        const remHours = totalHours % 24;
+        return { text: `${days}d ${remHours}h left`, isExpired: false };
+    }
+    return { text: `${totalHours}h ${totalMinutes}m left`, isExpired: false };
+};
+
 interface ListingCardProps {
     listing: Listing;
     cardIndex?: number;
@@ -132,6 +149,14 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing, cardIndex, ac
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [isFavorited, setIsFavorited] = useState(() => favoritesService.isFavorite(listing.id));
     const [imageLoaded, setImageLoaded] = useState(false);
+    const [nowTs, setNowTs] = useState(() => Date.now());
+
+    useEffect(() => {
+        const intervalId = setInterval(() => {
+            setNowTs(Date.now());
+        }, 60000);
+        return () => clearInterval(intervalId);
+    }, []);
     const imageCount = listing.images.length;
     const hasImages = imageCount > 0;
     const fallbackMedia = listing.media.find((item) => item.kind === 'video' && item.thumbnailUrl)?.thumbnailUrl;
@@ -179,9 +204,33 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing, cardIndex, ac
         return activeFlashSale.listingId === listing.id ? activeFlashSale : null;
     };
     const activeDrop = getActiveDrop();
-    const isOnSale = Boolean(activeDrop);
-    const currentPrice = isOnSale && activeDrop ? activeDrop.salePrice : listing.price;
-    const displayOriginalPrice = isOnSale && activeDrop ? listing.price : listing.originalPrice;
+    const origPrice = listing.originalPrice ?? listing.price;
+    const hasDirectDiscount = Boolean(
+        listing.discountedPrice &&
+        listing.discountedPrice < origPrice &&
+        listing.discountEndTime &&
+        new Date(listing.discountEndTime).getTime() > Date.now()
+    );
+    const activeDiscountPrice = activeDrop
+        ? activeDrop.salePrice
+        : hasDirectDiscount
+        ? listing.discountedPrice
+        : null;
+
+    const saleEndAt = activeDrop?.endAt ?? listing.discountEndTime;
+    const { text: countdownText, isExpired } = saleEndAt
+        ? formatRemainingTime(saleEndAt, nowTs)
+        : { text: '', isExpired: true };
+
+    const isOnSale = Boolean(activeDiscountPrice && activeDiscountPrice < origPrice && !isExpired);
+    const currentPrice = isOnSale && activeDiscountPrice ? activeDiscountPrice : listing.price;
+    const displayOriginalPrice = isOnSale ? origPrice : listing.originalPrice;
+
+    const discountPercent = activeDrop
+        ? Math.round(activeDrop.discountPercent)
+        : isOnSale && currentPrice < origPrice
+        ? Math.round(((origPrice - currentPrice) / origPrice) * 100)
+        : null;
 
     const priceLabel = new Intl.NumberFormat('en-IN', {
         style: 'currency',
@@ -333,9 +382,9 @@ export const ListingCard: React.FC<ListingCardProps> = ({ listing, cardIndex, ac
                             )}
                             <span className={styles.price}>{priceLabel}</span>
                             <span className={styles.period}> / night</span>
-                            {isOnSale && activeDrop && (
+                            {isOnSale && discountPercent != null && (
                                 <span className={styles.saleBadge}>
-                                    {Math.round(activeDrop.discountPercent)}% OFF
+                                    {discountPercent}% OFF
                                 </span>
                             )}
                         </div>

@@ -26,9 +26,10 @@ import { api } from '../services/api';
 import { authService } from '../services/auth';
 import { favoritesService } from '../services/favorites';
 import type { AvailabilityBlock, Listing, RoomType, FlashSaleDrop } from '../types';
-import { getFallbackImage } from '../services/media';
 import { FuzzyMap } from '../components/FuzzyMap';
 import { hasValidCoords, extractCoordsFromGoogleMapsUrl } from '../services/mapUtils';
+import DiscountCountdown from '../components/DiscountCountdown';
+import ListingDiscountCountdown from '../components/ListingDiscountCountdown';
 
 
 const formatPrice = (amount: number, currency?: string) =>
@@ -227,7 +228,19 @@ export const ListingDetails = () => {
     const desktopSliderRef = useRef<HTMLDivElement | null>(null);
 
     const [activeDrop, setActiveDrop] = useState<FlashSaleDrop | null>(null);
-    const [timeLeftStr, setTimeLeftStr] = useState('');
+
+    const handleFlashSaleExpire = useCallback(() => {
+        setActiveDrop(null);
+        if (id) {
+            api.fetchActiveFlashDropForListing(id).then((drop) => {
+                if (drop && drop.listingId === id) {
+                    setActiveDrop(drop);
+                } else {
+                    setActiveDrop(null);
+                }
+            });
+        }
+    }, [id]);
 
     const [checkIn, setCheckIn] = useState(() => {
         const tomorrow = new Date();
@@ -740,7 +753,9 @@ Please let me know the next steps for confirming the booking.`;
                     <span className={styles.flashSaleIcon}>⚡</span>
                     <div className={styles.flashSaleTextGroup}>
                         <strong className={styles.flashSaleTitleText}>FLASH SALE — {Math.round(activeDrop.discountPercent)}% OFF</strong>
-                        <span className={styles.flashSaleTimeText}>This special price ends in {timeLeftStr}</span>
+                        <span className={styles.flashSaleTimeText}>
+                            Special price &nbsp;<DiscountCountdown endTime={activeDrop.endAt} onExpire={handleFlashSaleExpire} />
+                        </span>
                     </div>
                 </div>
             )}
@@ -1089,15 +1104,17 @@ Please let me know the next steps for confirming the booking.`;
                             <h3>Booking details</h3>
                             <p>
                                 {isOnSale && activeDrop ? (
-                                    <>
+                                    <span className={styles.bookingDetailsPriceRow}>
                                         <span className={styles.originalPriceDetails}>{formatPrice(listing.price, listing.currency)}</span>
                                         <span className={styles.salePriceDetails}>{formatPrice(activeDrop.salePrice, listing.currency)}</span>
-                                    </>
+                                        <DiscountCountdown endTime={activeDrop.endAt} onExpire={handleFlashSaleExpire} />
+                                    </span>
                                 ) : listing.originalPrice && listing.originalPrice > listing.price ? (
-                                    <>
+                                    <span className={styles.bookingDetailsPriceRow}>
                                         <span className={styles.originalPriceDetails}>{formatPrice(listing.originalPrice, listing.currency)}</span>
                                         <span className={styles.salePriceDetails}>{formatPrice(listing.price, listing.currency)}</span>
-                                    </>
+                                        <ListingDiscountCountdown endTime={listing.discountEndTime} />
+                                    </span>
                                 ) : (
                                     formatPrice(listing.price, listing.currency)
                                 )}{' '}
@@ -1157,12 +1174,21 @@ Please let me know the next steps for confirming the booking.`;
                                         <span className={styles.originalPriceCard}>{formatPrice(selectedRoomType?.pricePerNight ?? listing.price, listing.currency)}</span>
                                         <span className={styles.salePriceCard}>{formatPrice(nightlyRate, listing.currency)}</span>
                                         <span className={styles.period}>/ night</span>
+                                        <DiscountCountdown endTime={activeDrop.endAt} onExpire={handleFlashSaleExpire} />
+                                    </div>
+                                ) : isOnSale && activeDrop ? (
+                                    <div className={styles.priceContainer}>
+                                        <span className={styles.originalPriceCard}>{formatPrice(selectedRoomType?.pricePerNight ?? listing.price, listing.currency)}</span>
+                                        <span className={styles.salePriceCard}>{formatPrice(activeDrop.salePrice, listing.currency)}</span>
+                                        <span className={styles.period}>/ night</span>
+                                        <DiscountCountdown endTime={activeDrop.endAt} onExpire={handleFlashSaleExpire} />
                                     </div>
                                 ) : listing.originalPrice && listing.originalPrice > listing.price ? (
                                     <div className={styles.priceContainer}>
                                         <span className={styles.originalPriceCard}>{formatPrice(listing.originalPrice, listing.currency)}</span>
                                         <span className={styles.salePriceCard}>{formatPrice(nightlyRate, listing.currency)}</span>
                                         <span className={styles.period}>/ night</span>
+                                        <ListingDiscountCountdown endTime={listing.discountEndTime} />
                                     </div>
                                 ) : (
                                     <>

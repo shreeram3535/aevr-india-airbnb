@@ -165,6 +165,35 @@
     color: #1a1a1a;
 }
 
+.flashSaleBadge {
+    background-color: #fff1f0;
+    color: #e53e3e;
+    border: 1px solid #ffccc7;
+}
+
+.saleCountdownBadge {
+    position: absolute;
+    top: 42px;
+    left: 12px;
+    background-color: rgba(229, 62, 62, 0.92);
+    color: #ffffff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: var(--radius-full);
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(4px);
+    letter-spacing: 0.02em;
+}
+
+.countdownIcon {
+    stroke-width: 2.5px;
+}
+
 /* Info Section */
 .info {
     display: flex;

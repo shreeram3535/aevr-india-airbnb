@@ -13,11 +13,13 @@ import { uploadListingImages } from '../services/storage';
 import { HostApprovalStatusView } from '../components/HostApprovalStatus';
 import { SkeletonScreen } from '../components/SkeletonScreen';
 import AmenityIcon from '../components/AmenityIcon';
-import type { AvailabilityBlock, AvailabilityBlockStatus, Category, Listing, ListingMediaItem, RoomType, Experience, ExperienceCategory } from '../types';
+import type { AvailabilityBlock, AvailabilityBlockStatus, Category, Listing, ListingMediaItem, RoomType, Experience, ExperienceCategory, FlashSaleDrop } from '../types';
 import { createExternalVideoMedia } from '../services/media';
 import { extractCoordsFromGoogleMapsUrl } from '../services/mapUtils';
 
 /* ─── Types ──────────────────────────────────────────────────────────────── */
+
+type SaleDurationMode = '24' | '48' | '72' | 'custom';
 
 type FormState = {
     title: string;
@@ -25,6 +27,8 @@ type FormState = {
     hostName: string;
     originalPrice: string;
     discountedPrice: string;
+    saleDurationMode: SaleDurationMode;
+    customEndTime: string;
     currency: string;
     categorySlug: string;
     city: string;
@@ -130,12 +134,22 @@ const STEPS = [
 
 /* ─── Helpers ────────────────────────────────────────────────────────────── */
 
+const isoToDatetimeLocal = (isoStr?: string) => {
+    if (!isoStr) return '';
+    const date = new Date(isoStr);
+    if (isNaN(date.getTime())) return '';
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+};
+
 const initialState: FormState = {
     title: '',
     description: '',
     hostName: '',
     originalPrice: '',
     discountedPrice: '',
+    saleDurationMode: '24',
+    customEndTime: '',
     currency: 'INR',
     categorySlug: 'cabins',
     city: '',
@@ -162,12 +176,26 @@ const createRoomTypeRow = (overrides: Partial<RoomTypeFormState> = {}): RoomType
     videoLinks: overrides.videoLinks ?? '',
 });
 
-const listingToForm = (listing: Listing): FormState => ({
+const listingToForm = (listing: Listing, activeDrop?: FlashSaleDrop | null): FormState => ({
     title: listing.title,
     description: listing.description,
     hostName: listing.host.name,
     originalPrice: String(listing.originalPrice ?? listing.price),
-    discountedPrice: String(listing.discountedPrice ?? listing.price),
+    discountedPrice: listing.discountedPrice && listing.discountedPrice < (listing.originalPrice ?? listing.price) ? String(listing.discountedPrice) : '',
+    saleDurationMode: (() => {
+        if (!activeDrop) return '24';
+        const startMs = new Date(activeDrop.startAt).getTime();
+        const endMs = new Date(activeDrop.endAt).getTime();
+        const totalMinutes = (endMs - startMs) / (1000 * 60);
+        if (Math.abs(totalMinutes - 24 * 60) <= 5) return '24';
+        if (Math.abs(totalMinutes - 48 * 60) <= 5) return '48';
+        if (Math.abs(totalMinutes - 72 * 60) <= 5) return '72';
+        return 'custom';
+    })(),
+    customEndTime: (() => {
+        if (!activeDrop) return '';
+        return isoToDatetimeLocal(activeDrop.endAt);
+    })(),
     currency: listing.currency ?? 'INR',
     categorySlug: listing.category,
     city: listing.location.city,
@@ -342,10 +370,11 @@ export const HostNewProperty = () => {
             setCategories(data);
             if (listingId) {
                 const listing = await api.fetchListingById(listingId);
+                const activeDrop = await api.fetchActiveFlashDropForListing(listingId);
                 if (!listing) {
                     setError('Listing not found.');
                 } else {
-                    setForm(listingToForm(listing));
+                    setForm(listingToForm(listing, activeDrop));
                     setRoomTypes(roomTypesToForm(listing.roomTypes, listing.price));
                     setLocalExperiences(experiencesToForm(listing.localExperiences));
                     setExistingMedia(listing.media);
@@ -600,6 +629,25 @@ export const HostNewProperty = () => {
                 throw new Error('Prices must be positive numbers.');
             }
 
+            const hasDiscount = discPrice > 0 && discPrice < origPrice;
+            let flashSaleEndTimeIso: string | undefined = undefined;
+
+            if (hasDiscount) {
+                if (form.saleDurationMode === 'custom') {
+                    if (!form.customEndTime) {
+                        throw new Error('Please pick an end date and time for the discount offer.');
+                    }
+                    const customDate = new Date(form.customEndTime);
+                    if (isNaN(customDate.getTime()) || customDate.getTime() <= Date.now()) {
+                        throw new Error('Discount offer end time must be in the future.');
+                    }
+                    flashSaleEndTimeIso = customDate.toISOString();
+                } else {
+                    const hours = Number(form.saleDurationMode);
+                    flashSaleEndTimeIso = new Date(Date.now() + hours * 60 * 60 * 1000).toISOString();
+                }
+            }
+
             const uploadedPropertyMedia = selectedFiles.length > 0
                 ? await uploadListingImages(session.user.id, selectedFiles)
                 : undefined;
@@ -640,6 +688,7 @@ export const HostNewProperty = () => {
                 pricePerNight: startingPrice,
                 originalPrice: origPrice,
                 discountedPrice: discPrice,
+                discountEndTime: flashSaleEndTimeIso,
                 currency: form.currency,
                 categorySlug: form.categorySlug,
                 city: form.city,
@@ -881,7 +930,6 @@ export const HostNewProperty = () => {
                                         onChange={updateField('discountedPrice')}
                                         className={styles.priceInput}
                                         placeholder="0"
-                                        required
                                     />
                                 </div>
                             </label>
@@ -895,6 +943,56 @@ export const HostNewProperty = () => {
                                 </select>
                             </label>
                         </div>
+                        {Number(form.discountedPrice) > 0 && Number(form.discountedPrice) < Number(form.originalPrice) && (
+                            <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>Sale Duration</span>
+                                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                                    {(['24', '48', '72', 'custom'] as const).map((mode) => {
+                                        const isSelected = form.saleDurationMode === mode;
+                                        const label = mode === 'custom' ? 'Custom' : `${mode} hours`;
+                                        return (
+                                            <button
+                                                key={mode}
+                                                type="button"
+                                                onClick={() => setForm((f) => ({ ...f, saleDurationMode: mode }))}
+                                                style={{
+                                                    padding: '6px 16px',
+                                                    borderRadius: '9999px',
+                                                    border: isSelected ? '2px solid #ff385c' : '1px solid #d1d5db',
+                                                    backgroundColor: isSelected ? '#fff1f0' : '#ffffff',
+                                                    color: isSelected ? '#ff385c' : '#374151',
+                                                    fontWeight: isSelected ? 600 : 400,
+                                                    cursor: 'pointer',
+                                                    transition: 'all 0.15s ease',
+                                                }}
+                                            >
+                                                {label}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+
+                                {form.saleDurationMode === 'custom' && (
+                                    <div style={{ marginTop: '8px' }}>
+                                        <input
+                                            type="datetime-local"
+                                            value={form.customEndTime}
+                                            onChange={updateField('customEndTime')}
+                                            className={styles.priceInput}
+                                            style={{ maxWidth: '280px' }}
+                                            min={isoToDatetimeLocal(new Date().toISOString())}
+                                            required
+                                        />
+                                    </div>
+                                )}
+
+                                <span style={{ fontSize: '0.825rem', color: '#6b7280', marginTop: '2px' }}>
+                                    {form.saleDurationMode === 'custom'
+                                        ? 'Pick an exact end date and time above.'
+                                        : `Sale ends in ${form.saleDurationMode} hours. Deactivate anytime from the listing dashboard.`}
+                                </span>
+                            </div>
+                        )}
                     </div>
                 );
 

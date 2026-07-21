@@ -24,10 +24,93 @@
 }
 
 .currentDrop {
-    padding: 12px;
+    padding: 16px;
+    border-radius: 16px;
+    background: rgba(0, 132, 137, 0.08);
+    border: 1px solid rgba(0, 132, 137, 0.2);
+    margin-bottom: 24px;
+}
+
+.dropsListHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.dropsListHeader h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.dropsGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.dropItemCard {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
     border-radius: 12px;
-    background: rgba(0, 132, 137, 0.1);
-    margin-bottom: 16px;
+    background: #ffffff;
+    border: 1px solid var(--color-gray-100);
+    box-shadow: var(--shadow-sm);
+    gap: 12px;
+}
+
+.dropItemInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.dropItemTitle {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.dropItemTiming {
+    font-size: var(--font-size-xs);
+    color: var(--text-secondary);
+}
+
+.dropItemPrice {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: #ff385c;
+}
+
+.dropItemBadge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 99px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    background: rgba(255, 56, 92, 0.12);
+    color: #b4233f;
+    width: fit-content;
+}
+
+.deactivateBtn {
+    height: 36px;
+    padding: 0 14px;
+    border-radius: 99px;
+    border: 1px solid #e03e5f;
+    background: #ffffff;
+    color: #e03e5f;
+    font-weight: 600;
+    font-size: var(--font-size-xs);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.deactivateBtn:hover {
+    background: #e03e5f;
+    color: #ffffff;
 }
 
 .form {

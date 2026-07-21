@@ -121,7 +121,7 @@ const CustomDateTimePicker = ({ value, onChange }: CustomDateTimePickerProps) =>
 export const AdminFlashSales = () => {
     const navigate = useNavigate();
     const [listings, setListings] = useState<Listing[]>([]);
-    const [currentDrop, setCurrentDrop] = useState<FlashSaleDrop | null>(null);
+    const [allDrops, setAllDrops] = useState<FlashSaleDrop[]>([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -136,55 +136,55 @@ export const AdminFlashSales = () => {
     const [internalNameSaved, setInternalNameSaved] = useState(false);
     const [dropdownOpen, setDropdownOpen] = useState(false);
 
+    const loadData = async () => {
+        if (!hasSupabaseConfig) {
+            setError('Supabase auth is not configured yet.');
+            setLoading(false);
+            return;
+        }
 
+        const session = await authService.getSession();
+        if (!session) {
+            navigate('/host/auth', { replace: true });
+            return;
+        }
+
+        const role = await api.getCurrentUserRole();
+        if (role !== 'admin') {
+            setError('Only super admins can manage flash sales.');
+            setLoading(false);
+            return;
+        }
+
+        const [allListings, drops] = await Promise.all([
+            api.fetchAdminListings(),
+            api.fetchAdminFlashDrops(),
+        ]);
+
+        const activeListings = allListings.filter((l) => l.isActive);
+        setListings(activeListings);
+        setAllDrops(drops);
+
+        if (drops.length > 0) {
+            const firstActive = drops.find((d) => d.isActive) ?? drops[0];
+            setListingId(firstActive.listingId);
+            setSaleType(firstActive.saleType);
+            setSaleValue(String(firstActive.saleValue));
+            setStartAt(toDatetimeLocal(firstActive.startAt));
+            setEndAt(toDatetimeLocal(firstActive.endAt));
+        } else {
+            const firstListing = allListings[0];
+            if (firstListing) setListingId(firstListing.id);
+            const defaultStart = new Date(Date.now() + (15 * 60 * 1000));
+            setStartAt(toDatetimeLocal(defaultStart.toISOString()));
+            const defaultEnd = new Date(defaultStart.getTime() + (72 * 60 * 60 * 1000));
+            setEndAt(toDatetimeLocal(defaultEnd.toISOString()));
+        }
+        setLoading(false);
+    };
 
     useEffect(() => {
-        const load = async () => {
-            if (!hasSupabaseConfig) {
-                setError('Supabase auth is not configured yet.');
-                setLoading(false);
-                return;
-            }
-
-            const session = await authService.getSession();
-            if (!session) {
-                navigate('/host/auth', { replace: true });
-                return;
-            }
-
-            const role = await api.getCurrentUserRole();
-            if (role !== 'admin') {
-                setError('Only super admins can manage flash sales.');
-                setLoading(false);
-                return;
-            }
-
-            const [allListings, drop] = await Promise.all([
-                api.fetchAdminListings(),
-                api.fetchAdminDropState(),
-            ]);
-
-            const activeListings = allListings.filter((l) => l.isActive);
-            setListings(activeListings);
-            setCurrentDrop(drop);
-            if (drop) {
-                setListingId(drop.listingId);
-                setSaleType(drop.saleType);
-                setSaleValue(String(drop.saleValue));
-                setStartAt(toDatetimeLocal(drop.startAt));
-                setEndAt(toDatetimeLocal(drop.endAt));
-            } else {
-                const firstListing = allListings[0];
-                if (firstListing) setListingId(firstListing.id);
-                const defaultStart = new Date(Date.now() + (15 * 60 * 1000));
-                setStartAt(toDatetimeLocal(defaultStart.toISOString()));
-                const defaultEnd = new Date(defaultStart.getTime() + (72 * 60 * 60 * 1000));
-                setEndAt(toDatetimeLocal(defaultEnd.toISOString()));
-            }
-            setLoading(false);
-        };
-
-        load();
+        loadData();
     }, [navigate]);
 
     useEffect(() => {
@@ -202,7 +202,16 @@ export const AdminFlashSales = () => {
         const selectedListing = listings.find((l) => l.id === listingId);
         setInternalName(selectedListing?.internalName ?? '');
         setInternalNameSaved(false);
-    }, [listingId, listings]);
+
+        // Populate fields if this listing has an existing active drop
+        const existingDrop = allDrops.find((d) => d.listingId === listingId && d.isActive);
+        if (existingDrop) {
+            setSaleType(existingDrop.saleType);
+            setSaleValue(String(existingDrop.saleValue));
+            setStartAt(toDatetimeLocal(existingDrop.startAt));
+            setEndAt(toDatetimeLocal(existingDrop.endAt));
+        }
+    }, [listingId, listings, allDrops]);
 
     const handleSaveInternalName = async () => {
         if (!listingId) return;
@@ -222,6 +231,7 @@ export const AdminFlashSales = () => {
             setSavingInternalName(false);
         }
     };
+
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
@@ -236,7 +246,7 @@ export const AdminFlashSales = () => {
             setError('Please provide a valid start date/time.');
             return;
         }
-        if (start.getTime() < Date.now()) {
+        if (start.getTime() < Date.now() - 60000) {
             setError('Start date cannot be in the past.');
             return;
         }
@@ -259,10 +269,12 @@ export const AdminFlashSales = () => {
 
         setSaving(true);
         try {
-            await api.updateListingInternalName(listingId, internalName);
-            setListings((prev) =>
-                prev.map((l) => (l.id === listingId ? { ...l, internalName } : l))
-            );
+            if (internalName) {
+                await api.updateListingInternalName(listingId, internalName);
+                setListings((prev) =>
+                    prev.map((l) => (l.id === listingId ? { ...l, internalName } : l))
+                );
+            }
 
             const drop = await api.upsertScheduledDrop({
                 listingId,
@@ -271,7 +283,10 @@ export const AdminFlashSales = () => {
                 startAt: start.toISOString(),
                 endAt: end.toISOString(),
             });
-            setCurrentDrop(drop);
+
+            // Refresh drops list
+            const updatedDrops = await api.fetchAdminFlashDrops();
+            setAllDrops(updatedDrops);
             setStartAt(toDatetimeLocal(drop.startAt));
             setEndAt(toDatetimeLocal(drop.endAt));
             setSaleValue(String(drop.saleValue));
@@ -282,13 +297,13 @@ export const AdminFlashSales = () => {
         }
     };
 
-    const handleDeactivate = async () => {
-        if (!currentDrop) return;
+    const handleDeactivate = async (dropId: string) => {
         setSaving(true);
         setError(null);
         try {
-            await api.deactivateDrop(currentDrop.id);
-            setCurrentDrop(null);
+            await api.deactivateDrop(dropId);
+            const updatedDrops = await api.fetchAdminFlashDrops();
+            setAllDrops(updatedDrops);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Unable to deactivate flash sale.');
         } finally {
@@ -299,18 +314,49 @@ export const AdminFlashSales = () => {
     if (loading) return <div className={styles.page}><SkeletonScreen variant="admin-form" /></div>;
     if (error && !listings.length) return <div className={styles.page}><div className={styles.panel}>{error}</div></div>;
 
+    const activeDropsList = allDrops.filter((d) => d.isActive);
+    const selectedListingDrop = allDrops.find((d) => d.listingId === listingId && d.isActive);
+
     return (
         <div className={styles.page}>
             <div className={styles.panel}>
                 <h1>Flash Sale Control</h1>
-                <p>Schedule one active property drop at a time.</p>
+                <p>Manage flash sale drops for your properties. Multiple properties can be on flash sale simultaneously.</p>
 
-                {currentDrop && (
+                {activeDropsList.length > 0 && (
                     <div className={styles.currentDrop}>
-                        <strong>Current drop:</strong> {currentDrop.listing.title} | {formatTo12Hour(currentDrop.startAt)} to {formatTo12Hour(currentDrop.endAt)}
+                        <div className={styles.dropsListHeader}>
+                            <h3>🔥 Active Flash Sales ({activeDropsList.length})</h3>
+                        </div>
+                        <div className={styles.dropsGrid}>
+                            {activeDropsList.map((drop) => (
+                                <div key={drop.id} className={styles.dropItemCard}>
+                                    <div className={styles.dropItemInfo}>
+                                        <span className={styles.dropItemTitle}>{drop.listing.title}</span>
+                                        <span className={styles.dropItemTiming}>
+                                            {formatTo12Hour(drop.startAt)} → {formatTo12Hour(drop.endAt)}
+                                        </span>
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                        <span className={styles.dropItemBadge}>
+                                            {Math.round(drop.discountPercent)}% OFF (₹{Math.round(drop.salePrice).toLocaleString('en-IN')})
+                                        </span>
+                                        <button
+                                            type="button"
+                                            className={styles.deactivateBtn}
+                                            onClick={() => handleDeactivate(drop.id)}
+                                            disabled={saving}
+                                        >
+                                            Deactivate
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 )}
 
+                <h2>Schedule Flash Sale</h2>
                 <form onSubmit={handleSave} className={styles.form}>
                     <label>
                         Property
@@ -429,9 +475,9 @@ export const AdminFlashSales = () => {
 
                     <div className={styles.actions}>
                         <button type="submit" disabled={saving}>Save & Activate</button>
-                        {currentDrop && (
-                            <button type="button" className={styles.danger} onClick={handleDeactivate} disabled={saving}>
-                                Deactivate
+                        {selectedListingDrop && (
+                            <button type="button" className={styles.danger} onClick={() => handleDeactivate(selectedListingDrop.id)} disabled={saving}>
+                                Deactivate Selected Property Drop
                             </button>
                         )}
                     </div>

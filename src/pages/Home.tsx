@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, type CSSProperties } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
     Clock3,
     ShieldCheck,
@@ -43,6 +43,7 @@ import styles from '../App.module.css'; // Reusing the grid styles from App modu
 import { ListingCard } from '../components/ListingCard';
 import { SkeletonScreen } from '../components/SkeletonScreen';
 import { api } from '../services/api';
+import { getFallbackImage } from '../services/media';
 import type { FlashSaleDrop, Listing, ListingFilters, ListingSortOption, PresetVideo } from '../types';
 
 const SORT_OPTIONS: Array<{ value: ListingSortOption; label: string }> = [
@@ -1071,30 +1072,61 @@ export const Home = () => {
                 </div>
 
             <main className={`${styles.homeMainContainer} ${luxurySection ? styles.homeModeLuxe : styles.homeModeAevr}`}>
-                {hasActiveDrop && activeDrop && (
-                    <section className={styles.flashSaleCard}>
-                        <img
-                            className={styles.flashSaleImage}
-                            src={activeDrop.listing.images[0] ?? 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?q=80&w=1200&auto=format&fit=crop'}
-                            alt={activeDrop.listing.title}
-                        />
-                        <div className={styles.flashSaleBody}>
-                            <div className={styles.flashSaleMeta}>
-                                <span className={styles.flashSaleBadge}>
-                                    <ShieldCheck size={14} /> Verified by AevrLux
-                                </span>
-                                <span className={styles.flashSaleTimer}>
-                                    <Clock3 size={14} /> {countdown}
+                {activeDrops.filter((drop) => new Date(drop.endAt).getTime() > nowTs).length > 0 && (
+                    <section className={styles.flashSaleSection}>
+                        <div className={styles.flashSaleSectionHeader}>
+                            <div className={styles.flashSaleTitleGroup}>
+                                <Sparkles className={styles.flashSaleSparkleIcon} size={22} />
+                                <h2>⚡ Flash Sale Deals</h2>
+                                <span className={styles.flashSaleCountBadge}>
+                                    {activeDrops.filter((drop) => new Date(drop.endAt).getTime() > nowTs).length} Propert{activeDrops.filter((drop) => new Date(drop.endAt).getTime() > nowTs).length > 1 ? 'ies' : 'y'} on Sale
                                 </span>
                             </div>
-                            <h2>{activeDrop.listing.title}</h2>
-                            <p>{activeDrop.listing.location.city}, {activeDrop.listing.location.country}</p>
-                            <div className={styles.flashSalePricing}>
-                                <span className={styles.flashOldPrice}>₹{Math.round(activeDrop.listing.price).toLocaleString('en-IN')}</span>
-                                <strong>₹{Math.round(activeDrop.salePrice).toLocaleString('en-IN')}</strong>
-                                <span className={styles.flashDiscount}>{Math.round(activeDrop.discountPercent)}% OFF</span>
-                            </div>
-                            <a className={styles.flashSaleCta} href={`/rooms/${activeDrop.listing.id}`}>View drop</a>
+                            <p className={styles.flashSaleSubtitle}>
+                                Limited-time special offers! Book directly before the timer runs out.
+                            </p>
+                        </div>
+
+                        <div className={styles.flashSaleGrid}>
+                            {activeDrops
+                                .filter((drop) => new Date(drop.endAt).getTime() > nowTs)
+                                .map((drop) => {
+                                    const remMs = new Date(drop.endAt).getTime() - nowTs;
+                                    const remSec = Math.max(0, Math.floor(remMs / 1000));
+                                    const h = Math.floor(remSec / 3600);
+                                    const m = Math.floor((remSec % 3600) / 60);
+                                    const s = remSec % 60;
+                                    const dropCountdown = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+                                    const origPrice = drop.listing.originalPrice ?? drop.listing.price;
+
+                                    return (
+                                        <div key={drop.id} className={styles.flashSaleCard}>
+                                            <img
+                                                className={styles.flashSaleImage}
+                                                src={drop.listing.images[0] ?? getFallbackImage()}
+                                                alt={drop.listing.title}
+                                            />
+                                            <div className={styles.flashSaleBody}>
+                                                <div className={styles.flashSaleMeta}>
+                                                    <span className={styles.flashSaleBadge}>
+                                                        <ShieldCheck size={14} /> Verified by AevrLux
+                                                    </span>
+                                                    <span className={styles.flashSaleTimer}>
+                                                        <Clock3 size={14} /> {dropCountdown}
+                                                    </span>
+                                                </div>
+                                                <h2>{drop.listing.title}</h2>
+                                                <p>{drop.listing.location.city}, {drop.listing.location.country}</p>
+                                                <div className={styles.flashSalePricing}>
+                                                    <span className={styles.flashOldPrice}>₹{Math.round(origPrice).toLocaleString('en-IN')}</span>
+                                                    <strong>₹{Math.round(drop.salePrice).toLocaleString('en-IN')}</strong>
+                                                    <span className={styles.flashDiscount}>{Math.round(drop.discountPercent)}% OFF</span>
+                                                </div>
+                                                <Link className={styles.flashSaleCta} to={`/rooms/${drop.listing.id}`}>View drop</Link>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
                         </div>
                     </section>
                 )}
